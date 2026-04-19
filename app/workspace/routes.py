@@ -24,11 +24,12 @@ def get_workspace_dir(repo_name):
     return repo_workspace
 
 def is_safe_path(basedir, path, follow_symlinks=True):
+    basedir = os.path.realpath(basedir)
     if follow_symlinks:
         matchpath = os.path.realpath(path)
     else:
         matchpath = os.path.abspath(path)
-    return matchpath.startswith(os.path.realpath(basedir))
+    return os.path.commonpath([basedir, matchpath]) == basedir
 
 @bp.before_app_request
 def ensure_session_id():
