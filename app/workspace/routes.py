@@ -242,3 +242,44 @@ def commit_changes():
         return jsonify({"message": "Changes committed successfully"}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@bp.route('/api/workspace/save-template', methods=['POST'])
+def save_template():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    data = request.get_json() or request.form
+    template_name = data.get('template_name')
+    if not template_name:
+        return jsonify({"error": "template_name is required"}), 400
+
+    template_name = secure_filename(template_name)
+    workspace_dir = get_workspace_dir(repo_name)
+
+    # Use appdata/.zekiprod/templates as persistent storage
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    os.makedirs(templates_root, exist_ok=True)
+    template_path = os.path.join(templates_root, template_name)
+
+    if os.path.exists(template_path):
+        shutil.rmtree(template_path)
+
+    try:
+        # Copy workspace content to template storage, excluding .git
+        def ignore_git(path, names):
+            return ['.git'] if '.git' in names else []
+
+        shutil.copytree(workspace_dir, template_path, ignore=ignore_git)
+        return jsonify({"message": f"Template '{template_name}' saved successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@bp.route('/api/workspace/templates', methods=['GET'])
+def list_templates():
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    if not os.path.exists(templates_root):
+        return jsonify([]), 200
+
+    templates = [d for d in os.listdir(templates_root) if os.path.isdir(os.path.join(templates_root, d))]
+    return jsonify(templates), 200
