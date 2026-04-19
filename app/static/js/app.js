@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const handleForm = (formId, endpoint, method = 'POST', isMultipart = false) => {
+    const handleForm = (formId, endpoint, method = 'POST', isMultipart = false, onSuccess = null) => {
         const form = document.getElementById(formId);
         if (!form) return;
         form.addEventListener('submit', async (e) => {
@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 if (response.ok) {
                     showAlert(result.message || 'Operation successful');
+                    if (onSuccess) onSuccess(result);
                 } else {
                     showAlert(result.error || 'Operation failed', 'danger');
                 }
@@ -63,6 +64,28 @@ document.addEventListener('DOMContentLoaded', () => {
     handleForm('uploadArchiveForm', '/api/workspace/modify/archive', 'POST', true);
     handleForm('applyPatchForm', '/api/workspace/modify/patch', 'POST', true);
     handleForm('commitForm', '/api/workspace/commit');
+    const refreshTemplates = async () => {
+        try {
+            const response = await fetch('/api/workspace/templates');
+            const templates = await response.json();
+            const select = document.getElementById('templateSelect');
+            if (select) {
+                // Keep the first "None" option
+                select.innerHTML = '<option value="">None (Empty Repository)</option>';
+                templates.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch templates:', error);
+        }
+    };
+
+    refreshTemplates();
+    handleForm('saveTemplateForm', '/api/workspace/save-template', 'POST', false, refreshTemplates);
 
     const createPrForm = document.getElementById('createPrForm');
     if (createPrForm) {

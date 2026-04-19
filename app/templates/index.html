@@ -55,6 +55,12 @@
                             <label class="form-check-label" for="visibilityPrivate">Private</label>
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <label for="templateSelect" class="form-label">Initialize from Template (Optional)</label>
+                        <select class="form-select" id="templateSelect" name="template_name">
+                            <option value="">None (Empty Repository)</option>
+                        </select>
+                    </div>
                     <button type="submit" class="btn btn-primary">Create</button>
                 </form>
             </div>
@@ -141,6 +147,13 @@
                     <label for="commitMessage" class="form-label">Commit Message</label>
                     <input type="text" class="form-control mb-2" id="commitMessage" name="commit_message" placeholder="Commit message" required>
                     <button type="submit" class="btn btn-success">Commit Changes</button>
+                </form>
+                <hr>
+                <h4>Save as Template</h4>
+                <form id="saveTemplateForm">
+                    <label for="templateName" class="form-label">Template Name</label>
+                    <input type="text" class="form-control mb-2" id="templateName" name="template_name" placeholder="E.g. flask-boilerplate" required>
+                    <button type="submit" class="btn btn-primary">Save Workspace as Template</button>
                 </form>
             </div>
         </div>
