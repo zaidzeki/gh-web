@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GH-Web - GitHub Management Interface</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/bootstrap/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">GH-Web</a>
+            <form class="d-flex" id="loginForm">
+                <input class="form-control me-2" type="password" name="token" placeholder="GitHub PAT" aria-label="GitHub Personal Access Token" required>
+                <button class="btn btn-outline-success" type="submit">Login</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div id="alertContainer"></div>
+
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="repos-tab" data-bs-toggle="tab" data-bs-target="#repos" type="button" role="tab" aria-controls="repos" aria-selected="true">Repositories</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="prs-tab" data-bs-toggle="tab" data-bs-target="#prs" type="button" role="tab" aria-controls="prs" aria-selected="false">Pull Requests</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="workspace-tab" data-bs-toggle="tab" data-bs-target="#workspace" type="button" role="tab" aria-controls="workspace" aria-selected="false">Workspace</button>
+            </li>
+        </ul>
+
+        <div class="tab-content border-start border-end border-bottom p-3">
+            <div class="tab-pane fade show active" id="repos" role="tabpanel" aria-labelledby="repos-tab">
+                <h3>Create Repository</h3>
+                <form id="createRepoForm" class="mb-4">
+                    <div class="mb-3">
+                        <label for="repoName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="repoName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="repoDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="repoDescription" name="description"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="visibility" id="visibilityPublic" value="public" checked>
+                            <label class="form-check-label" for="visibilityPublic">Public</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="visibility" id="visibilityPrivate" value="private">
+                            <label class="form-check-label" for="visibilityPrivate">Private</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="prs" role="tabpanel" aria-labelledby="prs-tab">
+                <h3>Pull Requests</h3>
+                <div class="mb-3">
+                    <label for="repoFullName" class="form-label d-block">Repository Full Name</label>
+                    <input type="text" id="repoFullName" class="form-control d-inline-block w-50" placeholder="owner/repo">
+                    <button id="listPrsBtn" class="btn btn-secondary">List PRs</button>
+                </div>
+                <table class="table" id="prsTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Title</th>
+                            <th>State</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <hr>
+                <h3>Create Pull Request</h3>
+                <form id="createPrForm">
+                    <div class="mb-3">
+                        <label for="prTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="prTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="prHead" class="form-label">Head (source branch)</label>
+                        <input type="text" class="form-control" id="prHead" name="head" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="prBase" class="form-label">Base (target branch)</label>
+                        <input type="text" class="form-control" id="prBase" name="base" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create PR</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="workspace" role="tabpanel" aria-labelledby="workspace-tab">
+                <h3>Workspace Operations</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Clone/Download</h4>
+                        <form id="cloneForm" class="mb-3">
+                            <label for="repoUrl" class="form-label">Repo URL</label>
+                            <input type="text" class="form-control mb-2" id="repoUrl" name="repo_url" placeholder="Git Repo URL">
+                            <button type="submit" class="btn btn-info">Clone</button>
+                        </form>
+                        <form id="downloadForm" class="mb-3">
+                            <label for="downloadRepoName" class="form-label">Repo Name</label>
+                            <input type="text" class="form-control mb-2" id="downloadRepoName" name="repo_name" placeholder="owner/repo">
+                            <label for="downloadRef" class="form-label">Ref</label>
+                            <input type="text" class="form-control mb-2" id="downloadRef" name="ref" placeholder="ref (main)">
+                            <button type="submit" class="btn btn-info">Download Archive</button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Modify</h4>
+                        <form id="uploadFileForm" class="mb-3">
+                            <label for="uploadFile" class="form-label">Upload Single File</label>
+                            <input type="file" class="form-control mb-2" id="uploadFile" name="file">
+                            <input type="text" class="form-control mb-2" name="target_path" aria-label="Target Path" placeholder="Target Directory">
+                            <button type="submit" class="btn btn-warning">Upload File</button>
+                        </form>
+                        <form id="uploadArchiveForm" class="mb-3">
+                            <label for="uploadArchive" class="form-label">Upload Archive</label>
+                            <input type="file" class="form-control mb-2" id="uploadArchive" name="archive">
+                            <input type="text" class="form-control mb-2" name="target_cwd" aria-label="Target CWD" placeholder="Target CWD">
+                            <button type="submit" class="btn btn-warning">Upload & Extract</button>
+                        </form>
+                        <form id="applyPatchForm" class="mb-3">
+                            <label for="patchFile" class="form-label">Apply Patch</label>
+                            <input type="file" class="form-control mb-2" id="patchFile" name="file">
+                            <button type="submit" class="btn btn-warning">Apply Patch</button>
+                        </form>
+                    </div>
+                </div>
+                <hr>
+                <h4>Commit</h4>
+                <form id="commitForm">
+                    <label for="commitMessage" class="form-label">Commit Message</label>
+                    <input type="text" class="form-control mb-2" id="commitMessage" name="commit_message" placeholder="Commit message" required>
+                    <button type="submit" class="btn btn-success">Commit Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendors/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
