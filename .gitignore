@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.class
+.env
+.venv
+env/
+venv/
+ENV/
+.coverage
+htmlcov/
+docs/_build/
+appdata/
+/tmp/gh-web-workspaces/
+flask_output.log
+requirements.txt.bak
