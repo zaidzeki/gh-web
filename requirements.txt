@@ -1,0 +1,15 @@
+flask
+PyGithub
+GitPython
+httpx
+pytest
+pytest-httpx
+syrupy
+playwright
+pytest-playwright
+flake8
+pylint
+Sphinx
+pytest-cov
+Werkzeug
+python-dotenv

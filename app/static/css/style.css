@@ -1,0 +1,12 @@
+.navbar {
+    margin-bottom: 20px;
+}
+.tab-content {
+    background: #fff;
+}
+#alertContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+}
