@@ -3,6 +3,12 @@ from github import Github
 
 bp = Blueprint('prs', __name__)
 
+def mask_token(s):
+    token = session.get('github_token')
+    if token and isinstance(s, str):
+        return s.replace(token, '********')
+    return s
+
 def get_github_client():
     token = session.get('github_token')
     if not token:
@@ -26,7 +32,7 @@ def list_prs(full_name):
             "user": pr.user.login
         } for pr in prs]), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/repos/<path:full_name>/prs', methods=['POST'])
 def create_pr(full_name):
@@ -52,7 +58,7 @@ def create_pr(full_name):
             "html_url": pr.html_url
         }), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/repos/<path:full_name>/prs/<int:pr_number>/merge', methods=['POST'])
 def merge_pr(full_name, pr_number):
@@ -73,4 +79,4 @@ def merge_pr(full_name, pr_number):
         else:
             return jsonify({"error": "Failed to merge Pull Request"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
