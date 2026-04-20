@@ -8,6 +8,12 @@ from werkzeug.utils import secure_filename
 
 bp = Blueprint('repos', __name__)
 
+def mask_token(s):
+    token = session.get('github_token')
+    if token and isinstance(s, str):
+        return s.replace(token, '********')
+    return s
+
 def get_github_client():
     token = session.get('github_token')
     if not token:
@@ -78,4 +84,4 @@ def create_repo():
             "clone_url": repo.clone_url
         }), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500

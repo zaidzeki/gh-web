@@ -10,6 +10,12 @@ from werkzeug.utils import secure_filename
 
 bp = Blueprint('workspace', __name__)
 
+def mask_token(s):
+    token = session.get('github_token')
+    if token and isinstance(s, str):
+        return s.replace(token, '********')
+    return s
+
 def get_github_client():
     token = session.get('github_token')
     if not token:
@@ -65,7 +71,7 @@ def clone_repo():
         session['active_repo'] = repo_name
         return jsonify({"message": "Repository cloned successfully", "path": workspace_dir}), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/download', methods=['POST'])
 def download_repo():
@@ -100,7 +106,7 @@ def download_repo():
         session['active_repo'] = repo_name
         return jsonify({"message": "Repository downloaded and extracted successfully", "path": workspace_dir}), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/modify/patch', methods=['POST'])
 def apply_patch():
@@ -133,7 +139,7 @@ def apply_patch():
     except Exception as e:
         if os.path.exists(patch_path):
             os.remove(patch_path)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/modify/upload', methods=['POST'])
 def upload_file():
@@ -212,7 +218,7 @@ def upload_archive():
     except Exception as e:
         if os.path.exists(archive_path):
             os.remove(archive_path)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/commit', methods=['POST'])
 def commit_changes():
@@ -241,7 +247,7 @@ def commit_changes():
         repo.index.commit(commit_message)
         return jsonify({"message": "Changes committed successfully"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/save-template', methods=['POST'])
 def save_template():
@@ -273,7 +279,7 @@ def save_template():
         shutil.copytree(workspace_dir, template_path, ignore=ignore_git)
         return jsonify({"message": f"Template '{template_name}' saved successfully"}), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/templates', methods=['GET'])
 def list_templates():
@@ -343,7 +349,7 @@ def delete_workspace_file():
             os.remove(full_path)
         return jsonify({"message": f"Deleted {target_rel_path}"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/files/content', methods=['GET'])
 def get_file_content():
@@ -370,7 +376,7 @@ def get_file_content():
             content = f.read()
         return jsonify({"content": content, "path": target_rel_path}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/status', methods=['GET'])
 def workspace_status():
