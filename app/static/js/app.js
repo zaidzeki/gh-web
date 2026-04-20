@@ -3,9 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('alertContainer');
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.setAttribute('role', type === 'danger' ? 'alert' : 'status');
         alert.innerHTML = `
             ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         container.appendChild(alert);
         setTimeout(() => alert.remove(), 5000);
@@ -136,15 +137,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 let html = '<ul class="list-unstyled ms-3">';
                 nodes.forEach(node => {
                     const icon = node.type === 'directory' ? '📁' : '📄';
+                    const isFile = node.type === 'file';
                     html += `<li class="mb-1">
-                        <span class="me-2">${icon}</span>
-                        <span class="${node.type === 'file' ? 'text-primary' : 'fw-bold'}"
-                              style="${node.type === 'file' ? 'cursor:pointer;' : ''}"
+                        <span class="me-2" aria-hidden="true">${icon}</span>
+                        <span class="${isFile ? 'text-primary' : 'fw-bold'}"
+                              style="${isFile ? 'cursor:pointer;' : ''}"
                               data-path="${node.path}"
-                              data-type="${node.type}">
+                              data-type="${node.type}"
+                              ${isFile ? `tabindex="0" role="button" aria-label="View file ${node.name}"` : ''}>
                             ${node.name}
                         </span>
-                        <button class="btn btn-sm text-danger delete-file-btn ms-2" data-path="${node.path}" style="padding: 0 5px;">&times;</button>
+                        <button class="btn btn-sm text-danger delete-file-btn ms-2"
+                                data-path="${node.path}"
+                                style="padding: 0 5px;"
+                                aria-label="Delete ${node.name}"
+                                title="Delete ${node.name}">&times;</button>
                         ${node.children ? renderTree(node.children) : ''}
                     </li>`;
                 });
@@ -154,9 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             explorer.innerHTML = renderTree(data);
 
-            // Add click handlers for files
+            // Add click and keyboard handlers for files
             explorer.querySelectorAll('span[data-type="file"]').forEach(el => {
-                el.addEventListener('click', async () => {
+                const openFile = async () => {
                     const path = el.getAttribute('data-path');
                     try {
                         const resp = await fetch(`/api/workspace/files/content?path=${encodeURIComponent(path)}`);
@@ -171,6 +178,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } catch (err) {
                         showAlert(err.message, 'danger');
+                    }
+                };
+                el.addEventListener('click', openFile);
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openFile();
                     }
                 });
             });
@@ -208,7 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshExplorerBtn = document.getElementById('refreshExplorerBtn');
     if (refreshExplorerBtn) {
-        refreshExplorerBtn.addEventListener('click', refreshExplorer);
+        refreshExplorerBtn.addEventListener('click', async () => {
+            toggleLoading(refreshExplorerBtn, true);
+            await refreshExplorer();
+            toggleLoading(refreshExplorerBtn, false);
+        });
     }
 
     // Auto-refresh explorer when clone/download/upload/patch/commit happens
