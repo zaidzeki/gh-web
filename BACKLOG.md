@@ -1,19 +1,20 @@
 # BACKLOG
 
 ## P0: Immediate
-- [ ] Initialize Python environment and dependencies (`flask`, `PyGithub`, `GitPython`, `pytest`, etc.).
-- [ ] Implement core Flask application with Blueprints structure.
-- [ ] Implement Authentication (GitHub PAT in session).
-- [ ] Implement Repository Management (Create repo).
+- [x] Initialize Python environment and dependencies (`flask`, `PyGithub`, `GitPython`, `pytest`, etc.).
+- [x] Implement core Flask application with Blueprints structure.
+- [x] Implement Authentication (GitHub PAT in session).
+- [x] Implement Repository Management (Create repo).
 
 ## P1: Critical
-- [ ] Implement Pull Request Management (List, Create, Merge).
-- [ ] Implement Workspace Support (Clone, Download).
-- [ ] Implement Modification & File Operations (Patch, Upload, Commit).
-- [ ] **Epic: Workspace Visibility & Management**
-    - [ ] List workspace files in a tree-view.
-    - [ ] Delete files/folders from workspace.
-    - [ ] View file content in modal.
+- [x] Implement Pull Request Management (List, Create, Merge).
+- [x] Implement Workspace Support (Clone, Download).
+- [x] Implement Modification & File Operations (Patch, Upload, Commit).
+- [x] **Epic: Workspace Visibility & Management**
+    - [x] List workspace files in a tree-view.
+    - [x] Delete files/folders from workspace.
+    - [x] View file content in modal.
+    - [x] Enhanced Git support (Branching, Status, Pushing).
 
 ## P2: Feature
 - [ ] Create Frontend UI (Jinja2 templates, JS).
