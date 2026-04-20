@@ -85,7 +85,111 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     refreshTemplates();
-    handleForm('saveTemplateForm', '/api/workspace/save-template', 'POST', false, refreshTemplates);
+    handleForm('saveTemplateForm', '/api/workspace/save-template', 'POST', false, () => {
+        refreshTemplates();
+        refreshExplorer();
+    });
+
+    const refreshExplorer = async () => {
+        const explorer = document.getElementById('workspaceExplorer');
+        if (!explorer) return;
+
+        try {
+            const response = await fetch('/api/workspace/files');
+            const data = await response.json();
+
+            if (!response.ok) {
+                explorer.innerHTML = `<p class="text-muted">${data.error || 'No active repository.'}</p>`;
+                return;
+            }
+
+            const renderTree = (nodes) => {
+                if (!nodes || nodes.length === 0) return '<ul class="list-unstyled ms-3"><li>(empty)</li></ul>';
+                let html = '<ul class="list-unstyled ms-3">';
+                nodes.forEach(node => {
+                    const icon = node.type === 'directory' ? '📁' : '📄';
+                    html += `<li class="mb-1">
+                        <span class="me-2">${icon}</span>
+                        <span class="${node.type === 'file' ? 'text-primary' : 'fw-bold'}"
+                              style="${node.type === 'file' ? 'cursor:pointer;' : ''}"
+                              data-path="${node.path}"
+                              data-type="${node.type}">
+                            ${node.name}
+                        </span>
+                        <button class="btn btn-sm text-danger delete-file-btn ms-2" data-path="${node.path}" style="padding: 0 5px;">&times;</button>
+                        ${node.children ? renderTree(node.children) : ''}
+                    </li>`;
+                });
+                html += '</ul>';
+                return html;
+            };
+
+            explorer.innerHTML = renderTree(data);
+
+            // Add click handlers for files
+            explorer.querySelectorAll('span[data-type="file"]').forEach(el => {
+                el.addEventListener('click', async () => {
+                    const path = el.getAttribute('data-path');
+                    try {
+                        const resp = await fetch(`/api/workspace/files/content?path=${encodeURIComponent(path)}`);
+                        const contentData = await resp.json();
+                        if (resp.ok) {
+                            document.getElementById('fileModalLabel').textContent = path;
+                            document.getElementById('fileContentDisplay').textContent = contentData.content;
+                            const modal = new bootstrap.Modal(document.getElementById('fileModal'));
+                            modal.show();
+                        } else {
+                            showAlert(contentData.error, 'danger');
+                        }
+                    } catch (err) {
+                        showAlert(err.message, 'danger');
+                    }
+                });
+            });
+
+            // Add click handlers for deletion
+            explorer.querySelectorAll('.delete-file-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const path = btn.getAttribute('data-path');
+                    if (!confirm(`Are you sure you want to delete ${path}?`)) return;
+
+                    try {
+                        const resp = await fetch('/api/workspace/files', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path: path })
+                        });
+                        const delResult = await resp.json();
+                        if (resp.ok) {
+                            showAlert(delResult.message);
+                            refreshExplorer();
+                        } else {
+                            showAlert(delResult.error, 'danger');
+                        }
+                    } catch (err) {
+                        showAlert(err.message, 'danger');
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error('Failed to fetch workspace files:', error);
+            explorer.innerHTML = '<p class="text-danger">Failed to load workspace explorer.</p>';
+        }
+    };
+
+    const refreshExplorerBtn = document.getElementById('refreshExplorerBtn');
+    if (refreshExplorerBtn) {
+        refreshExplorerBtn.addEventListener('click', refreshExplorer);
+    }
+
+    // Auto-refresh explorer when clone/download/upload/patch/commit happens
+    handleForm('cloneForm', '/api/workspace/clone', 'POST', false, refreshExplorer);
+    handleForm('downloadForm', '/api/workspace/download', 'POST', false, refreshExplorer);
+    handleForm('uploadFileForm', '/api/workspace/modify/upload', 'POST', true, refreshExplorer);
+    handleForm('uploadArchiveForm', '/api/workspace/modify/archive', 'POST', true, refreshExplorer);
+    handleForm('applyPatchForm', '/api/workspace/modify/patch', 'POST', true, refreshExplorer);
+    handleForm('commitForm', '/api/workspace/commit', 'POST', false, refreshExplorer);
 
     const createPrForm = document.getElementById('createPrForm');
     if (createPrForm) {

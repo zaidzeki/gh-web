@@ -283,3 +283,91 @@ def list_templates():
 
     templates = [d for d in os.listdir(templates_root) if os.path.isdir(os.path.join(templates_root, d))]
     return jsonify(templates), 200
+
+@bp.route('/api/workspace/files', methods=['GET'])
+def list_workspace_files():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+
+    def build_tree(path):
+        tree = []
+        try:
+            for item in sorted(os.listdir(path)):
+                if item == '.git':
+                    continue
+                full_path = os.path.join(path, item)
+                rel_path = os.path.relpath(full_path, workspace_dir)
+                is_dir = os.path.isdir(full_path)
+
+                node = {
+                    "name": item,
+                    "path": rel_path,
+                    "type": "directory" if is_dir else "file"
+                }
+                if is_dir:
+                    node["children"] = build_tree(full_path)
+                tree.append(node)
+        except Exception:
+            pass
+        return tree
+
+    return jsonify(build_tree(workspace_dir)), 200
+
+@bp.route('/api/workspace/files', methods=['DELETE'])
+def delete_workspace_file():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    data = request.get_json() or request.form
+    target_rel_path = data.get('path')
+
+    if not target_rel_path:
+        return jsonify({"error": "Path is required"}), 400
+
+    full_path = os.path.join(workspace_dir, target_rel_path)
+    if not is_safe_path(workspace_dir, full_path):
+        return jsonify({"error": "Invalid path"}), 400
+
+    if target_rel_path == '.git' or target_rel_path.startswith('.git/'):
+        return jsonify({"error": "Cannot delete .git directory"}), 403
+
+    try:
+        if os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+        else:
+            os.remove(full_path)
+        return jsonify({"message": f"Deleted {target_rel_path}"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@bp.route('/api/workspace/files/content', methods=['GET'])
+def get_file_content():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    target_rel_path = request.args.get('path')
+
+    if not target_rel_path:
+        return jsonify({"error": "Path is required"}), 400
+
+    full_path = os.path.join(workspace_dir, target_rel_path)
+    if not is_safe_path(workspace_dir, full_path) or os.path.isdir(full_path):
+        return jsonify({"error": "Invalid file path"}), 400
+
+    # Limit file size to 1MB
+    if os.path.getsize(full_path) > 1024 * 1024:
+        return jsonify({"error": "File too large (max 1MB)"}), 400
+
+    try:
+        with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+            content = f.read()
+        return jsonify({"content": content, "path": target_rel_path}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

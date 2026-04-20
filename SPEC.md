@@ -73,6 +73,19 @@ These operations apply to the repository currently active in the server's worksp
     *   **Route:** `POST /api/workspace/commit`
     *   **Payload:** `commit_message`
     *   **Behavior:** Stages all changes (`git add .`) and creates a commit (`git commit -m`). (Note: Pushing can be bundled here or as a separate step).
+*   **List Workspace Files**
+    *   **UI Component:** A tree-view explorer in the Workspace tab.
+    *   **Route:** `GET /api/workspace/files`
+    *   **Behavior:** Recursively lists files and directories in the active workspace, excluding the `.git` folder.
+*   **Delete Workspace File/Folder**
+    *   **UI Component:** "Delete" icon/button in the file explorer.
+    *   **Route:** `DELETE /api/workspace/files`
+    *   **Payload:** `path` (relative to workspace root).
+    *   **Behavior:** Permanently removes the file or directory from the server workspace.
+*   **View File Content**
+    *   **UI Component:** Modal popup when a file is clicked in the explorer.
+    *   **Route:** `GET /api/workspace/files/content?path=...`
+    *   **Behavior:** Returns the raw text content of the specified file.
 
 ## 5. API Route Summary (Backend)
 
@@ -90,6 +103,9 @@ These operations apply to the repository currently active in the server's worksp
 | `POST` | `/api/workspace/modify/upload` | Uploads a single file to a specific path. |
 | `POST` | `/api/workspace/modify/archive` | Uploads and extracts an archive to a given CWD. |
 | `POST` | `/api/workspace/commit` | Commits (and optionally pushes) local modifications. |
+| `GET` | `/api/workspace/files` | Lists files in the active workspace. |
+| `DELETE` | `/api/workspace/files` | Deletes a file/folder in the workspace. |
+| `GET` | `/api/workspace/files/content` | Retrieves text content of a file. |
 
 ## 6. Frontend Structure
 

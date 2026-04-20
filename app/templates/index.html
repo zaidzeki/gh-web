@@ -155,6 +155,32 @@
                     <input type="text" class="form-control mb-2" id="templateName" name="template_name" placeholder="E.g. flask-boilerplate" required>
                     <button type="submit" class="btn btn-primary">Save Workspace as Template</button>
                 </form>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h4>Workspace Explorer</h4>
+                    <button id="refreshExplorerBtn" class="btn btn-sm btn-outline-secondary">Refresh</button>
+                </div>
+                <div id="workspaceExplorer" class="border p-2 bg-light" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-muted">No repository active.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Content Modal -->
+    <div class="modal fade" id="fileModal" tabindex="-1" aria-labelledby="fileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileModalLabel">File Content</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="fileContentDisplay" class="bg-dark text-light p-3 rounded" style="white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
