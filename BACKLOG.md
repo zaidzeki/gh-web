@@ -10,6 +10,10 @@
 - [ ] Implement Pull Request Management (List, Create, Merge).
 - [ ] Implement Workspace Support (Clone, Download).
 - [ ] Implement Modification & File Operations (Patch, Upload, Commit).
+- [ ] **Epic: Workspace Visibility & Management**
+    - [ ] List workspace files in a tree-view.
+    - [ ] Delete files/folders from workspace.
+    - [ ] View file content in modal.
 
 ## P2: Feature
 - [ ] Create Frontend UI (Jinja2 templates, JS).
