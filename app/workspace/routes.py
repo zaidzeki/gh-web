@@ -371,3 +371,87 @@ def get_file_content():
         return jsonify({"content": content, "path": target_rel_path}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@bp.route('/api/workspace/status', methods=['GET'])
+def workspace_status():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"is_git": False}), 200
+
+    try:
+        repo = git.Repo(workspace_dir)
+        return jsonify({
+            "is_git": True,
+            "branch": repo.active_branch.name,
+            "is_dirty": repo.is_dirty(),
+            "untracked": len(repo.untracked_files) > 0
+        }), 200
+    except Exception as e:
+        return jsonify({"error": "Failed to get workspace status"}), 500
+
+@bp.route('/api/workspace/branch', methods=['POST'])
+def workspace_branch():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Not a git repository"}), 400
+
+    data = request.get_json() or request.form
+    branch_name = data.get('branch_name')
+    create_new = data.get('create_new') in [True, 'true', 'on', '1']
+
+    if not branch_name:
+        return jsonify({"error": "branch_name is required"}), 400
+
+    try:
+        repo = git.Repo(workspace_dir)
+        if create_new:
+            repo.git.checkout('-b', branch_name)
+            msg = f"Branch '{branch_name}' created and checked out"
+        else:
+            repo.git.checkout(branch_name)
+            msg = f"Switched to branch '{branch_name}'"
+
+        return jsonify({"message": msg, "branch": branch_name}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to change branch: {str(e)}"}), 500
+
+@bp.route('/api/workspace/push', methods=['POST'])
+def workspace_push():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Not a git repository"}), 400
+
+    token = session.get('github_token')
+    if not token:
+         return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = git.Repo(workspace_dir)
+        origin = repo.remote('origin')
+        url = origin.url
+
+        # Always update URL with current session token if it's a GitHub URL
+        if 'github.com' in url:
+            import re
+            # Remove existing token if present and inject current one
+            clean_url = re.sub(r'https://.*@github\.com/', 'https://github.com/', url)
+            auth_url = clean_url.replace('https://github.com/', f'https://{token}@github.com/')
+            if auth_url != url:
+                origin.set_url(auth_url)
+
+        origin.push(repo.active_branch.name)
+        return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to origin"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to push to remote: {str(e)}"}), 500

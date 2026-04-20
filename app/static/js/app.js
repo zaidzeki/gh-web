@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     handleForm('uploadFileForm', '/api/workspace/modify/upload', 'POST', true);
     handleForm('uploadArchiveForm', '/api/workspace/modify/archive', 'POST', true);
     handleForm('applyPatchForm', '/api/workspace/modify/patch', 'POST', true);
-    handleForm('commitForm', '/api/workspace/commit');
     const refreshTemplates = async () => {
         try {
             const response = await fetch('/api/workspace/templates');
@@ -90,10 +89,39 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshExplorer();
     });
 
+    const refreshStatus = async () => {
+        const branchBadge = document.getElementById('branchBadge');
+        const statusBadge = document.getElementById('statusBadge');
+        if (!branchBadge || !statusBadge) return;
+
+        try {
+            const response = await fetch('/api/workspace/status');
+            const data = await response.json();
+            if (response.ok && data.is_git) {
+                branchBadge.textContent = data.branch;
+                branchBadge.style.display = 'inline-block';
+                if (data.is_dirty || data.untracked) {
+                    statusBadge.textContent = 'Modified';
+                    statusBadge.className = 'badge bg-warning text-dark';
+                } else {
+                    statusBadge.textContent = 'Clean';
+                    statusBadge.className = 'badge bg-success';
+                }
+                statusBadge.style.display = 'inline-block';
+            } else {
+                branchBadge.style.display = 'none';
+                statusBadge.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to fetch workspace status:', error);
+        }
+    };
+
     const refreshExplorer = async () => {
         const explorer = document.getElementById('workspaceExplorer');
         if (!explorer) return;
 
+        refreshStatus();
         try {
             const response = await fetch('/api/workspace/files');
             const data = await response.json();
@@ -190,6 +218,24 @@ document.addEventListener('DOMContentLoaded', () => {
     handleForm('uploadArchiveForm', '/api/workspace/modify/archive', 'POST', true, refreshExplorer);
     handleForm('applyPatchForm', '/api/workspace/modify/patch', 'POST', true, refreshExplorer);
     handleForm('commitForm', '/api/workspace/commit', 'POST', false, refreshExplorer);
+    handleForm('branchForm', '/api/workspace/branch', 'POST', false, refreshExplorer);
+
+    const pushBtn = document.getElementById('pushBtn');
+    if (pushBtn) {
+        pushBtn.addEventListener('click', async () => {
+            toggleLoading(pushBtn, true);
+            try {
+                const response = await fetch('/api/workspace/push', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) showAlert(result.message);
+                else showAlert(result.error, 'danger');
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(pushBtn, false);
+            }
+        });
+    }
 
     const createPrForm = document.getElementById('createPrForm');
     if (createPrForm) {

@@ -142,12 +142,29 @@
                     </div>
                 </div>
                 <hr>
-                <h4>Commit</h4>
-                <form id="commitForm">
-                    <label for="commitMessage" class="form-label">Commit Message</label>
-                    <input type="text" class="form-control mb-2" id="commitMessage" name="commit_message" placeholder="Commit message" required>
-                    <button type="submit" class="btn btn-success">Commit Changes</button>
-                </form>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h4>Branch</h4>
+                        <form id="branchForm">
+                            <input type="text" class="form-control mb-2" name="branch_name" placeholder="Branch name" required>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="create_new" id="createNewBranch">
+                                <label class="form-check-label" for="createNewBranch">Create New</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Switch/Create</button>
+                        </form>
+                    </div>
+                    <div class="col-md-8">
+                        <h4>Commit & Push</h4>
+                        <form id="commitForm" class="mb-2">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="commitMessage" name="commit_message" placeholder="Commit message" required>
+                                <button type="submit" class="btn btn-success">Commit</button>
+                            </div>
+                        </form>
+                        <button id="pushBtn" class="btn btn-outline-primary">Push to Remote</button>
+                    </div>
+                </div>
                 <hr>
                 <h4>Save as Template</h4>
                 <form id="saveTemplateForm">
@@ -157,7 +174,11 @@
                 </form>
                 <hr>
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h4>Workspace Explorer</h4>
+                    <div class="d-flex align-items-center">
+                        <h4 class="mb-0 me-3">Workspace Explorer</h4>
+                        <span id="branchBadge" class="badge bg-secondary me-2" title="Current Branch"></span>
+                        <span id="statusBadge" class="badge" title="Workspace Status"></span>
+                    </div>
                     <button id="refreshExplorerBtn" class="btn btn-sm btn-outline-secondary">Refresh</button>
                 </div>
                 <div id="workspaceExplorer" class="border p-2 bg-light" style="max-height: 400px; overflow-y: auto;">
