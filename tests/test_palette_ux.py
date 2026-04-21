@@ -56,6 +56,14 @@ def test_explorer_accessibility(page: Page, server):
     expect(alert).to_have_attribute("role", "alert")
     expect(alert.locator(".btn-close")).to_have_attribute("aria-label", "Close")
 
+def test_new_aria_labels(page: Page, server):
+    page.goto(server)
+    page.click("#workspace-tab")
+
+    expect(page.locator("#workspaceTemplateSelect")).to_have_attribute("aria-label", "Select template to apply")
+    expect(page.locator("input[name='branch_name']")).to_have_attribute("aria-label", "Branch name")
+    expect(page.locator("#commitMessage")).to_have_attribute("aria-label", "Commit message")
+
 def test_tree_item_accessibility(page: Page, server):
     # To test the tree items, we'd need a real workspace.
     # For now, let's verify the code by checking the HTML structure if we can trigger a mock response.

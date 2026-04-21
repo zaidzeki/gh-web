@@ -109,7 +109,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <h3>Workspace Operations</h3>
                     <div class="d-flex gap-2">
-                        <select class="form-select form-select-sm" id="workspaceTemplateSelect" style="width: auto;">
+                        <select class="form-select form-select-sm" id="workspaceTemplateSelect" style="width: auto;" aria-label="Select template to apply">
                             <option value="">Apply Template...</option>
                         </select>
                         <button class="btn btn-sm btn-outline-primary" id="applyTemplateBtn">Apply</button>
@@ -165,7 +165,7 @@
                     <div class="col-md-4">
                         <h4>Branch</h4>
                         <form id="branchForm">
-                            <input type="text" class="form-control mb-2" name="branch_name" placeholder="Branch name" required>
+                            <input type="text" class="form-control mb-2" name="branch_name" placeholder="Branch name" aria-label="Branch name" required>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" name="create_new" id="createNewBranch">
                                 <label class="form-check-label" for="createNewBranch">Create New</label>
@@ -177,7 +177,7 @@
                         <h4>Commit & Push</h4>
                         <form id="commitForm" class="mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control" id="commitMessage" name="commit_message" placeholder="Commit message" required>
+                                <input type="text" class="form-control" id="commitMessage" name="commit_message" placeholder="Commit message" aria-label="Commit message" required>
                                 <button type="submit" class="btn btn-success">Commit</button>
                             </div>
                         </form>
@@ -284,7 +284,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveFileBtn">Save Changes</button>
+                    <button type="button" class="btn btn-primary" id="saveFileBtn" title="Save Changes (Ctrl+S)">Save Changes</button>
                 </div>
             </div>
         </div>
