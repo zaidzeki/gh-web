@@ -19,6 +19,12 @@
     - [x] Direct file editing in browser.
     - [x] Composite scaffolding (merging templates).
     - [x] Remote template import from GitHub.
+- [ ] **Epic: Workspace Git Visibility & Transparency**
+    - [ ] Implement `GET /api/workspace/diff` for uncommitted changes.
+    - [ ] Implement `GET /api/workspace/history` for recent commits.
+    - [ ] Implement `POST /api/workspace/revert` to discard changes.
+    - [ ] Add "View Diff" and "History" modals to the Workspace UI.
+    - [ ] Add "Discard Changes" safety action to the Workspace UI.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

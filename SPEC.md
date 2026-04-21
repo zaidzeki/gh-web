@@ -106,6 +106,9 @@ These operations apply to the repository currently active in the server's worksp
 | `GET` | `/api/workspace/files` | Lists files in the active workspace. |
 | `DELETE` | `/api/workspace/files` | Deletes a file/folder in the workspace. |
 | `GET` | `/api/workspace/files/content` | Retrieves text content of a file. |
+| `GET` | `/api/workspace/diff` | Returns unified diff of uncommitted changes. |
+| `GET` | `/api/workspace/history` | Returns list of recent workspace commits. |
+| `POST` | `/api/workspace/revert` | Discards all uncommitted changes in workspace. |
 
 ## 6. Frontend Structure
 

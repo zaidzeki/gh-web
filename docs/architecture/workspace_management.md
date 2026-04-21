@@ -20,6 +20,11 @@ The Workspace Management module provides a window into the server-side filesyste
     *   Backend validates path.
     *   Backend reads the file and returns it as plain text or JSON.
 
+4.  **Git Visibility (Diff & History):**
+    *   **Diff:** Frontend calls `GET /api/workspace/diff`. Backend uses `GitPython` (`repo.git.diff()`) to generate a unified diff of unstaged/staged changes.
+    *   **History:** Frontend calls `GET /api/workspace/history`. Backend uses `repo.iter_commits(max_count=10)` to retrieve recent activity.
+    *   **Revert:** Frontend calls `POST /api/workspace/revert`. Backend executes `repo.git.checkout('--', '.')` to discard uncommitted changes.
+
 ## Security Considerations
 *   **Path Traversal:** All file operations MUST use `is_safe_path` to prevent access to files outside the assigned workspace.
 *   **Protected Files:** The `.git` directory must be protected from deletion to maintain repository integrity.
