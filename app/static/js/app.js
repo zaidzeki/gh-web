@@ -68,15 +68,59 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/workspace/templates');
             const templates = await response.json();
-            const select = document.getElementById('templateSelect');
-            if (select) {
-                // Keep the first "None" option
-                select.innerHTML = '<option value="">None (Empty Repository)</option>';
+
+            // Populate all template selects
+            const selects = ['templateSelect', 'workspaceTemplateSelect'];
+            selects.forEach(id => {
+                const select = document.getElementById(id);
+                if (select) {
+                    const firstOption = select.options[0] ? select.options[0].textContent : (id === 'templateSelect' ? 'None (Empty Repository)' : 'Apply Template...');
+                    select.innerHTML = `<option value="">${firstOption}</option>`;
+                    templates.forEach(t => {
+                        const opt = document.createElement('option');
+                        opt.value = t;
+                        opt.textContent = t;
+                        select.appendChild(opt);
+                    });
+                }
+            });
+
+            // Populate template library list
+            const libraryList = document.getElementById('templateLibraryList');
+            if (libraryList) {
+                libraryList.innerHTML = '';
+                if (templates.length === 0) {
+                    libraryList.innerHTML = '<p class="text-muted">No templates found.</p>';
+                }
                 templates.forEach(t => {
-                    const opt = document.createElement('option');
-                    opt.value = t;
-                    opt.textContent = t;
-                    select.appendChild(opt);
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    item.innerHTML = `
+                        <span>${t}</span>
+                        <button class="btn btn-sm btn-outline-danger delete-template-btn" data-template="${t}">Delete</button>
+                    `;
+                    libraryList.appendChild(item);
+                });
+
+                libraryList.querySelectorAll('.delete-template-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const t = btn.getAttribute('data-template');
+                        if (!confirm(`Delete template '${t}'?`)) return;
+                        try {
+                            const response = await fetch(`/api/workspace/templates/${encodeURIComponent(t)}`, {
+                                method: 'DELETE'
+                            });
+                            const result = await response.json();
+                            if (response.ok) {
+                                showAlert(result.message);
+                                refreshTemplates();
+                            } else {
+                                showAlert(result.error, 'danger');
+                            }
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        }
+                    });
                 });
             }
         } catch (error) {
@@ -89,6 +133,35 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshTemplates();
         refreshExplorer();
     });
+    handleForm('importTemplateForm', '/api/workspace/import-template', 'POST', false, refreshTemplates);
+
+    const applyTemplateBtn = document.getElementById('applyTemplateBtn');
+    if (applyTemplateBtn) {
+        applyTemplateBtn.addEventListener('click', async () => {
+            const templateName = document.getElementById('workspaceTemplateSelect').value;
+            if (!templateName) return showAlert('Please select a template', 'danger');
+
+            toggleLoading(applyTemplateBtn, true);
+            try {
+                const response = await fetch('/api/workspace/apply-template', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ template_name: templateName })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    refreshExplorer();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(applyTemplateBtn, false);
+            }
+        });
+    }
 
     const refreshStatus = async () => {
         const branchBadge = document.getElementById('branchBadge');
@@ -169,8 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const resp = await fetch(`/api/workspace/files/content?path=${encodeURIComponent(path)}`);
                         const contentData = await resp.json();
                         if (resp.ok) {
-                            document.getElementById('fileModalLabel').textContent = path;
-                            document.getElementById('fileContentDisplay').textContent = contentData.content;
+                            document.getElementById('fileModalLabel').textContent = `Editing: ${path}`;
+                            document.getElementById('fileModalLabel').dataset.path = path;
+                            document.getElementById('fileContentEditor').value = contentData.content;
                             const modal = new bootstrap.Modal(document.getElementById('fileModal'));
                             modal.show();
                         } else {
@@ -226,6 +300,34 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleLoading(refreshExplorerBtn, true);
             await refreshExplorer();
             toggleLoading(refreshExplorerBtn, false);
+        });
+    }
+
+    const saveFileBtn = document.getElementById('saveFileBtn');
+    if (saveFileBtn) {
+        saveFileBtn.addEventListener('click', async () => {
+            const path = document.getElementById('fileModalLabel').dataset.path;
+            const content = document.getElementById('fileContentEditor').value;
+
+            toggleLoading(saveFileBtn, true);
+            try {
+                const response = await fetch('/api/workspace/files/content', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: path, content: content })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('fileModal')).hide();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(saveFileBtn, false);
+            }
         });
     }
 
