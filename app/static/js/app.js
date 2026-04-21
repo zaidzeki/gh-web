@@ -357,6 +357,91 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const viewDiffBtn = document.getElementById('viewDiffBtn');
+    if (viewDiffBtn) {
+        viewDiffBtn.addEventListener('click', async () => {
+            toggleLoading(viewDiffBtn, true);
+            try {
+                const response = await fetch('/api/workspace/diff');
+                const result = await response.json();
+                if (response.ok) {
+                    const diffContent = document.getElementById('diffContent');
+                    diffContent.textContent = result.diff || 'No uncommitted changes.';
+                    const modal = new bootstrap.Modal(document.getElementById('diffModal'));
+                    modal.show();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(viewDiffBtn, false);
+            }
+        });
+    }
+
+    const viewHistoryBtn = document.getElementById('viewHistoryBtn');
+    if (viewHistoryBtn) {
+        viewHistoryBtn.addEventListener('click', async () => {
+            toggleLoading(viewHistoryBtn, true);
+            try {
+                const response = await fetch('/api/workspace/history');
+                const result = await response.json();
+                if (response.ok) {
+                    const historyList = document.getElementById('historyList');
+                    historyList.innerHTML = '';
+                    if (result.length === 0) {
+                        historyList.innerHTML = '<p class="text-muted p-3">No commit history found.</p>';
+                    } else {
+                        result.forEach(commit => {
+                            const item = document.createElement('div');
+                            item.className = 'list-group-item';
+                            item.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1 text-truncate">${commit.message}</h6>
+                                    <small class="text-muted font-monospace">${commit.hash.substring(0, 7)}</small>
+                                </div>
+                                <p class="mb-1 small">By <strong>${commit.author}</strong></p>
+                                <small class="text-muted">${new Date(commit.date).toLocaleString()}</small>
+                            `;
+                            historyList.appendChild(item);
+                        });
+                    }
+                    const modal = new bootstrap.Modal(document.getElementById('historyModal'));
+                    modal.show();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(viewHistoryBtn, false);
+            }
+        });
+    }
+
+    const revertChangesBtn = document.getElementById('revertChangesBtn');
+    if (revertChangesBtn) {
+        revertChangesBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to discard all uncommitted changes? This action cannot be undone.')) return;
+            toggleLoading(revertChangesBtn, true);
+            try {
+                const response = await fetch('/api/workspace/revert', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    refreshExplorer();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(revertChangesBtn, false);
+            }
+        });
+    }
+
     const createPrForm = document.getElementById('createPrForm');
     if (createPrForm) {
         createPrForm.addEventListener('submit', async (e) => {

@@ -153,6 +153,14 @@
                     </div>
                 </div>
                 <hr>
+                <div class="row mb-3">
+                    <div class="col-12 d-flex gap-2">
+                        <button id="viewDiffBtn" class="btn btn-outline-info">View Diff</button>
+                        <button id="viewHistoryBtn" class="btn btn-outline-info">View History</button>
+                        <button id="revertChangesBtn" class="btn btn-outline-danger">Discard Changes</button>
+                    </div>
+                </div>
+                <hr>
                 <div class="row">
                     <div class="col-md-4">
                         <h4>Branch</h4>
@@ -220,6 +228,44 @@
                             <!-- Templates populated via JS -->
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diff Modal -->
+    <div class="modal fade" id="diffModal" tabindex="-1" aria-labelledby="diffModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="diffModalLabel">Uncommitted Changes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <pre id="diffContent" class="bg-dark text-light p-3 rounded font-monospace" style="max-height: 600px; overflow-y: auto; white-space: pre-wrap;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="historyModalLabel">Commit History</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyList" class="list-group">
+                        <!-- History populated via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
