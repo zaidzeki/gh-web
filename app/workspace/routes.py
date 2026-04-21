@@ -567,3 +567,95 @@ def workspace_push():
         return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to origin"}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to push to remote: {str(e)}"}), 500
+
+@bp.route('/api/workspace/diff', methods=['GET'])
+def workspace_diff():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Active workspace is not a git repository"}), 400
+
+    try:
+        repo = git.Repo(workspace_dir)
+        try:
+            # Check if there are any commits
+            repo.head.commit
+            # Diff against HEAD to see both staged and unstaged changes
+            diff_text = repo.git.diff('HEAD')
+        except (ValueError, git.GitCommandError):
+            # No commits yet, diff against empty tree to show all changes (including staged)
+            try:
+                # Use magic hash for empty tree: 4b825dc642cb6eb9a060e54bf8d69288fbee4904
+                diff_text = repo.git.diff('4b825dc642cb6eb9a060e54bf8d69288fbee4904')
+            except git.GitCommandError:
+                # Fallback to simple diff if that fails
+                diff_text = repo.git.diff()
+
+        return jsonify({"diff": diff_text}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/history', methods=['GET'])
+def workspace_history():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Active workspace is not a git repository"}), 400
+
+    try:
+        repo = git.Repo(workspace_dir)
+        commits = []
+        try:
+            # Limit to last 50 commits
+            for commit in repo.iter_commits(max_count=50):
+                commits.append({
+                    "hash": commit.hexsha,
+                    "author": commit.author.name,
+                    "date": commit.authored_datetime.isoformat(),
+                    "message": commit.message.strip()
+                })
+        except git.GitCommandError:
+            # Likely no commits yet
+            pass
+
+        return jsonify(commits), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/revert', methods=['POST'])
+def workspace_revert():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Active workspace is not a git repository"}), 400
+
+    try:
+        repo = git.Repo(workspace_dir)
+        try:
+            # Hard reset to HEAD if commits exist
+            repo.head.commit
+            repo.git.reset('--hard', 'HEAD')
+        except (ValueError, git.GitCommandError):
+            # No commits yet, just clear the index and delete all files except .git
+            repo.git.rm('-r', '--cached', '.', ignore_unmatch=True)
+            for item in os.listdir(workspace_dir):
+                if item == '.git': continue
+                item_path = os.path.join(workspace_dir, item)
+                if os.path.isdir(item_path):
+                    shutil.rmtree(item_path)
+                else:
+                    os.remove(item_path)
+
+        repo.git.clean('-fd')
+        return jsonify({"message": "Workspace changes discarded successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
