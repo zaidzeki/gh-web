@@ -304,6 +304,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const saveFileBtn = document.getElementById('saveFileBtn');
+    const fileContentEditor = document.getElementById('fileContentEditor');
+    if (fileContentEditor && saveFileBtn) {
+        fileContentEditor.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveFileBtn.click();
+            }
+        });
+    }
+
     if (saveFileBtn) {
         saveFileBtn.addEventListener('click', async () => {
             const path = document.getElementById('fileModalLabel').dataset.path;
