@@ -35,7 +35,17 @@ def is_safe_path(basedir, path, follow_symlinks=True):
         matchpath = os.path.realpath(path)
     else:
         matchpath = os.path.abspath(path)
-    return os.path.commonpath([basedir, matchpath]) == basedir
+
+    if os.path.commonpath([basedir, matchpath]) != basedir:
+        return False
+
+    # Prevent access to .git directory and its contents
+    rel_path = os.path.relpath(matchpath, basedir)
+    parts = rel_path.split(os.sep)
+    if '.git' in parts:
+        return False
+
+    return True
 
 @bp.before_app_request
 def ensure_session_id():
@@ -352,10 +362,12 @@ def delete_workspace_file():
 
     full_path = os.path.join(workspace_dir, target_rel_path)
     if not is_safe_path(workspace_dir, full_path):
+        # Specific check for existing tests that expect 403 for .git
+        rel_path = os.path.relpath(os.path.realpath(full_path), os.path.realpath(workspace_dir))
+        parts = rel_path.split(os.sep)
+        if '.git' in parts:
+            return jsonify({"error": "Cannot access .git directory"}), 403
         return jsonify({"error": "Invalid path"}), 400
-
-    if target_rel_path == '.git' or target_rel_path.startswith('.git/'):
-        return jsonify({"error": "Cannot delete .git directory"}), 403
 
     try:
         if os.path.isdir(full_path):
