@@ -15,9 +15,13 @@
     - [x] Delete files/folders from workspace.
     - [x] View file content in modal.
     - [x] Enhanced Git support (Branching, Status, Pushing).
+- [x] **Epic: Workspace Composition & Cloud IDE**
+    - [x] Direct file editing in browser.
+    - [x] Composite scaffolding (merging templates).
+    - [x] Remote template import from GitHub.
 
 ## P2: Feature
-- [ ] Create Frontend UI (Jinja2 templates, JS).
+- [x] Create Frontend UI (Jinja2 templates, JS).
 - [ ] Add toast notifications for API responses.
 
 ## P3: Polish

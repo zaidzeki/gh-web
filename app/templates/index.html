@@ -31,6 +31,9 @@
             <li class="nav-item">
                 <button class="nav-link" id="workspace-tab" data-bs-toggle="tab" data-bs-target="#workspace" type="button" role="tab" aria-controls="workspace" aria-selected="false">Workspace</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab" aria-controls="templates" aria-selected="false">Templates</button>
+            </li>
         </ul>
 
         <div class="tab-content border-start border-end border-bottom p-3">
@@ -103,7 +106,15 @@
             </div>
 
             <div class="tab-pane fade" id="workspace" role="tabpanel" aria-labelledby="workspace-tab">
-                <h3>Workspace Operations</h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3>Workspace Operations</h3>
+                    <div class="d-flex gap-2">
+                        <select class="form-select form-select-sm" id="workspaceTemplateSelect" style="width: auto;">
+                            <option value="">Apply Template...</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-primary" id="applyTemplateBtn">Apply</button>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <h4>Clone/Download</h4>
@@ -185,6 +196,32 @@
                     <p class="text-muted">No repository active.</p>
                 </div>
             </div>
+
+            <div class="tab-pane fade" id="templates" role="tabpanel" aria-labelledby="templates-tab">
+                <h3>Template Library</h3>
+                <div class="row">
+                    <div class="col-md-6 border-end">
+                        <h4>Import from GitHub</h4>
+                        <form id="importTemplateForm" class="mb-4">
+                            <div class="mb-3">
+                                <label for="importRepoUrl" class="form-label">Repository URL</label>
+                                <input type="text" class="form-control" id="importRepoUrl" name="repo_url" placeholder="https://github.com/owner/repo" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="importTemplateName" class="form-label">Template Name (Optional)</label>
+                                <input type="text" class="form-control" id="importTemplateName" name="template_name" placeholder="E.g. custom-boilerplate">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Import to Library</button>
+                        </form>
+                    </div>
+                    <div class="col-md-6">
+                        <h4>Available Templates</h4>
+                        <div id="templateLibraryList" class="list-group">
+                            <!-- Templates populated via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -193,14 +230,15 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="fileModalLabel">File Content</h5>
+                    <h5 class="modal-title" id="fileModalLabel">Edit File</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <pre id="fileContentDisplay" class="bg-dark text-light p-3 rounded" style="white-space: pre-wrap; word-break: break-all;"></pre>
+                    <textarea id="fileContentEditor" class="form-control bg-dark text-light p-3 rounded font-monospace" style="height: 500px;"></textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveFileBtn">Save Changes</button>
                 </div>
             </div>
         </div>

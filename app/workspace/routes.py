@@ -290,6 +290,21 @@ def list_templates():
     templates = [d for d in os.listdir(templates_root) if os.path.isdir(os.path.join(templates_root, d))]
     return jsonify(templates), 200
 
+@bp.route('/api/workspace/templates/<template_name>', methods=['DELETE'])
+def delete_template(template_name):
+    template_name = secure_filename(template_name)
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    template_path = os.path.join(templates_root, template_name)
+
+    if not os.path.exists(template_path):
+        return jsonify({"error": "Template not found"}), 404
+
+    try:
+        shutil.rmtree(template_path)
+        return jsonify({"message": f"Template '{template_name}' deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/files', methods=['GET'])
 def list_workspace_files():
     repo_name = session.get('active_repo')
@@ -351,14 +366,19 @@ def delete_workspace_file():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
-@bp.route('/api/workspace/files/content', methods=['GET'])
+@bp.route('/api/workspace/files/content', methods=['GET', 'POST'])
 def get_file_content():
     repo_name = session.get('active_repo')
     if not repo_name:
         return jsonify({"error": "No active repository in workspace"}), 400
 
     workspace_dir = get_workspace_dir(repo_name)
-    target_rel_path = request.args.get('path')
+
+    if request.method == 'GET':
+        target_rel_path = request.args.get('path')
+    else:
+        data = request.get_json() or request.form
+        target_rel_path = data.get('path')
 
     if not target_rel_path:
         return jsonify({"error": "Path is required"}), 400
@@ -367,14 +387,100 @@ def get_file_content():
     if not is_safe_path(workspace_dir, full_path) or os.path.isdir(full_path):
         return jsonify({"error": "Invalid file path"}), 400
 
-    # Limit file size to 1MB
-    if os.path.getsize(full_path) > 1024 * 1024:
-        return jsonify({"error": "File too large (max 1MB)"}), 400
+    if request.method == 'GET':
+        # Limit file size to 1MB
+        if os.path.exists(full_path) and os.path.getsize(full_path) > 1024 * 1024:
+            return jsonify({"error": "File too large (max 1MB)"}), 400
+
+        try:
+            with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
+                content = f.read()
+            return jsonify({"content": content, "path": target_rel_path}), 200
+        except Exception as e:
+            return jsonify({"error": mask_token(str(e))}), 500
+    else:
+        # POST - Save content
+        data = request.get_json() or request.form
+        content = data.get('content')
+        if content is None:
+            return jsonify({"error": "content is required"}), 400
+
+        try:
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            return jsonify({"message": f"File {target_rel_path} saved successfully"}), 200
+        except Exception as e:
+            return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/apply-template', methods=['POST'])
+def apply_template():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    data = request.get_json() or request.form
+    template_name = data.get('template_name')
+    if not template_name:
+        return jsonify({"error": "template_name is required"}), 400
+
+    template_name = secure_filename(template_name)
+    workspace_dir = get_workspace_dir(repo_name)
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    template_path = os.path.join(templates_root, template_name)
+
+    if not os.path.exists(template_path):
+        return jsonify({"error": "Template not found"}), 404
 
     try:
-        with open(full_path, 'r', encoding='utf-8', errors='replace') as f:
-            content = f.read()
-        return jsonify({"content": content, "path": target_rel_path}), 200
+        # Copy template content to workspace, merging files
+        for item in os.listdir(template_path):
+            s = os.path.join(template_path, item)
+            d = os.path.join(workspace_dir, item)
+            if os.path.isdir(s):
+                shutil.copytree(s, d, dirs_exist_ok=True)
+            else:
+                shutil.copy2(s, d)
+        return jsonify({"message": f"Template '{template_name}' applied to workspace"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/import-template', methods=['POST'])
+def import_template():
+    token = session.get('github_token')
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    repo_url = data.get('repo_url')
+    template_name = data.get('template_name')
+
+    if not repo_url:
+        return jsonify({"error": "repo_url is required"}), 400
+
+    if not template_name:
+        template_name = repo_url.split('/')[-1].replace('.git', '')
+
+    template_name = secure_filename(template_name)
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    template_path = os.path.join(templates_root, template_name)
+
+    if os.path.exists(template_path):
+        shutil.rmtree(template_path)
+
+    try:
+        if repo_url.startswith('https://github.com/'):
+            auth_url = repo_url.replace('https://github.com/', f'https://{token}@github.com/')
+        else:
+            auth_url = repo_url
+
+        # Clone to a temporary directory first to remove .git
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            git.Repo.clone_from(auth_url, tmp_dir, depth=1)
+            shutil.rmtree(os.path.join(tmp_dir, '.git'))
+            shutil.copytree(tmp_dir, template_path)
+
+        return jsonify({"message": f"Repository imported as template '{template_name}'"}), 201
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
