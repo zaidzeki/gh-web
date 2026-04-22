@@ -498,6 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>${pr.state}</td>
                         <td>
                             <button class="btn btn-sm btn-success merge-btn" data-number="${pr.number}">Merge</button>
+                            <button class="btn btn-sm btn-primary review-btn" data-number="${pr.number}">Review</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -514,6 +515,36 @@ document.addEventListener('DOMContentLoaded', () => {
                             const res = await resp.json();
                             if (resp.ok) showAlert(res.message);
                             else showAlert(res.error, 'danger');
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        } finally {
+                            toggleLoading(btn, false);
+                        }
+                    });
+                });
+                document.querySelectorAll('.review-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const num = btn.getAttribute('data-number');
+                        toggleLoading(btn, true);
+                        try {
+                            const resp = await fetch('/api/workspace/stream-pr', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    repo_full_name: repoFull,
+                                    pr_number: num
+                                })
+                            });
+                            const res = await resp.json();
+                            if (resp.ok) {
+                                showAlert(res.message);
+                                // Switch to Workspace tab
+                                const workspaceTab = document.getElementById('workspace-tab');
+                                bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+                                refreshExplorer();
+                            } else {
+                                showAlert(res.error, 'danger');
+                            }
                         } catch (error) {
                             showAlert(error.message, 'danger');
                         } finally {
