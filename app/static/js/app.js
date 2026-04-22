@@ -1,11 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const escapeHTML = (str) => {
+        if (str == null) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    };
+
     const showAlert = (message, type = 'success') => {
         const container = document.getElementById('alertContainer');
         const alert = document.createElement('div');
         alert.className = `alert alert-${type} alert-dismissible fade show`;
         alert.setAttribute('role', type === 'danger' ? 'alert' : 'status');
         alert.innerHTML = `
-            ${message}
+            ${escapeHTML(message)}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         container.appendChild(alert);
@@ -56,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Expose handleForm for testing or dynamic forms
     window.handleForm = handleForm;
+    window.showAlert = showAlert;
 
     handleForm('loginForm', '/login');
     handleForm('createRepoForm', '/api/repos');
@@ -215,16 +223,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="me-2" aria-hidden="true">${icon}</span>
                         <span class="${isFile ? 'text-primary' : 'fw-bold'}"
                               style="${isFile ? 'cursor:pointer;' : ''}"
-                              data-path="${node.path}"
-                              data-type="${node.type}"
-                              ${isFile ? `tabindex="0" role="button" aria-label="View file ${node.name}"` : ''}>
-                            ${node.name}
+                              data-path="${escapeHTML(node.path)}"
+                              data-type="${escapeHTML(node.type)}"
+                              ${isFile ? `tabindex="0" role="button" aria-label="View file ${escapeHTML(node.name)}"` : ''}>
+                            ${escapeHTML(node.name)}
                         </span>
                         <button class="btn btn-sm text-danger delete-file-btn ms-2"
-                                data-path="${node.path}"
+                                data-path="${escapeHTML(node.path)}"
                                 style="padding: 0 5px;"
-                                aria-label="Delete ${node.name}"
-                                title="Delete ${node.name}">&times;</button>
+                                aria-label="Delete ${escapeHTML(node.name)}"
+                                title="Delete ${escapeHTML(node.name)}">&times;</button>
                         ${node.children ? renderTree(node.children) : ''}
                     </li>`;
                 });
@@ -408,11 +416,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             item.className = 'list-group-item';
                             item.innerHTML = `
                                 <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1 text-truncate">${commit.message}</h6>
-                                    <small class="text-muted font-monospace">${commit.hash.substring(0, 7)}</small>
+                                    <h6 class="mb-1 text-truncate">${escapeHTML(commit.message)}</h6>
+                                    <small class="text-muted font-monospace">${escapeHTML(commit.hash.substring(0, 7))}</small>
                                 </div>
-                                <p class="mb-1 small">By <strong>${commit.author}</strong></p>
-                                <small class="text-muted">${new Date(commit.date).toLocaleString()}</small>
+                                <p class="mb-1 small">By <strong>${escapeHTML(commit.author)}</strong></p>
+                                <small class="text-muted">${escapeHTML(new Date(commit.date).toLocaleString())}</small>
                             `;
                             historyList.appendChild(item);
                         });
@@ -498,12 +506,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 prs.forEach(pr => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td>${pr.number}</td>
-                        <td><a href="${pr.html_url}" target="_blank">${pr.title}</a></td>
-                        <td>${pr.state}</td>
+                        <td>${escapeHTML(String(pr.number))}</td>
+                        <td><a href="${escapeHTML(pr.html_url)}" target="_blank">${escapeHTML(pr.title)}</a></td>
+                        <td>${escapeHTML(pr.state)}</td>
                         <td>
-                            <button class="btn btn-sm btn-success merge-btn" data-number="${pr.number}" aria-label="Merge pull request #${pr.number}">Merge</button>
-                            <button class="btn btn-sm btn-primary review-btn" data-number="${pr.number}" aria-label="Review pull request #${pr.number}">Review</button>
+                            <button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>
+                            <button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
