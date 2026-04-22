@@ -70,11 +70,13 @@
 
             <div class="tab-pane fade" id="prs" role="tabpanel" aria-labelledby="prs-tab">
                 <h3>Pull Requests</h3>
-                <div class="mb-3">
-                    <label for="repoFullName" class="form-label d-block">Repository Full Name</label>
-                    <input type="text" id="repoFullName" class="form-control d-inline-block w-50" placeholder="owner/repo">
-                    <button id="listPrsBtn" class="btn btn-secondary">List PRs</button>
-                </div>
+                <form id="listPrsForm" class="mb-3">
+                    <label for="repoFullName" class="form-label">Repository Full Name</label>
+                    <div class="input-group w-50">
+                        <input type="text" id="repoFullName" class="form-control" placeholder="owner/repo" required>
+                        <button type="submit" id="listPrsBtn" class="btn btn-secondary">List PRs</button>
+                    </div>
+                </form>
                 <table class="table" id="prsTable">
                     <thead>
                         <tr>

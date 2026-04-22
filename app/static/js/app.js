@@ -478,9 +478,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const listPrsBtn = document.getElementById('listPrsBtn');
-    if (listPrsBtn) {
-        listPrsBtn.addEventListener('click', async () => {
+    const listPrsForm = document.getElementById('listPrsForm');
+    if (listPrsForm) {
+        listPrsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const listPrsBtn = document.getElementById('listPrsBtn');
             const repoFull = document.getElementById('repoFullName').value;
             if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
 
@@ -490,6 +492,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prs = await response.json();
                 const tbody = document.querySelector('#prsTable tbody');
                 tbody.innerHTML = '';
+                if (prs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No open pull requests found.</td></tr>';
+                }
                 prs.forEach(pr => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
@@ -497,8 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><a href="${pr.html_url}" target="_blank">${pr.title}</a></td>
                         <td>${pr.state}</td>
                         <td>
-                            <button class="btn btn-sm btn-success merge-btn" data-number="${pr.number}">Merge</button>
-                            <button class="btn btn-sm btn-primary review-btn" data-number="${pr.number}">Review</button>
+                            <button class="btn btn-sm btn-success merge-btn" data-number="${pr.number}" aria-label="Merge pull request #${pr.number}">Merge</button>
+                            <button class="btn btn-sm btn-primary review-btn" data-number="${pr.number}" aria-label="Review pull request #${pr.number}">Review</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
