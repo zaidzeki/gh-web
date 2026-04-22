@@ -640,6 +640,54 @@ def workspace_history():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/workspace/stream-pr', methods=['POST'])
+def stream_pr():
+    token = session.get('github_token')
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    repo_full_name = data.get('repo_full_name')
+    pr_number = data.get('pr_number')
+
+    if not repo_full_name or not pr_number:
+        return jsonify({"error": "repo_full_name and pr_number are required"}), 400
+
+    repo_name = repo_full_name.split('/')[-1]
+    workspace_dir = get_workspace_dir(repo_name)
+
+    try:
+        if not os.path.exists(os.path.join(workspace_dir, '.git')):
+            # Clone if not exists
+            auth_url = f"https://{token}@github.com/{repo_full_name}.git"
+            repo = git.Repo.clone_from(auth_url, workspace_dir)
+        else:
+            repo = git.Repo(workspace_dir)
+
+        # Update remote URL with token if needed
+        origin = repo.remote('origin')
+        if 'github.com' in origin.url and token not in origin.url:
+            auth_url = f"https://{token}@github.com/{repo_full_name}.git"
+            origin.set_url(auth_url)
+
+        # Fetch PR head
+        pr_ref = f"pull/{pr_number}/head"
+        local_branch = f"review-pr-{pr_number}"
+
+        # Fetch with force to allow updating existing local branch
+        repo.remotes.origin.fetch(f"{pr_ref}:{local_branch}", force=True)
+        # Checkout branch, forcing it if necessary to overwrite any local changes
+        repo.git.checkout(local_branch, force=True)
+
+        session['active_repo'] = repo_name
+        return jsonify({
+            "message": f"PR #{pr_number} from {repo_full_name} is now active in workspace",
+            "branch": local_branch,
+            "path": workspace_dir
+        }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/revert', methods=['POST'])
 def workspace_revert():
     repo_name = session.get('active_repo')
