@@ -3,6 +3,7 @@ import shutil
 import zipfile
 import tarfile
 import subprocess
+import re
 from flask import Blueprint, request, session, jsonify, current_app
 from github import Github
 import git
@@ -526,11 +527,32 @@ def workspace_status():
 
     try:
         repo = git.Repo(workspace_dir)
+        can_push = False
+
+        # Check if we can push to the tracking remote
+        tracking = repo.active_branch.tracking_branch()
+        if tracking:
+            remote = repo.remote(tracking.remote_name)
+            url = remote.url
+            if 'github.com' in url:
+                # Extract repo full name from URL
+                match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
+                if match:
+                    repo_full_name = match.group(1)
+                    g = get_github_client()
+                    if g:
+                        try:
+                            gh_repo = g.get_repo(repo_full_name)
+                            can_push = gh_repo.permissions.push
+                        except Exception:
+                            pass
+
         return jsonify({
             "is_git": True,
             "branch": repo.active_branch.name,
             "is_dirty": repo.is_dirty(),
-            "untracked": len(repo.untracked_files) > 0
+            "untracked": len(repo.untracked_files) > 0,
+            "can_push": can_push
         }), 200
     except Exception as e:
         return jsonify({"error": "Failed to get workspace status"}), 500
@@ -581,20 +603,26 @@ def workspace_push():
 
     try:
         repo = git.Repo(workspace_dir)
-        origin = repo.remote('origin')
-        url = origin.url
+
+        # Determine target remote from tracking branch
+        tracking = repo.active_branch.tracking_branch()
+        remote_name = 'origin'
+        if tracking:
+            remote_name = tracking.remote_name
+
+        target_remote = repo.remote(remote_name)
+        url = target_remote.url
 
         # Always update URL with current session token if it's a GitHub URL
         if 'github.com' in url:
-            import re
             # Remove existing token if present and inject current one
             clean_url = re.sub(r'https://.*@github\.com/', 'https://github.com/', url)
             auth_url = clean_url.replace('https://github.com/', f'https://{token}@github.com/')
             if auth_url != url:
-                origin.set_url(auth_url)
+                target_remote.set_url(auth_url)
 
-        origin.push(repo.active_branch.name)
-        return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to origin"}), 200
+        target_remote.push(repo.active_branch.name)
+        return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to {remote_name}"}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to push to remote: {str(e)}"}), 500
 
@@ -660,8 +688,9 @@ def workspace_history():
 
 @bp.route('/api/workspace/stream-pr', methods=['POST'])
 def stream_pr():
+    g = get_github_client()
     token = session.get('github_token')
-    if not token:
+    if not g or not token:
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json() or request.form
@@ -682,29 +711,67 @@ def stream_pr():
         else:
             repo = git.Repo(workspace_dir)
 
-        # Update remote URL with token if needed
+        # Update origin remote URL with token if needed
         origin = repo.remote('origin')
-        if 'github.com' in origin.url and token not in origin.url:
-            auth_url = f"https://{token}@github.com/{repo_full_name}.git"
-            origin.set_url(auth_url)
+        if 'github.com' in origin.url:
+            clean_url = re.sub(r'https://.*@github\.com/', 'https://github.com/', origin.url)
+            auth_url = clean_url.replace('https://github.com/', f'https://{token}@github.com/')
+            if auth_url != origin.url:
+                origin.set_url(auth_url)
 
-        # Fetch PR head
-        pr_ref = f"pull/{pr_number}/head"
+        # Fetch detailed PR info for collaboration support
+        gh_repo = g.get_repo(repo_full_name)
+        pr = gh_repo.get_pull(int(pr_number))
+
         local_branch = f"review-pr-{pr_number}"
+        head_repo_full_name = pr.head.repo.full_name if pr.head.repo else None
+        head_ref = pr.head.ref
 
-        # Fetch with force to allow updating existing local branch
-        repo.remotes.origin.fetch(f"{pr_ref}:{local_branch}", force=True)
-        # Checkout branch, forcing it if necessary to overwrite any local changes
-        repo.git.checkout(local_branch, force=True)
+        if head_repo_full_name and head_repo_full_name != repo_full_name:
+            # PR is from a fork
+            remote_name = 'head-fork'
+            auth_fork_url = f"https://{token}@github.com/{head_repo_full_name}.git"
+
+            try:
+                fork_remote = repo.remote(remote_name)
+                fork_remote.set_url(auth_fork_url)
+            except (ValueError, git.GitCommandError, IndexError):
+                fork_remote = repo.create_remote(remote_name, auth_fork_url)
+
+            fork_remote.fetch()
+            # Create/Reset local branch to track fork branch
+            repo.git.checkout('-B', local_branch, f"{remote_name}/{head_ref}")
+            repo.git.branch("--set-upstream-to", f"{remote_name}/{head_ref}", local_branch)
+            msg = f"PR #{pr_number} from fork {head_repo_full_name} is now active in workspace (Collaborative Mode)"
+        else:
+            # PR is from the same repo
+            origin.fetch()
+            repo.git.checkout('-B', local_branch, f"origin/{head_ref}")
+            repo.git.branch("--set-upstream-to", f"origin/{head_ref}", local_branch)
+            msg = f"PR #{pr_number} from {repo_full_name} is now active in workspace"
 
         session['active_repo'] = repo_name
         return jsonify({
-            "message": f"PR #{pr_number} from {repo_full_name} is now active in workspace",
+            "message": msg,
             "branch": local_branch,
             "path": workspace_dir
         }), 200
     except Exception as e:
-        return jsonify({"error": mask_token(str(e))}), 500
+        # Fallback to read-only PR ref if branch-based checkout fails
+        try:
+            repo = git.Repo(workspace_dir)
+            pr_ref = f"pull/{pr_number}/head"
+            local_branch = f"review-pr-{pr_number}"
+            repo.remotes.origin.fetch(f"{pr_ref}:{local_branch}", force=True)
+            repo.git.checkout(local_branch, force=True)
+            session['active_repo'] = repo_name
+            return jsonify({
+                "message": f"PR #{pr_number} is active (Read-Only fallback)",
+                "branch": local_branch,
+                "path": workspace_dir
+            }), 200
+        except Exception as fallback_err:
+            return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/revert', methods=['POST'])
 def workspace_revert():

@@ -241,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshStatus = async () => {
         const branchBadge = document.getElementById('branchBadge');
         const statusBadge = document.getElementById('statusBadge');
+        const collabBadge = document.getElementById('collabBadge');
         if (!branchBadge || !statusBadge) return;
 
         try {
@@ -257,6 +258,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusBadge.className = 'badge bg-success';
                 }
                 statusBadge.style.display = 'inline-block';
+
+                if (collabBadge) {
+                    if (data.can_push) {
+                        collabBadge.textContent = 'Collaborative Mode';
+                        collabBadge.className = 'badge bg-info text-dark';
+                        collabBadge.style.display = 'inline-block';
+                        collabBadge.title = 'You have permission to push changes to the source branch.';
+                    } else {
+                        collabBadge.style.display = 'none';
+                    }
+                }
             } else {
                 branchBadge.style.display = 'none';
                 statusBadge.style.display = 'none';
@@ -565,6 +577,12 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const response = await fetch(`/api/repos/${repoFull}/prs`);
                 const prs = await response.json();
+
+                if (!response.ok) {
+                    showAlert(prs.error || 'Failed to fetch PRs', 'danger');
+                    return;
+                }
+
                 const tbody = document.querySelector('#prsTable tbody');
                 tbody.innerHTML = '';
                 if (prs.length === 0) {

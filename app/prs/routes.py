@@ -31,7 +31,8 @@ def list_prs(full_name):
             "html_url": pr.html_url,
             "user": pr.user.login,
             "head_repo_full_name": pr.head.repo.full_name if pr.head.repo else None,
-            "head_branch": pr.head.ref
+            "head_branch": pr.head.ref,
+            "can_push": pr.head.repo.permissions.push if pr.head.repo else False
         } for pr in prs]), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
