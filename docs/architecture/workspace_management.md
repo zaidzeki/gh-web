@@ -25,6 +25,11 @@ The Workspace Management module provides a window into the server-side filesyste
     *   **History:** Frontend calls `GET /api/workspace/history`. Backend uses `repo.iter_commits(max_count=10)` to retrieve recent activity.
     *   **Revert:** Frontend calls `POST /api/workspace/revert`. Backend executes `repo.git.checkout('--', '.')` to discard uncommitted changes.
 
+5.  **Multi-Remote Management (Collaboration):**
+    *   The workspace supports multiple remotes to enable cross-repository contributions (e.g., from base repo to a contributor's fork).
+    *   `POST /api/workspace/stream-pr` automatically configures a `head-fork` remote when a PR from a fork is detected.
+    *   `POST /api/workspace/push` uses the session-stored GitHub PAT to authenticate against any configured remote.
+
 ## Security Considerations
 *   **Path Traversal:** All file operations MUST use `is_safe_path` to prevent access to files outside the assigned workspace.
 *   **Protected Files:** The `.git` directory must be protected from deletion to maintain repository integrity.
