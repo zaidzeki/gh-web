@@ -13,3 +13,7 @@
 ## 2026-04-21 - [Expansion: Dynamic Scaffolding]
 **Learning:** Static templates are a "dead end" for complex projects that require customization (names, ports, IDs). Adding dynamic parameter injection (via Jinja2) during template application turns simple boilerplate into a flexible project generator.
 **Action:** Repurpose existing file-copy logic by adding a "Transformation" layer to multiply the value of stored assets.
+
+## 2026-04-23 - [Expansion: Dynamic Scaffolding Implementation]
+**Learning:** By integrating a transformation layer (Jinja2) into both repository creation and workspace composition, we've turned a static "cloner" into a powerful "generator". The leverage here was reusing 90% of the existing file traversal and safety logic, while adding a small but high-impact rendering step.
+**Action:** Always ensure that new "Transformation" layers are applied consistently across all entry points (e.g., both Create Repo and Apply Template) to maximize utility.

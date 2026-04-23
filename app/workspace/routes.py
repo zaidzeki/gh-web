@@ -7,6 +7,7 @@ from flask import Blueprint, request, session, jsonify, current_app
 from github import Github
 import git
 from werkzeug.utils import secure_filename
+from .utils import get_template_manifest, render_template_dir, is_safe_path
 
 bp = Blueprint('workspace', __name__)
 
@@ -300,6 +301,21 @@ def list_templates():
     templates = [d for d in os.listdir(templates_root) if os.path.isdir(os.path.join(templates_root, d))]
     return jsonify(templates), 200
 
+@bp.route('/api/workspace/templates/<template_name>/manifest', methods=['GET'])
+def get_manifest(template_name):
+    template_name = secure_filename(template_name)
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    template_path = os.path.join(templates_root, template_name)
+
+    if not os.path.exists(template_path):
+        return jsonify({"error": "Template not found"}), 404
+
+    manifest = get_template_manifest(template_path)
+    if manifest:
+        return jsonify(manifest), 200
+    else:
+        return jsonify({"variables": []}), 200
+
 @bp.route('/api/workspace/templates/<template_name>', methods=['DELETE'])
 def delete_template(template_name):
     template_name = secure_filename(template_name)
@@ -432,6 +448,14 @@ def apply_template():
 
     data = request.get_json() or request.form
     template_name = data.get('template_name')
+    context = data.get('context', {})
+    if isinstance(context, str):
+        try:
+            import json
+            context = json.loads(context)
+        except Exception:
+            context = {}
+
     if not template_name:
         return jsonify({"error": "template_name is required"}), 400
 
@@ -444,14 +468,8 @@ def apply_template():
         return jsonify({"error": "Template not found"}), 404
 
     try:
-        # Copy template content to workspace, merging files
-        for item in os.listdir(template_path):
-            s = os.path.join(template_path, item)
-            d = os.path.join(workspace_dir, item)
-            if os.path.isdir(s):
-                shutil.copytree(s, d, dirs_exist_ok=True)
-            else:
-                shutil.copy2(s, d)
+        # Use render_template_dir for dynamic scaffolding
+        render_template_dir(template_path, workspace_dir, context, is_safe_path, workspace_dir)
         return jsonify({"message": f"Template '{template_name}' applied to workspace"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

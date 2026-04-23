@@ -37,9 +37,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!form) return;
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Check if template is selected and needs parameters
+            if (formId === 'createRepoForm' || formId === 'applyTemplateForm' || formId === 'dummyApplyTemplateForm') {
+                const templateSelect = form.querySelector('select[name="template_name"]') || document.getElementById('workspaceTemplateSelect');
+                const templateName = templateSelect ? templateSelect.value : '';
+                if (templateName && !form.dataset.paramsConfirmed) {
+                    return await showTemplateParams(templateName, form);
+                }
+            }
+
             const submitBtn = form.querySelector('button[type="submit"]');
-            toggleLoading(submitBtn, true);
+            if (submitBtn) toggleLoading(submitBtn, true);
             const formData = isMultipart ? new FormData(form) : new URLSearchParams(new FormData(form));
+
+            // Inject context if confirmed
+            if (form.dataset.context) {
+                if (isMultipart) {
+                    formData.append('context', form.dataset.context);
+                } else {
+                    formData.set('context', form.dataset.context);
+                }
+            }
+
             try {
                 const url = typeof endpoint === 'function' ? endpoint() : endpoint;
                 const response = await fetch(url, {
@@ -50,13 +70,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok) {
                     showAlert(result.message || 'Operation successful');
                     if (onSuccess) onSuccess(result);
+                    // Reset confirmation state
+                    delete form.dataset.paramsConfirmed;
+                    delete form.dataset.context;
                 } else {
                     showAlert(result.error || 'Operation failed', 'danger');
                 }
             } catch (error) {
                 showAlert(error.message, 'danger');
             } finally {
-                toggleLoading(submitBtn, false);
+                if (submitBtn) toggleLoading(submitBtn, false);
             }
         });
     };
@@ -143,31 +166,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     handleForm('importTemplateForm', '/api/workspace/import-template', 'POST', false, refreshTemplates);
 
+    const showTemplateParams = async (templateName, sourceForm) => {
+        try {
+            const resp = await fetch(`/api/workspace/templates/${encodeURIComponent(templateName)}/manifest`);
+            const manifest = await resp.json();
+
+            if (!manifest.variables || manifest.variables.length === 0) {
+                sourceForm.dataset.paramsConfirmed = 'true';
+                sourceForm.dispatchEvent(new Event('submit'));
+                return;
+            }
+
+            const container = document.getElementById('dynamicParamsContainer');
+            container.innerHTML = '';
+            manifest.variables.forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'mb-3';
+                div.innerHTML = `
+                    <label class="form-label">${escapeHTML(v.label || v.name)}</label>
+                    <input type="${escapeHTML(v.type || 'text')}" class="form-control" name="${escapeHTML(v.name)}" value="${escapeHTML(v.default || '')}" required>
+                `;
+                container.appendChild(div);
+            });
+
+            const modal = new bootstrap.Modal(document.getElementById('templateParamsModal'));
+            modal.show();
+
+            const confirmBtn = document.getElementById('confirmTemplateBtn');
+            // Clone button to clear old listeners
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+            newConfirmBtn.addEventListener('click', () => {
+                const paramsForm = document.getElementById('templateParamsForm');
+                const context = {};
+                new FormData(paramsForm).forEach((value, key) => {
+                    context[key] = value;
+                });
+                sourceForm.dataset.context = JSON.stringify(context);
+                sourceForm.dataset.paramsConfirmed = 'true';
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('templateParamsModal'));
+                if (modalInstance) modalInstance.hide();
+                sourceForm.dispatchEvent(new Event('submit'));
+            });
+
+        } catch (err) {
+            showAlert('Failed to fetch template manifest: ' + err.message, 'danger');
+        }
+    };
+
     const applyTemplateBtn = document.getElementById('applyTemplateBtn');
     if (applyTemplateBtn) {
         applyTemplateBtn.addEventListener('click', async () => {
             const templateName = document.getElementById('workspaceTemplateSelect').value;
             if (!templateName) return showAlert('Please select a template', 'danger');
 
-            toggleLoading(applyTemplateBtn, true);
-            try {
-                const response = await fetch('/api/workspace/apply-template', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ template_name: templateName })
-                });
-                const result = await response.json();
-                if (response.ok) {
-                    showAlert(result.message);
-                    refreshExplorer();
-                } else {
-                    showAlert(result.error, 'danger');
-                }
-            } catch (error) {
-                showAlert(error.message, 'danger');
-            } finally {
-                toggleLoading(applyTemplateBtn, false);
+            // We'll simulate a form submission to reuse handleForm logic if possible,
+            // or just trigger showTemplateParams directly.
+            // Let's create a dummy form to handle this.
+            let dummyForm = document.getElementById('dummyApplyTemplateForm');
+            if (!dummyForm) {
+                dummyForm = document.createElement('form');
+                dummyForm.id = 'dummyApplyTemplateForm';
+                dummyForm.style.display = 'none';
+                dummyForm.innerHTML = '<input type="hidden" name="template_name">';
+                document.body.appendChild(dummyForm);
+                handleForm('dummyApplyTemplateForm', '/api/workspace/apply-template', 'POST', false, refreshExplorer);
             }
+            dummyForm.querySelector('input[name="template_name"]').value = templateName;
+            dummyForm.dispatchEvent(new Event('submit'));
         });
     }
 

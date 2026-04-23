@@ -5,6 +5,7 @@ import tempfile
 from flask import Blueprint, request, session, jsonify
 from github import Github
 from werkzeug.utils import secure_filename
+from ..workspace.utils import render_template_dir
 
 bp = Blueprint('repos', __name__)
 
@@ -37,6 +38,14 @@ def create_repo():
         return jsonify({"error": "Repository name is required"}), 400
 
     template_name = data.get('template_name')
+    context = data.get('context', {})
+    if isinstance(context, str):
+        try:
+            import json
+            context = json.loads(context)
+        except Exception:
+            context = {}
+
     if template_name:
         template_name = secure_filename(template_name)
 
@@ -59,14 +68,8 @@ def create_repo():
                     auth_url = repo.clone_url.replace('https://github.com/', f'https://{session["github_token"]}@github.com/')
                     local_repo = git.Repo.clone_from(auth_url, tmp_dir)
 
-                    # Copy template content to the repo
-                    for item in os.listdir(template_path):
-                        s = os.path.join(template_path, item)
-                        d = os.path.join(tmp_dir, item)
-                        if os.path.isdir(s):
-                            shutil.copytree(s, d, dirs_exist_ok=True)
-                        else:
-                            shutil.copy(s, d)
+                    # Use render_template_dir for dynamic scaffolding
+                    render_template_dir(template_path, tmp_dir, context)
 
                     # Configure Git identity
                     with local_repo.config_writer() as cw:
