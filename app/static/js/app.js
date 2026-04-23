@@ -454,6 +454,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const copyDiffBtn = document.getElementById('copyDiffBtn');
+    if (copyDiffBtn) {
+        copyDiffBtn.addEventListener('click', () => {
+            const diffContent = document.getElementById('diffContent');
+            if (diffContent) {
+                const text = diffContent.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const originalText = copyDiffBtn.textContent;
+                    copyDiffBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyDiffBtn.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy diff: ', err);
+                    showAlert('Failed to copy diff to clipboard', 'danger');
+                });
+            }
+        });
+    }
+
     const viewDiffBtn = document.getElementById('viewDiffBtn');
     if (viewDiffBtn) {
         viewDiffBtn.addEventListener('click', async () => {
