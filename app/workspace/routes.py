@@ -25,9 +25,11 @@ def get_github_client():
     return Github(token)
 
 def get_workspace_dir(repo_name):
-    session_id = session.get('session_id', 'default')
+    session_id = secure_filename(session.get('session_id', 'default'))
     workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
-    repo_workspace = os.path.join(workspace_root, repo_name)
+    # Sanitize repo_name to prevent path traversal via malicious repository names
+    safe_repo_name = secure_filename(repo_name)
+    repo_workspace = os.path.join(workspace_root, safe_repo_name)
     os.makedirs(repo_workspace, exist_ok=True)
     return repo_workspace
 
@@ -555,7 +557,7 @@ def workspace_status():
             "can_push": can_push
         }), 200
     except Exception as e:
-        return jsonify({"error": "Failed to get workspace status"}), 500
+        return jsonify({"error": mask_token(str(e))}), 500
 
 @bp.route('/api/workspace/branch', methods=['POST'])
 def workspace_branch():
@@ -585,7 +587,7 @@ def workspace_branch():
 
         return jsonify({"message": msg, "branch": branch_name}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to change branch: {str(e)}"}), 500
+        return jsonify({"error": mask_token(f"Failed to change branch: {str(e)}")}), 500
 
 @bp.route('/api/workspace/push', methods=['POST'])
 def workspace_push():
@@ -624,7 +626,7 @@ def workspace_push():
         target_remote.push(repo.active_branch.name)
         return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to {remote_name}"}), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to push to remote: {str(e)}"}), 500
+        return jsonify({"error": mask_token(f"Failed to push to remote: {str(e)}")}), 500
 
 @bp.route('/api/workspace/diff', methods=['GET'])
 def workspace_diff():

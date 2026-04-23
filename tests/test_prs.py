@@ -28,6 +28,9 @@ def test_list_prs(mock_github, client):
     mock_pr.user.login = "testuser"
     mock_pr.head.repo.full_name = "owner/repo"
     mock_pr.head.ref = "feature"
+    # mock_pr.head.repo.permissions.push must be set if we access it
+    mock_pr.head.repo.permissions.push = True
+
     mock_repo.get_pulls.return_value = [mock_pr]
     mock_github.return_value.get_repo.return_value = mock_repo
 
@@ -38,6 +41,7 @@ def test_list_prs(mock_github, client):
     assert data[0]['title'] == "Test PR"
     assert data[0]['head_repo_full_name'] == "owner/repo"
     assert data[0]['head_branch'] == "feature"
+    assert data[0]['can_push'] is True
 
 @patch('app.prs.routes.Github')
 def test_create_pr(mock_github, client):
