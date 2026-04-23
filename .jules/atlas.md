@@ -9,3 +9,7 @@
 ## 2025-05-25 - [Static vs. Dynamic Assets]
 **Learning:** Static templates are a "dead end" for complex projects that require customization. Adding dynamic parameter injection during template application turns simple boilerplate into a flexible project generator, significantly increasing user retention by reducing manual post-creation work.
 **Action:** Repurpose existing file-copy logic by adding a "Transformation" layer to multiply the value of stored assets.
+
+## 2025-05-26 - [Beyond Read-Only Reviews]
+**Learning:** Streaming a PR via `pull/ID/head` is great for reading, but it's a "collaboration dead-end" because that ref is read-only. To allow users to actually *fix* PRs and push back, we must track the PR's source fork and branch metadata.
+**Action:** Enrich PR discovery APIs with fork metadata and update the Workspace engine to manage multiple remotes, enabling a "Review -> Fix -> Push" workflow.
