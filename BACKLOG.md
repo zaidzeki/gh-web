@@ -28,6 +28,10 @@
 - [ ] **Epic: PR Review Sandboxing**
     - [ ] Implement `POST /api/workspace/stream-pr` for live PR reviews.
     - [ ] Add "Review" action to the PR management UI.
+- [x] **Epic: Dynamic Scaffolding Engine**
+    - [x] Implement `render_template_dir` with Jinja2 support.
+    - [x] Implement `manifest.json` parsing and API.
+    - [x] Implement dynamic form generation in Frontend.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
