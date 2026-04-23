@@ -80,6 +80,7 @@ def test_workspace_push(mock_repo_class, client):
 
     mock_repo = MagicMock()
     mock_repo.active_branch.name = 'main'
+    mock_repo.active_branch.tracking_branch.return_value.remote_name = 'origin'
     mock_remote = MagicMock()
     mock_remote.url = 'https://github.com/owner/repo.git'
     mock_repo.remote.return_value = mock_remote
