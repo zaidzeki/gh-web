@@ -266,7 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         collabBadge.style.display = 'inline-block';
                         collabBadge.title = 'You have permission to push changes to the source branch.';
                     } else {
-                        collabBadge.style.display = 'none';
+                        collabBadge.textContent = 'Read-Only Mode';
+                        collabBadge.className = 'badge bg-secondary';
+                        collabBadge.style.display = 'inline-block';
+                        collabBadge.title = 'You do not have permission to push to the source branch. Changes will be local-only.';
                     }
                 }
             } else {
@@ -610,10 +613,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 prs.forEach(pr => {
                     const tr = document.createElement('tr');
+                    const collabBadge = pr.can_push ?
+                        '<span class="badge bg-info text-dark ms-1" title="You can push changes to this PR branch">Collaborative</span>' :
+                        '<span class="badge bg-secondary ms-1" title="Read-only access to this PR branch">Read-Only</span>';
+
                     tr.innerHTML = `
                         <td>${escapeHTML(String(pr.number))}</td>
                         <td><a href="${escapeHTML(pr.html_url)}" target="_blank">${escapeHTML(pr.title)}</a></td>
-                        <td>${escapeHTML(pr.state)}</td>
+                        <td>
+                            ${escapeHTML(pr.state)}
+                            ${collabBadge}
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>
                             <button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>
