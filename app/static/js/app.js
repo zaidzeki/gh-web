@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.className = 'list-group-item d-flex justify-content-between align-items-center';
                     item.innerHTML = `
                         <span>${t}</span>
-                        <button class="btn btn-sm btn-outline-danger delete-template-btn" data-template="${t}">Delete</button>
+                        <button class="btn btn-sm btn-outline-danger delete-template-btn" data-template="${t}" aria-label="Delete template ${escapeHTML(t)}" title="Delete template ${escapeHTML(t)}">Delete</button>
                     `;
                     libraryList.appendChild(item);
                 });
@@ -182,9 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
             manifest.variables.forEach(v => {
                 const div = document.createElement('div');
                 div.className = 'mb-3';
+                const inputId = `param-${v.name}`;
                 div.innerHTML = `
-                    <label class="form-label">${escapeHTML(v.label || v.name)}</label>
-                    <input type="${escapeHTML(v.type || 'text')}" class="form-control" name="${escapeHTML(v.name)}" value="${escapeHTML(v.default || '')}" required>
+                    <label class="form-label" for="${escapeHTML(inputId)}">${escapeHTML(v.label || v.name)}</label>
+                    <input type="${escapeHTML(v.type || 'text')}" class="form-control" id="${escapeHTML(inputId)}" name="${escapeHTML(v.name)}" value="${escapeHTML(v.default || '')}" required>
                 `;
                 container.appendChild(div);
             });
