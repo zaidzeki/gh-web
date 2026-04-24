@@ -28,11 +28,17 @@
 - [x] **Epic: PR Review Sandboxing**
     - [x] Implement `POST /api/workspace/stream-pr` for live PR reviews.
     - [x] Add "Review" action to the PR management UI.
-- [ ] **Epic: Collaborative PR Contribution**
+- [x] **Epic: Collaborative PR Contribution**
     - [x] Enrich `GET /api/repos/full_name/prs` with head repo/branch metadata.
-    - [ ] Implement multi-remote support in `stream-pr`.
-    - [ ] Update `POST /api/workspace/push` to handle fork targets.
-    - [ ] Add "Collaborative Mode" indicators to the UI.
+    - [x] Implement multi-remote support in `stream-pr`.
+    - [x] Update `POST /api/workspace/push` to handle fork targets.
+    - [x] Add "Collaborative Mode" indicators to the UI.
+- [ ] **Epic: Repository Discovery & Dashboard**
+    - [ ] Implement `GET /api/user` for profile discovery.
+    - [ ] Implement `GET /api/repos` for repository listing and search.
+    - [ ] Implement `GET /api/workspace/portfolio` for multi-workspace monitoring.
+    - [ ] Create Dashboard UI with searchable repo list and active workspace summary.
+    - [ ] Integrate user profile (avatar/login) into the application header.
 - [x] **Epic: Dynamic Scaffolding Engine**
     - [x] Implement `render_template_dir` with Jinja2 support.
     - [x] Implement `manifest.json` parsing and API.
