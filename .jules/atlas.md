@@ -13,3 +13,7 @@
 ## 2025-05-26 - [Beyond Read-Only Reviews]
 **Learning:** Streaming a PR via `pull/ID/head` is great for reading, but it's a "collaboration dead-end" because that ref is read-only. To allow users to actually *fix* PRs and push back, we must track the PR's source fork and branch metadata.
 **Action:** Enrich PR discovery APIs with fork metadata and update the Workspace engine to manage multiple remotes, enabling a "Review -> Fix -> Push" workflow.
+
+## 2025-05-27 - [The Manual Entry Wall]
+**Learning:** Forcing users to manually enter repository names (e.g., `owner/repo`) creates a massive friction point and "Discovery Paralysis." Users shouldn't have to leave the app to find the name of the repo they want to work on.
+**Action:** Shift from a "Command-Line" UX to a "Dashboard" UX by implementing repository discovery, starred repo listing, and a central portfolio view for all active workspaces.
