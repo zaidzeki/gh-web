@@ -80,7 +80,10 @@ def test_workspace_push(mock_repo_class, client):
 
     mock_repo = MagicMock()
     mock_repo.active_branch.name = 'main'
-    mock_repo.active_branch.tracking_branch.return_value.remote_name = 'origin'
+    mock_tracking = MagicMock()
+    mock_tracking.remote_name = 'origin'
+    mock_tracking.remote_head = 'main'
+    mock_repo.active_branch.tracking_branch.return_value = mock_tracking
     mock_remote = MagicMock()
     mock_remote.url = 'https://github.com/owner/repo.git'
     mock_repo.remote.return_value = mock_remote
@@ -88,6 +91,6 @@ def test_workspace_push(mock_repo_class, client):
 
     response = client.post('/api/workspace/push')
     assert response.status_code == 200
-    assert "Pushed branch 'main' to origin" in response.get_json()['message']
+    assert "Pushed branch 'main' to origin as 'main'" in response.get_json()['message']
     mock_remote.set_url.assert_called_with('https://fake_token@github.com/owner/repo.git')
-    mock_remote.push.assert_called_with('main')
+    mock_remote.push.assert_called_with('main:main')

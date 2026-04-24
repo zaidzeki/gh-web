@@ -623,8 +623,13 @@ def workspace_push():
             if auth_url != url:
                 target_remote.set_url(auth_url)
 
-        target_remote.push(repo.active_branch.name)
-        return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to {remote_name}"}), 200
+        # Use explicit refspec to push local branch to correct remote branch
+        refspec = repo.active_branch.name
+        if tracking:
+            refspec = f"{repo.active_branch.name}:{tracking.remote_head}"
+
+        target_remote.push(refspec)
+        return jsonify({"message": f"Pushed branch '{repo.active_branch.name}' to {remote_name} as '{tracking.remote_head if tracking else repo.active_branch.name}'"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(f"Failed to push to remote: {str(e)}")}), 500
 
