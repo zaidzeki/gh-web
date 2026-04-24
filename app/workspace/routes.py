@@ -219,11 +219,17 @@ def upload_archive():
                 zip_ref.extractall(full_target_dir)
         elif filename.endswith(('.tar.gz', '.tgz')):
             with tarfile.open(archive_path, 'r:gz') as tar_ref:
+                # Manual check as first line of defense
                 for member in tar_ref.getmembers():
                     member_path = os.path.join(full_target_dir, member.name)
                     if not is_safe_path(full_target_dir, member_path):
                         raise Exception(f"Potential Tar Slip detected: {member.name}")
-                tar_ref.extractall(full_target_dir)
+
+                # Security: Use 'data' filter for extra protection if Python 3.12+
+                try:
+                    tar_ref.extractall(full_target_dir, filter='data')
+                except TypeError:
+                    tar_ref.extractall(full_target_dir)
         else:
             return jsonify({"error": "Unsupported archive format"}), 400
 
@@ -349,15 +355,23 @@ def list_workspace_files():
                 if item == '.git':
                     continue
                 full_path = os.path.join(path, item)
+
+                # Security: Ensure path is safe (doesn't point outside workspace)
+                # and explicitly avoid following symlinks during traversal to prevent leaks or loops.
+                if not is_safe_path(workspace_dir, full_path, follow_symlinks=True):
+                    continue
+
                 rel_path = os.path.relpath(full_path, workspace_dir)
+                is_symlink = os.path.islink(full_path)
                 is_dir = os.path.isdir(full_path)
 
                 node = {
                     "name": item,
                     "path": rel_path,
-                    "type": "directory" if is_dir else "file"
+                    "type": "directory" if is_dir and not is_symlink else "file"
                 }
-                if is_dir:
+                # Only recurse if it's a real directory, not a symlink, to prevent circularity or leaks
+                if is_dir and not is_symlink:
                     node["children"] = build_tree(full_path)
                 tree.append(node)
         except Exception:
