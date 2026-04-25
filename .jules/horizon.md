@@ -17,3 +17,7 @@
 ## 2026-04-23 - [Expansion: Dynamic Scaffolding Implementation]
 **Learning:** By integrating a transformation layer (Jinja2) into both repository creation and workspace composition, we've turned a static "cloner" into a powerful "generator". The leverage here was reusing 90% of the existing file traversal and safety logic, while adding a small but high-impact rendering step.
 **Action:** Always ensure that new "Transformation" layers are applied consistently across all entry points (e.g., both Create Repo and Apply Template) to maximize utility.
+
+## 2026-05-24 - [Expansion: Repository Discovery & Dashboard]
+**Learning:** The "Manual Entry Wall" was a major friction point where users were treated like command-line operators. Pivoting to a Dashboard-First UX by fetching the user's GitHub portfolio and scanning active workspaces turns the app into a "Control Center". Reusing 90% of existing auth and Git logic unlocked a "Platform-like" feel with minimal code delta.
+**Action:** Always prioritize "Discovery over Manual Entry" to reduce friction and increase stickiness.
