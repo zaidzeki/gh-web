@@ -18,7 +18,8 @@ def test_token_leakage_in_push(client):
         sess['session_id'] = 'test-session'
 
     # Mock git.Repo and its push behavior
-    with patch('git.Repo') as mock_repo_class:
+    with patch('git.Repo') as mock_repo_class, \
+         patch('os.makedirs') as mock_makedirs:
         mock_repo = MagicMock()
         mock_repo_class.return_value = mock_repo
 

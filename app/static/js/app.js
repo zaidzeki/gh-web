@@ -149,8 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
         repos.forEach(repo => {
             const item = document.createElement('div');
             item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-            const prBadge = repo.open_issues_count > 0 ?
-                `<span class="badge bg-warning text-dark ms-2" title="${repo.open_issues_count} open PRs/issues">${repo.open_issues_count} PRs</span>` : '';
+            const prBadge = repo.open_prs_count > 0 ?
+                `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
 
             item.innerHTML = `
                 <div>

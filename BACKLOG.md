@@ -39,8 +39,8 @@
     - [x] Implement `GET /api/workspace/portfolio` for multi-workspace monitoring.
     - [x] Create Dashboard UI with searchable repo list and active workspace summary.
     - [x] Integrate user profile (avatar/login) into the application header.
-    - [ ] Include PR counts in repo discovery.
-    - [ ] Implement quick actions (Sync/Discard) in workspace portfolio.
+    - [x] Include PR counts in repo discovery.
+    - [x] Implement quick actions (Sync/Discard) in workspace portfolio.
 - [x] **Epic: Dynamic Scaffolding Engine**
     - [x] Implement `render_template_dir` with Jinja2 support.
     - [x] Implement `manifest.json` parsing and API.

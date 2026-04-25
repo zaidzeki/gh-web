@@ -44,6 +44,11 @@ def test_list_repos(client):
 
         mock_github.return_value.get_user.return_value.get_repos.return_value = [mock_repo]
 
+        # Mock search_issues for PR counts
+        mock_pr = MagicMock()
+        mock_pr.repository.full_name = 'owner/repo'
+        mock_github.return_value.search_issues.return_value = [mock_pr]
+
         response = client.get('/api/repos')
         assert response.status_code == 200
         data = response.get_json()
