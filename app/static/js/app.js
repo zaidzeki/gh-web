@@ -149,9 +149,15 @@ document.addEventListener('DOMContentLoaded', () => {
         repos.forEach(repo => {
             const item = document.createElement('div');
             item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            const prBadge = repo.open_issues_count > 0 ?
+                `<span class="badge bg-warning text-dark ms-2" title="${repo.open_issues_count} open PRs/issues">${repo.open_issues_count} PRs</span>` : '';
+
             item.innerHTML = `
                 <div>
-                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}">${escapeHTML(repo.full_name)}</h6>
+                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}">
+                        ${escapeHTML(repo.full_name)}
+                        ${prBadge}
+                    </h6>
                     <small class="text-muted text-truncate d-block" style="max-width: 400px;">${escapeHTML(repo.description || 'No description')}</small>
                 </div>
                 <div class="d-flex gap-2">
@@ -236,16 +242,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const div = document.createElement('div');
                 div.className = 'list-group-item';
                 const statusBadge = (item.is_dirty || item.untracked) ?
-                    '<span class="badge bg-warning text-dark float-end">Modified</span>' :
-                    '<span class="badge bg-success float-end">Clean</span>';
+                    '<span class="badge bg-warning text-dark float-end ms-2">Modified</span>' :
+                    '<span class="badge bg-success float-end ms-2">Clean</span>';
 
                 div.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="text-truncate" style="max-width: 70%;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div class="text-truncate" style="max-width: 60%;">
                             <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}">${escapeHTML(item.repo_name)}</h6>
                             <small class="text-muted font-monospace">${escapeHTML(item.branch)}</small>
                         </div>
                         ${statusBadge}
+                    </div>
+                    <div class="d-flex gap-1 justify-content-end">
+                        <button class="btn btn-sm btn-outline-primary sync-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Sync (Fetch)">🔄</button>
+                        <button class="btn btn-sm btn-outline-danger revert-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Discard Changes">🗑️</button>
                     </div>
                 `;
                 portfolioList.appendChild(div);
@@ -254,9 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
             portfolioList.querySelectorAll('.open-workspace').forEach(el => {
                 el.addEventListener('click', async () => {
                     const repoName = el.getAttribute('data-repo-name');
-                    // We need a way to set active_repo on backend
-                    // For now, let's just set the session variable by calling a lightweight endpoint
-                    // We'll add POST /api/workspace/activate to routes.py soon or use existing clone logic
                     try {
                         await fetch('/api/workspace/activate', {
                             method: 'POST',
@@ -267,6 +274,61 @@ document.addEventListener('DOMContentLoaded', () => {
                         bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
                         refreshExplorer();
                     } catch (e) {}
+                });
+            });
+
+            portfolioList.querySelectorAll('.sync-workspace-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const repoName = btn.getAttribute('data-repo-name');
+                    toggleLoading(btn, true);
+                    try {
+                        // Activate first then sync
+                        await fetch('/api/workspace/activate', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({repo_name: repoName})
+                        });
+                        const response = await fetch('/api/workspace/sync', { method: 'POST' });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showAlert(result.message);
+                            refreshWorkspacePortfolio();
+                        } else {
+                            showAlert(result.error, 'danger');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    } finally {
+                        toggleLoading(btn, false);
+                    }
+                });
+            });
+
+            portfolioList.querySelectorAll('.revert-workspace-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const repoName = btn.getAttribute('data-repo-name');
+                    if (!confirm(`Discard changes for ${repoName}?`)) return;
+                    toggleLoading(btn, true);
+                    try {
+                        // Activate first then revert
+                        await fetch('/api/workspace/activate', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({repo_name: repoName})
+                        });
+                        const response = await fetch('/api/workspace/revert', { method: 'POST' });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showAlert(result.message);
+                            refreshWorkspacePortfolio();
+                        } else {
+                            showAlert(result.error, 'danger');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    } finally {
+                        toggleLoading(btn, false);
+                    }
                 });
             });
         } catch (error) {

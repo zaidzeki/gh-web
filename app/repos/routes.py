@@ -47,6 +47,7 @@ def list_repos():
                 "description": repo.description,
                 "html_url": repo.html_url,
                 "stargazers_count": repo.stargazers_count,
+                "open_issues_count": repo.open_issues_count,
                 "pushed_at": repo.pushed_at.isoformat() if repo.pushed_at else None,
                 "private": repo.private
             })

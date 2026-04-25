@@ -856,6 +856,25 @@ def stream_pr():
         except Exception as fallback_err:
             return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/workspace/sync', methods=['POST'])
+def workspace_sync():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Active workspace is not a git repository"}), 400
+
+    try:
+        repo = git.Repo(workspace_dir)
+        # Fetch from all remotes to ensure we're up to date
+        for remote in repo.remotes:
+            remote.fetch()
+        return jsonify({"message": "Workspace synced with remote successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/revert', methods=['POST'])
 def workspace_revert():
     repo_name = session.get('active_repo')
