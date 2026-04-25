@@ -21,6 +21,39 @@ def get_github_client():
         return None
     return Github(token)
 
+@bp.route('/api/repos', methods=['GET'])
+def list_repos():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    search_query = request.args.get('search')
+
+    try:
+        user = g.get_user()
+        if search_query:
+            # Filtered search within user's context
+            repos = g.search_repositories(f"user:{user.login} {search_query}")
+        else:
+            # Default to recently pushed
+            repos = user.get_repos(sort='pushed', direction='desc')
+
+        results = []
+        for i, repo in enumerate(repos):
+            if i >= 30: break
+            results.append({
+                "full_name": repo.full_name,
+                "name": repo.name,
+                "description": repo.description,
+                "html_url": repo.html_url,
+                "stargazers_count": repo.stargazers_count,
+                "pushed_at": repo.pushed_at.isoformat() if repo.pushed_at else None,
+                "private": repo.private
+            })
+        return jsonify(results), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/repos', methods=['POST'])
 @bp.route('/api/repos/create', methods=['POST'])
 def create_repo():

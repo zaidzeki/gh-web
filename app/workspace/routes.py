@@ -531,6 +531,63 @@ def import_template():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/workspace/activate', methods=['POST'])
+def activate_workspace():
+    data = request.get_json() or request.form
+    repo_name = data.get('repo_name')
+    if not repo_name:
+        return jsonify({"error": "repo_name is required"}), 400
+
+    session['active_repo'] = repo_name
+    return jsonify({"message": f"Workspace '{repo_name}' activated"}), 200
+
+@bp.route('/api/workspace/portfolio', methods=['GET'])
+def workspace_portfolio():
+    session_id = secure_filename(session.get('session_id', 'default'))
+    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+
+    if not os.path.exists(workspace_root):
+        return jsonify([]), 200
+
+    portfolio = []
+    try:
+        for repo_dir in sorted(os.listdir(workspace_root)):
+            repo_path = os.path.join(workspace_root, repo_dir)
+            if not os.path.isdir(repo_path):
+                continue
+
+            git_path = os.path.join(repo_path, '.git')
+            if not os.path.exists(git_path):
+                continue
+
+            try:
+                repo = git.Repo(repo_path)
+
+                # Try to resolve full name from remote URL
+                full_name = None
+                try:
+                    url = repo.remotes.origin.url
+                    match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
+                    if match:
+                        full_name = match.group(1)
+                except Exception:
+                    pass
+
+                portfolio.append({
+                    "repo_name": repo_dir,
+                    "full_name": full_name,
+                    "branch": repo.active_branch.name,
+                    "is_dirty": repo.is_dirty(),
+                    "untracked": len(repo.untracked_files) > 0
+                })
+            except Exception:
+                # Skip invalid repos
+                continue
+
+        return jsonify(portfolio), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/status', methods=['GET'])
 def workspace_status():
     repo_name = session.get('active_repo')
@@ -546,7 +603,12 @@ def workspace_status():
         can_push = False
 
         # Check if we can push to the tracking remote
-        tracking = repo.active_branch.tracking_branch()
+        tracking = None
+        try:
+            tracking = repo.active_branch.tracking_branch()
+        except Exception:
+            pass
+
         if tracking:
             remote = repo.remote(tracking.remote_name)
             url = remote.url

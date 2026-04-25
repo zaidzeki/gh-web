@@ -88,7 +88,206 @@ document.addEventListener('DOMContentLoaded', () => {
     window.handleForm = handleForm;
     window.showAlert = showAlert;
 
-    handleForm('loginForm', '/login');
+    const initDashboard = async () => {
+        const profileDiv = document.getElementById('userProfile');
+        const loginForm = document.getElementById('loginForm');
+
+        try {
+            const response = await fetch('/api/user');
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('userAvatar').src = user.avatar_url;
+                document.getElementById('userLogin').textContent = user.login;
+                profileDiv.classList.remove('d-none');
+                profileDiv.classList.add('d-flex');
+                if (loginForm) loginForm.classList.add('d-none');
+
+                refreshDashboardRepos();
+                refreshWorkspacePortfolio();
+            } else {
+                profileDiv.classList.add('d-none');
+                profileDiv.classList.remove('d-flex');
+                if (loginForm) loginForm.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+        }
+    };
+
+    let allRepos = [];
+    const refreshDashboardRepos = async (search = '') => {
+        const repoList = document.getElementById('dashboardRepoList');
+        if (!repoList) return;
+
+        try {
+            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            const response = await fetch(url);
+            const repos = await response.json();
+
+            if (!response.ok) {
+                repoList.innerHTML = `<p class="text-danger p-3">${escapeHTML(repos.error || 'Failed to fetch repositories')}</p>`;
+                return;
+            }
+
+            allRepos = repos;
+            renderRepoList(repos);
+        } catch (error) {
+            repoList.innerHTML = `<p class="text-danger p-3">Error: ${escapeHTML(error.message)}</p>`;
+        }
+    };
+
+    const renderRepoList = (repos) => {
+        const repoList = document.getElementById('dashboardRepoList');
+        if (!repoList) return;
+
+        if (repos.length === 0) {
+            repoList.innerHTML = '<p class="text-muted p-3">No repositories found.</p>';
+            return;
+        }
+
+        repoList.innerHTML = '';
+        repos.forEach(repo => {
+            const item = document.createElement('div');
+            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            item.innerHTML = `
+                <div>
+                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}">${escapeHTML(repo.full_name)}</h6>
+                    <small class="text-muted text-truncate d-block" style="max-width: 400px;">${escapeHTML(repo.description || 'No description')}</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}">PRs</button>
+                    <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}">Clone</button>
+                </div>
+            `;
+            repoList.appendChild(item);
+        });
+
+        repoList.querySelectorAll('h6[data-repo]').forEach(el => {
+            el.addEventListener('click', () => {
+                const repo = el.getAttribute('data-repo');
+                document.getElementById('repoFullName').value = repo;
+                document.getElementById('downloadRepoName').value = repo;
+                const prTab = document.getElementById('prs-tab');
+                bootstrap.Tab.getOrCreateInstance(prTab).show();
+                document.getElementById('listPrsBtn').click();
+            });
+        });
+
+        repoList.querySelectorAll('.pr-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const repo = btn.getAttribute('data-repo');
+                document.getElementById('repoFullName').value = repo;
+                const prTab = document.getElementById('prs-tab');
+                bootstrap.Tab.getOrCreateInstance(prTab).show();
+                document.getElementById('listPrsBtn').click();
+            });
+        });
+
+        repoList.querySelectorAll('.clone-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const url = btn.getAttribute('data-repo-url');
+                document.getElementById('repoUrl').value = url;
+                const workspaceTab = document.getElementById('workspace-tab');
+                bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+            });
+        });
+    };
+
+    const dashboardRepoSearch = document.getElementById('dashboardRepoSearch');
+    if (dashboardRepoSearch) {
+        let timeout = null;
+        dashboardRepoSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            if (timeout) clearTimeout(timeout);
+
+            // Client-side filtering first
+            const filtered = allRepos.filter(r => r.full_name.toLowerCase().includes(query) || (r.description && r.description.toLowerCase().includes(query)));
+            renderRepoList(filtered);
+
+            // Debounced server-side search if needed
+            timeout = setTimeout(() => {
+                if (query && filtered.length < 5) {
+                    refreshDashboardRepos(query);
+                }
+            }, 500);
+        });
+    }
+
+    const refreshWorkspacePortfolio = async () => {
+        const portfolioList = document.getElementById('activeWorkspacesList');
+        if (!portfolioList) return;
+
+        try {
+            const response = await fetch('/api/workspace/portfolio');
+            const data = await response.json();
+
+            if (!response.ok) {
+                portfolioList.innerHTML = `<p class="text-danger p-3">${escapeHTML(data.error || 'Failed to fetch portfolio')}</p>`;
+                return;
+            }
+
+            if (data.length === 0) {
+                portfolioList.innerHTML = '<p class="text-muted p-3">No active workspaces found.</p>';
+                return;
+            }
+
+            portfolioList.innerHTML = '';
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'list-group-item';
+                const statusBadge = (item.is_dirty || item.untracked) ?
+                    '<span class="badge bg-warning text-dark float-end">Modified</span>' :
+                    '<span class="badge bg-success float-end">Clean</span>';
+
+                div.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="text-truncate" style="max-width: 70%;">
+                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}">${escapeHTML(item.repo_name)}</h6>
+                            <small class="text-muted font-monospace">${escapeHTML(item.branch)}</small>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                `;
+                portfolioList.appendChild(div);
+            });
+
+            portfolioList.querySelectorAll('.open-workspace').forEach(el => {
+                el.addEventListener('click', async () => {
+                    const repoName = el.getAttribute('data-repo-name');
+                    // We need a way to set active_repo on backend
+                    // For now, let's just set the session variable by calling a lightweight endpoint
+                    // We'll add POST /api/workspace/activate to routes.py soon or use existing clone logic
+                    try {
+                        await fetch('/api/workspace/activate', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({repo_name: repoName})
+                        });
+                        const workspaceTab = document.getElementById('workspace-tab');
+                        bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+                        refreshExplorer();
+                    } catch (e) {}
+                });
+            });
+        } catch (error) {
+            portfolioList.innerHTML = `<p class="text-danger p-3">Error: ${escapeHTML(error.message)}</p>`;
+        }
+    };
+
+    const refreshPortfolioBtn = document.getElementById('refreshPortfolioBtn');
+    if (refreshPortfolioBtn) {
+        refreshPortfolioBtn.addEventListener('click', () => {
+            toggleLoading(refreshPortfolioBtn, true);
+            refreshWorkspacePortfolio().finally(() => toggleLoading(refreshPortfolioBtn, false));
+        });
+    }
+
+    initDashboard();
+
+    handleForm('loginForm', '/login', 'POST', false, () => {
+        initDashboard();
+        refreshTemplates();
+    });
     handleForm('createRepoForm', '/api/repos');
     handleForm('cloneForm', '/api/workspace/clone');
     handleForm('downloadForm', '/api/workspace/download');
