@@ -64,7 +64,11 @@ def render_template_dir(source_path, target_path, context, is_safe_path_func=Non
 
             dest_file_path = os.path.join(target_path, rendered_rel_path)
 
-            # Safety check
+            # Safety check: Ensure the rendered path stays within the target directory
+            # We always check against target_path to prevent traversal via template variables
+            if not is_safe_path(target_path, dest_file_path):
+                continue # Skip unsafe paths
+
             if is_safe_path_func and workspace_root:
                 if not is_safe_path_func(workspace_root, dest_file_path):
                     continue # Skip unsafe paths
