@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             item.innerHTML = `
                 <div>
-                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}">
+                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="Open repository ${escapeHTML(repo.full_name)}">
                         ${escapeHTML(repo.full_name)}
                         ${prBadge}
                     </h6>
@@ -169,13 +169,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         repoList.querySelectorAll('h6[data-repo]').forEach(el => {
-            el.addEventListener('click', () => {
+            const openRepo = () => {
                 const repo = el.getAttribute('data-repo');
                 document.getElementById('repoFullName').value = repo;
                 document.getElementById('downloadRepoName').value = repo;
                 const prTab = document.getElementById('prs-tab');
                 bootstrap.Tab.getOrCreateInstance(prTab).show();
                 document.getElementById('listPrsBtn').click();
+            };
+            el.addEventListener('click', openRepo);
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openRepo();
+                }
             });
         });
 
@@ -248,21 +255,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="text-truncate" style="max-width: 60%;">
-                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}">${escapeHTML(item.repo_name)}</h6>
+                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}" tabindex="0" role="button" aria-label="Open workspace ${escapeHTML(item.repo_name)}">${escapeHTML(item.repo_name)}</h6>
                             <small class="text-muted font-monospace">${escapeHTML(item.branch)}</small>
                         </div>
                         ${statusBadge}
                     </div>
                     <div class="d-flex gap-1 justify-content-end">
-                        <button class="btn btn-sm btn-outline-primary sync-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Sync (Fetch)">🔄</button>
-                        <button class="btn btn-sm btn-outline-danger revert-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Discard Changes">🗑️</button>
+                        <button class="btn btn-sm btn-outline-primary sync-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Sync (Fetch)" aria-label="Sync workspace ${escapeHTML(item.repo_name)}">🔄</button>
+                        <button class="btn btn-sm btn-outline-danger revert-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Discard Changes" aria-label="Discard changes for workspace ${escapeHTML(item.repo_name)}">🗑️</button>
                     </div>
                 `;
                 portfolioList.appendChild(div);
             });
 
             portfolioList.querySelectorAll('.open-workspace').forEach(el => {
-                el.addEventListener('click', async () => {
+                const activateWorkspace = async () => {
                     const repoName = el.getAttribute('data-repo-name');
                     try {
                         await fetch('/api/workspace/activate', {
@@ -274,6 +281,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
                         refreshExplorer();
                     } catch (e) {}
+                };
+                el.addEventListener('click', activateWorkspace);
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activateWorkspace();
+                    }
                 });
             });
 
