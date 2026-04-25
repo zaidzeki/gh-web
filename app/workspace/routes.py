@@ -114,6 +114,11 @@ def download_repo():
                     f.write(chunk)
 
         with zipfile.ZipFile(archive_path, 'r') as zip_ref:
+            # Security: Validate paths before extraction to prevent Zip Slip
+            for member in zip_ref.namelist():
+                member_path = os.path.join(workspace_dir, member)
+                if not is_safe_path(workspace_dir, member_path):
+                    raise Exception(f"Potential Zip Slip detected: {member}")
             zip_ref.extractall(workspace_dir)
 
         os.remove(archive_path)
