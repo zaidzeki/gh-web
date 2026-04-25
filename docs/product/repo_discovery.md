@@ -20,14 +20,13 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
 ### 4.1. The Portfolio Dashboard
 - **UI:** A new "Dashboard" tab (or a revamped "Repositories" tab).
 - **Sections:**
-    - **Personal Repositories:** A searchable/filterable list of repos owned by the user.
-    - **Active Workspaces:** A list of repositories currently cloned in the server-side workspace with their branch and status.
-    - **PR Summary:** A quick-count of open PRs per repository.
+    - **Personal Repositories:** A searchable/filterable list of repos owned by the user, enriched with **open PR counts** to drive prioritization.
+    - **Active Workspaces:** A list of repositories currently cloned in the server-side workspace with their branch, status, and **quick actions (Sync, Discard)**.
 
 ### 4.2. Repository Discovery API
 - **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org`)
 - **Behavior:** Fetches repositories from GitHub using the user's PAT.
-- **Metadata:** Includes repo name, description, star count, and a flag indicating if a local workspace exists.
+- **Metadata:** Includes repo name, description, star count, open issues/PR count, and a flag indicating if a local workspace exists.
 
 ### 4.3. User Profile API
 - **Endpoint:** `GET /api/user`

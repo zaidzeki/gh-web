@@ -9,10 +9,11 @@ The Repository Discovery module enables users to explore their GitHub portfolio 
 Responsible for fetching repository metadata from the GitHub API using the user's PAT.
 - **Service:** `app/repos/routes.py`
 - **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
+- **Metadata Enrichment:** Returns `open_issues_count` to provide a quick summary of pending work (PRs and issues).
 - **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading. Subsequent data can be loaded via pagination.
 
-### 2.2. Workspace Portfolio Scanner
-Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user.
+### 2.2. Workspace Portfolio Scanner & Control
+Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user, and provides quick maintenance actions.
 - **Service:** `app/workspace/routes.py`
 - **Logic:**
     1. Identify the session-specific root: `/tmp/gh-web-workspaces/<session_id>/`.

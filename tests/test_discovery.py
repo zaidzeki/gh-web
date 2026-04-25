@@ -38,6 +38,7 @@ def test_list_repos(client):
         mock_repo.description = 'desc'
         mock_repo.html_url = 'http://github.com/owner/repo'
         mock_repo.stargazers_count = 10
+        mock_repo.open_issues_count = 5
         mock_repo.pushed_at = None
         mock_repo.private = False
 

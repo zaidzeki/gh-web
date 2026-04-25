@@ -33,12 +33,14 @@
     - [x] Implement multi-remote support in `stream-pr`.
     - [x] Update `POST /api/workspace/push` to handle fork targets.
     - [x] Add "Collaborative Mode" indicators to the UI.
-- [ ] **Epic: Repository Discovery & Dashboard**
-    - [ ] Implement `GET /api/user` for profile discovery.
-    - [ ] Implement `GET /api/repos` for repository listing and search.
-    - [ ] Implement `GET /api/workspace/portfolio` for multi-workspace monitoring.
-    - [ ] Create Dashboard UI with searchable repo list and active workspace summary.
-    - [ ] Integrate user profile (avatar/login) into the application header.
+- [x] **Epic: Repository Discovery & Dashboard**
+    - [x] Implement `GET /api/user` for profile discovery.
+    - [x] Implement `GET /api/repos` for repository listing and search.
+    - [x] Implement `GET /api/workspace/portfolio` for multi-workspace monitoring.
+    - [x] Create Dashboard UI with searchable repo list and active workspace summary.
+    - [x] Integrate user profile (avatar/login) into the application header.
+    - [ ] Include PR counts in repo discovery.
+    - [ ] Implement quick actions (Sync/Discard) in workspace portfolio.
 - [x] **Epic: Dynamic Scaffolding Engine**
     - [x] Implement `render_template_dir` with Jinja2 support.
     - [x] Implement `manifest.json` parsing and API.

@@ -17,3 +17,7 @@
 ## 2025-05-27 - [The Manual Entry Wall]
 **Learning:** Forcing users to manually enter repository names (e.g., `owner/repo`) creates a massive friction point and "Discovery Paralysis." Users shouldn't have to leave the app to find the name of the repo they want to work on.
 **Action:** Shift from a "Command-Line" UX to a "Dashboard" UX by implementing repository discovery, starred repo listing, and a central portfolio view for all active workspaces.
+
+## 2025-05-28 - [Actionable Dashboard]
+**Learning:** Discovery alone is not enough to break the "Manual Entry Wall". A dashboard that only lists repositories still requires the user to jump between tabs to perform basic maintenance like syncing with remotes or discarding local experiments.
+**Action:** Transform the Dashboard from a navigation aid into a "Control Center" by adding quick-action buttons (Sync, Discard) to the Portfolio view and surfacing PR counts in the discovery list to drive prioritization.
