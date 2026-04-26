@@ -87,6 +87,62 @@ def clone_repo():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/workspace/setup-issue-fix', methods=['POST'])
+def setup_issue_fix():
+    g = get_github_client()
+    token = session.get('github_token')
+    if not g or not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    repo_full_name = data.get('repo_full_name')
+    issue_number = data.get('issue_number')
+
+    if not repo_full_name or not issue_number:
+        return jsonify({"error": "repo_full_name and issue_number are required"}), 400
+
+    repo_name = repo_full_name.split('/')[-1]
+    workspace_dir = get_workspace_dir(repo_name)
+
+    try:
+        if not os.path.exists(os.path.join(workspace_dir, '.git')):
+            # Clone if not exists
+            auth_url = f"https://{token}@github.com/{repo_full_name}.git"
+            repo = git.Repo.clone_from(auth_url, workspace_dir)
+        else:
+            repo = git.Repo(workspace_dir)
+
+        # Update origin remote URL with token if needed
+        origin = repo.remote('origin')
+        if 'github.com' in origin.url:
+            clean_url = re.sub(r'https://.*@github\.com/', 'https://github.com/', origin.url)
+            auth_url = clean_url.replace('https://github.com/', f'https://{token}@github.com/')
+            if auth_url != origin.url:
+                origin.set_url(auth_url)
+
+        origin.fetch()
+        gh_repo = g.get_repo(repo_full_name)
+        default_branch = gh_repo.default_branch
+        fix_branch = f"fix/issue-{issue_number}"
+
+        try:
+            # Check if branch exists locally
+            repo.git.checkout(fix_branch)
+            msg = f"Switched to existing fix branch '{fix_branch}'"
+        except git.GitCommandError:
+            # Create from default branch
+            repo.git.checkout('-B', fix_branch, f"origin/{default_branch}")
+            msg = f"Created and checked out fix branch '{fix_branch}' from {default_branch}"
+
+        session['active_repo'] = repo_name
+        return jsonify({
+            "message": msg,
+            "branch": fix_branch,
+            "path": workspace_dir
+        }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/download', methods=['POST'])
 def download_repo():
     g = get_github_client()
