@@ -21,3 +21,7 @@
 ## 2026-05-24 - [Expansion: Repository Discovery & Dashboard]
 **Learning:** The "Manual Entry Wall" was a major friction point where users were treated like command-line operators. Pivoting to a Dashboard-First UX by fetching the user's GitHub portfolio and scanning active workspaces turns the app into a "Control Center". Reusing 90% of existing auth and Git logic unlocked a "Platform-like" feel with minimal code delta.
 **Action:** Always prioritize "Discovery over Manual Entry" to reduce friction and increase stickiness.
+
+## 2026-06-15 - [Expansion: Issue Management & Triage]
+**Learning:** Expanding from code-centric operations (PRs, Workspaces) into task-centric operations (Issues) completes the project lifecycle within the application. The leverage was high because it reused the existing auth and repository context while providing a high-frequency "triage" use case that increases daily active value.
+**Action:** Look for "upstream" (Issues) or "downstream" (Deployments, Actions) adjacencies to bridge lifecycle gaps in the user journey.

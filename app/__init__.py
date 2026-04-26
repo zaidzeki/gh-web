@@ -23,11 +23,13 @@ def create_app(test_config=None):
     from .auth import routes as auth_routes
     from .repos import routes as repos_routes
     from .prs import routes as prs_routes
+    from .issues import routes as issues_routes
     from .workspace import routes as workspace_routes
 
     app.register_blueprint(auth_routes.bp)
     app.register_blueprint(repos_routes.bp)
     app.register_blueprint(prs_routes.bp)
+    app.register_blueprint(issues_routes.bp)
     app.register_blueprint(workspace_routes.bp)
 
     @app.route('/')
