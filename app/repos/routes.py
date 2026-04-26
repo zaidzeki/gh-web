@@ -86,6 +86,9 @@ def create_repo():
     if not name:
         return jsonify({"error": "Repository name is required"}), 400
 
+    if not secure_filename(name):
+        return jsonify({"error": "Invalid repository name"}), 400
+
     template_name = data.get('template_name')
     context = data.get('context', {})
     if isinstance(context, str):
@@ -97,6 +100,8 @@ def create_repo():
 
     if template_name:
         template_name = secure_filename(template_name)
+        if not template_name:
+            return jsonify({"error": "Invalid template name"}), 400
 
     try:
         user = g.get_user()

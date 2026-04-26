@@ -26,9 +26,13 @@ def get_github_client():
 
 def get_workspace_dir(repo_name):
     session_id = secure_filename(session.get('session_id', 'default'))
+    if not session_id:
+        session_id = 'default'
     workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
     # Sanitize repo_name to prevent path traversal via malicious repository names
     safe_repo_name = secure_filename(repo_name)
+    if not safe_repo_name:
+        raise ValueError("Invalid repository name")
     repo_workspace = os.path.join(workspace_root, safe_repo_name)
     os.makedirs(repo_workspace, exist_ok=True)
     return repo_workspace
@@ -204,6 +208,8 @@ def apply_patch():
         return jsonify({"error": "No selected file"}), 400
 
     filename = secure_filename(patch_file.filename)
+    if not filename:
+        return jsonify({"error": "Invalid patch filename"}), 400
     patch_path = os.path.join(workspace_dir, filename)
     patch_file.save(patch_path)
 
@@ -239,6 +245,8 @@ def upload_file():
         return jsonify({"error": "No selected file"}), 400
 
     filename = secure_filename(file.filename)
+    if not filename:
+        return jsonify({"error": "Invalid filename"}), 400
     full_target_dir = os.path.join(workspace_dir, target_path)
     if not is_safe_path(workspace_dir, full_target_dir):
         return jsonify({"error": "Invalid target path"}), 400
@@ -267,6 +275,8 @@ def upload_archive():
         return jsonify({"error": "No selected archive"}), 400
 
     filename = secure_filename(archive.filename)
+    if not filename:
+        return jsonify({"error": "Invalid archive filename"}), 400
     full_target_dir = os.path.join(workspace_dir, target_cwd)
     if not is_safe_path(workspace_dir, full_target_dir):
         return jsonify({"error": "Invalid target CWD"}), 400
@@ -347,6 +357,8 @@ def save_template():
         return jsonify({"error": "template_name is required"}), 400
 
     template_name = secure_filename(template_name)
+    if not template_name:
+        return jsonify({"error": "Invalid template name"}), 400
     workspace_dir = get_workspace_dir(repo_name)
 
     # Use appdata/.zekiprod/templates as persistent storage
@@ -379,6 +391,8 @@ def list_templates():
 @bp.route('/api/workspace/templates/<template_name>/manifest', methods=['GET'])
 def get_manifest(template_name):
     template_name = secure_filename(template_name)
+    if not template_name:
+        return jsonify({"error": "Invalid template name"}), 400
     templates_root = os.path.expanduser('~/.zekiprod/templates')
     template_path = os.path.join(templates_root, template_name)
 
@@ -394,6 +408,8 @@ def get_manifest(template_name):
 @bp.route('/api/workspace/templates/<template_name>', methods=['DELETE'])
 def delete_template(template_name):
     template_name = secure_filename(template_name)
+    if not template_name:
+        return jsonify({"error": "Invalid template name"}), 400
     templates_root = os.path.expanduser('~/.zekiprod/templates')
     template_path = os.path.join(templates_root, template_name)
 
@@ -543,6 +559,8 @@ def apply_template():
         return jsonify({"error": "template_name is required"}), 400
 
     template_name = secure_filename(template_name)
+    if not template_name:
+        return jsonify({"error": "Invalid template name"}), 400
     workspace_dir = get_workspace_dir(repo_name)
     templates_root = os.path.expanduser('~/.zekiprod/templates')
     template_path = os.path.join(templates_root, template_name)
@@ -574,6 +592,8 @@ def import_template():
         template_name = repo_url.split('/')[-1].replace('.git', '')
 
     template_name = secure_filename(template_name)
+    if not template_name:
+        return jsonify({"error": "Invalid template name"}), 400
     templates_root = os.path.expanduser('~/.zekiprod/templates')
     template_path = os.path.join(templates_root, template_name)
 
@@ -610,6 +630,8 @@ def activate_workspace():
 @bp.route('/api/workspace/portfolio', methods=['GET'])
 def workspace_portfolio():
     session_id = secure_filename(session.get('session_id', 'default'))
+    if not session_id:
+        session_id = 'default'
     workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
 
     if not os.path.exists(workspace_root):
