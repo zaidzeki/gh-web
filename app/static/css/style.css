@@ -4,12 +4,6 @@
 .tab-content {
     background: #fff;
 }
-#alertContainer {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1050;
-}
 
 /* UX: Keyboard Accessibility Focus Indicators */
 [role="button"]:focus-visible,

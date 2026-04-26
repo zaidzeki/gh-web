@@ -135,6 +135,11 @@ def setup_issue_fix():
             msg = f"Created and checked out fix branch '{fix_branch}' from {default_branch}"
 
         session['active_repo'] = repo_name
+        # Store active issue linkage in session
+        if 'active_issues' not in session:
+            session['active_issues'] = {}
+        session['active_issues'][repo_name] = issue_number
+
         return jsonify({
             "message": msg,
             "branch": fix_branch,
@@ -686,12 +691,16 @@ def workspace_status():
                         except Exception:
                             pass
 
+        # Check for active issue linkage
+        active_issue = session.get('active_issues', {}).get(repo_name)
+
         return jsonify({
             "is_git": True,
             "branch": repo.active_branch.name,
             "is_dirty": repo.is_dirty(),
             "untracked": len(repo.untracked_files) > 0,
-            "can_push": can_push
+            "can_push": can_push,
+            "active_issue": active_issue
         }), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

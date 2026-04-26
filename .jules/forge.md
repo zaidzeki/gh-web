@@ -11,3 +11,7 @@
 ## 2026-04-22 - Dynamic Remote Management for PR Collaboration
 **Learning:** Enabling "Collaborative Mode" for forked PRs requires mapping local review branches to their upstream tracking remotes dynamically. Hardcoding 'origin' for pushes is a collaboration dead-end.
 **Action:** Utilize `repo.active_branch.tracking_branch().remote_name` in GitPython to identify the correct push target, and always re-inject the session-based PAT into the target remote's URL before pushing to ensure authenticated write access without persistent credential storage.
+
+## 2026-04-26 - Mocking Filesystem Utilities in Flask Routes
+**Learning:** When testing Flask routes that perform directory creation (e.g., `os.makedirs`), patching the global `os.path.exists` can cause unexpected `FileNotFoundError` if internal library calls or the test runner itself rely on that function.
+**Action:** Always patch `os.path.exists` and `os.makedirs` locally within the specific module under test (e.g., `app.workspace.routes.os.path.exists`) to isolate the mock and prevent environment-related side effects.

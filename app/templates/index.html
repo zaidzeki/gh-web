@@ -25,7 +25,7 @@
     </nav>
 
     <div class="container mt-4">
-        <div id="alertContainer"></div>
+        <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 1100"></div>
 
         <ul class="nav nav-tabs" id="mainTabs" role="tablist">
             <li class="nav-item">
@@ -271,6 +271,7 @@
                     <div class="d-flex align-items-center">
                         <h4 class="mb-0 me-3">Workspace Explorer</h4>
                         <span id="branchBadge" class="badge bg-secondary me-2" title="Current Branch"></span>
+                        <span id="issueBadge" class="badge bg-dark me-2" title="Active Issue" style="display:none;"></span>
                         <span id="statusBadge" class="badge me-2" title="Workspace Status"></span>
                         <span id="collabBadge" class="badge" title="Collaborative Mode" style="display:none;"></span>
                     </div>
