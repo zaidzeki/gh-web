@@ -7,16 +7,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const showAlert = (message, type = 'success') => {
-        const container = document.getElementById('alertContainer');
-        const alert = document.createElement('div');
-        alert.className = `alert alert-${type} alert-dismissible fade show`;
-        alert.setAttribute('role', type === 'danger' ? 'alert' : 'status');
-        alert.innerHTML = `
-            ${escapeHTML(message)}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'danger' ? 'danger' : (type === 'info' ? 'info' : (type === 'warning' ? 'warning' : 'success'))} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${escapeHTML(message)}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
         `;
-        container.appendChild(alert);
-        setTimeout(() => alert.remove(), 5000);
+
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
     };
 
     const toggleLoading = (button, isLoading) => {
@@ -656,6 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshStatus = async () => {
         const branchBadge = document.getElementById('branchBadge');
+        const issueBadge = document.getElementById('issueBadge');
         const statusBadge = document.getElementById('statusBadge');
         const collabBadge = document.getElementById('collabBadge');
         if (!branchBadge || !statusBadge) return;
@@ -666,6 +682,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok && data.is_git) {
                 branchBadge.textContent = data.branch;
                 branchBadge.style.display = 'inline-block';
+
+                if (data.active_issue) {
+                    issueBadge.textContent = `Issue #${data.active_issue}`;
+                    issueBadge.style.display = 'inline-block';
+                    const commitInput = document.getElementById('commitMessage');
+                    if (commitInput && !commitInput.value) {
+                        commitInput.value = `Closes #${data.active_issue}`;
+                    }
+                } else {
+                    issueBadge.style.display = 'none';
+                }
                 if (data.is_dirty || data.untracked) {
                     statusBadge.textContent = 'Modified';
                     statusBadge.className = 'badge bg-warning text-dark';

@@ -52,7 +52,7 @@
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
-- [ ] Add toast notifications for API responses.
+- [x] Add toast notifications for API responses.
 
 ## P3: Polish
 - [ ] Sphinx documentation.

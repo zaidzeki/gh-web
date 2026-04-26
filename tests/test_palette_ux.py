@@ -46,16 +46,16 @@ def test_explorer_accessibility(page: Page, server):
     refresh_btn.click()
     # If it's too fast, we might not see it, but we can check if it exists in the DOM at some point or if the button was disabled.
 
-    # Verify Alert accessibility
-    # We can trigger an alert by trying to list PRs with an invalid repo name
+    # Verify Toast accessibility
+    # We can trigger a toast by trying to list PRs with an invalid repo name
     page.click("#prs-tab")
     page.fill("#repoFullName", "invalid/repo")
     page.click("#listPrsBtn")
 
-    alert = page.locator(".alert-danger")
-    expect(alert).to_be_visible()
-    expect(alert).to_have_attribute("role", "alert")
-    expect(alert.locator(".btn-close")).to_have_attribute("aria-label", "Close")
+    toast = page.locator(".toast.bg-danger")
+    expect(toast).to_be_visible()
+    expect(toast).to_have_attribute("role", "alert")
+    expect(toast.locator(".btn-close")).to_have_attribute("aria-label", "Close")
 
 def test_new_aria_labels(page: Page, server):
     page.goto(server)

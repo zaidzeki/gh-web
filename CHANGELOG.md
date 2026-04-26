@@ -18,3 +18,9 @@
 ### Added
 - Enhanced Workspace Git operations: Branch management (create/switch), Status indicators, and Pushing to remote.
 - Frontend status badges for current branch and repository state (Clean/Modified).
+
+## [0.3.0] - 2025-05-26
+### Added
+- Issue Linkage in IDD: Workspaces now track and display the active issue being fixed.
+- Commit Automation: Automatically pre-fills commit messages with "Closes #N" when an issue is linked.
+- Modernized Notifications: Replaced static alerts with Bootstrap Toast notifications for non-blocking feedback.

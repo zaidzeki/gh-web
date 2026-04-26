@@ -69,5 +69,5 @@ def test_dynamic_scaffolding_flow(page: Page, server):
     # Clicking "Apply" in modal
     page.click("#confirmTemplateBtn")
 
-    # Since there's no active repo, it should show an error alert
-    expect(page.locator(".alert-danger")).to_contain_text("No active repository")
+    # Since there's no active repo, it should show an error toast
+    expect(page.locator(".toast.bg-danger")).to_contain_text("No active repository")
