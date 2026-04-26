@@ -22,3 +22,8 @@
 **Vulnerability:** The `render_template_dir` utility rendered relative file paths using user-provided context, allowing an attacker to inject traversal sequences into filename templates.
 **Learning:** Even when the source template files are safe, dynamic rendering of filenames can introduce new traversal vectors if the resulting path is not validated against the target directory.
 **Prevention:** Enforce `is_safe_path` validation on all dynamically generated paths during scaffolding, ensuring they never escape the intended destination root regardless of the rendering context.
+
+## 2025-05-21 - Unintended Root Access via Empty Sanitized Filenames
+**Vulnerability:** Using `secure_filename` on malicious inputs like `..` or `/` returns an empty string. When this empty string is joined to a base directory (e.g., `os.path.join('/base', '')`), it results in the base directory itself being used as the target, potentially allowing operations (like deletion or listing) on the entire root or session directory instead of a specific subdirectory.
+**Learning:** `secure_filename` is not enough to ensure a path is safe if the resulting string is used to define a subdirectory. An empty result must be treated as an invalid/dangerous input.
+**Prevention:** Always validate that the output of `secure_filename` is a non-empty string before using it to construct a path.
