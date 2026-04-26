@@ -45,6 +45,10 @@
     - [x] Implement `render_template_dir` with Jinja2 support.
     - [x] Implement `manifest.json` parsing and API.
     - [x] Implement dynamic form generation in Frontend.
+- [x] **Epic: Issue-Driven Development (IDD)**
+    - [x] Implement `POST /api/workspace/setup-issue-fix` for automated branch creation.
+    - [x] Add "Fix" action to Issues table in UI.
+    - [x] Implement automated tab navigation and workspace refresh after "Fix" click.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

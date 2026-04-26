@@ -437,10 +437,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><a href="${escapeHTML(issue.html_url)}" target="_blank">${escapeHTML(issue.title)}</a></td>
                         <td><small class="text-muted">${escapeHTML(new Date(issue.created_at).toLocaleDateString())}</small></td>
                         <td>
+                            <button class="btn btn-sm btn-outline-primary fix-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Fix issue #${escapeHTML(String(issue.number))}">Fix</button>
                             <button class="btn btn-sm btn-outline-danger close-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Close issue #${escapeHTML(String(issue.number))}">Close</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
+                });
+
+                document.querySelectorAll('.fix-issue-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const num = btn.getAttribute('data-number');
+                        toggleLoading(btn, true);
+                        try {
+                            const resp = await fetch('/api/workspace/setup-issue-fix', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    repo_full_name: repoFull,
+                                    issue_number: num
+                                })
+                            });
+                            const res = await resp.json();
+                            if (resp.ok) {
+                                showAlert(res.message);
+                                // Switch to Workspace tab
+                                const workspaceTab = document.getElementById('workspace-tab');
+                                bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+                                refreshExplorer();
+                            } else {
+                                showAlert(res.error, 'danger');
+                            }
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        } finally {
+                            toggleLoading(btn, false);
+                        }
+                    });
                 });
 
                 document.querySelectorAll('.close-issue-btn').forEach(btn => {
