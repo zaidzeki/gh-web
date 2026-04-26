@@ -161,6 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <small class="text-muted text-truncate d-block" style="max-width: 400px;">${escapeHTML(repo.description || 'No description')}</small>
                 </div>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary issues-action" data-repo="${escapeHTML(repo.full_name)}">Issues</button>
                     <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}">PRs</button>
                     <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}">Clone</button>
                 </div>
@@ -186,10 +187,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        repoList.querySelectorAll('.issues-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const repo = btn.getAttribute('data-repo');
+                document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
+                const issuesTab = document.getElementById('issues-tab');
+                bootstrap.Tab.getOrCreateInstance(issuesTab).show();
+                document.getElementById('listIssuesBtn').click();
+            });
+        });
+
         repoList.querySelectorAll('.pr-action').forEach(btn => {
             btn.addEventListener('click', () => {
                 const repo = btn.getAttribute('data-repo');
-                document.getElementById('repoFullName').value = repo;
+                document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
                 const prTab = document.getElementById('prs-tab');
                 bootstrap.Tab.getOrCreateInstance(prTab).show();
                 document.getElementById('listPrsBtn').click();
@@ -365,6 +376,103 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshTemplates();
     });
     handleForm('createRepoForm', '/api/repos');
+
+    const createIssueForm = document.getElementById('createIssueForm');
+    if (createIssueForm) {
+        createIssueForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = createIssueForm.querySelector('button[type="submit"]');
+            const repoFull = document.getElementById('issuesRepoFullName').value;
+            if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
+
+            toggleLoading(submitBtn, true);
+            const formData = new URLSearchParams(new FormData(createIssueForm));
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/issues`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    document.getElementById('listIssuesBtn').click();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
+    const listIssuesForm = document.getElementById('listIssuesForm');
+    if (listIssuesForm) {
+        listIssuesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const listIssuesBtn = document.getElementById('listIssuesBtn');
+            const repoFull = document.getElementById('issuesRepoFullName').value;
+            if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
+
+            toggleLoading(listIssuesBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/issues`);
+                const issues = await response.json();
+
+                if (!response.ok) {
+                    showAlert(issues.error || 'Failed to fetch Issues', 'danger');
+                    return;
+                }
+
+                const tbody = document.querySelector('#issuesTable tbody');
+                tbody.innerHTML = '';
+                if (issues.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No open issues found.</td></tr>';
+                }
+                issues.forEach(issue => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${escapeHTML(String(issue.number))}</td>
+                        <td><a href="${escapeHTML(issue.html_url)}" target="_blank">${escapeHTML(issue.title)}</a></td>
+                        <td><small class="text-muted">${escapeHTML(new Date(issue.created_at).toLocaleDateString())}</small></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger close-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Close issue #${escapeHTML(String(issue.number))}">Close</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.querySelectorAll('.close-issue-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const num = btn.getAttribute('data-number');
+                        if (!confirm(`Close issue #${num}?`)) return;
+                        toggleLoading(btn, true);
+                        try {
+                            const resp = await fetch(`/api/repos/${repoFull}/issues/${num}/close`, {
+                                method: 'POST'
+                            });
+                            const res = await resp.json();
+                            if (resp.ok) {
+                                showAlert(res.message);
+                                listIssuesBtn.click();
+                            } else {
+                                showAlert(res.error, 'danger');
+                            }
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        } finally {
+                            toggleLoading(btn, false);
+                        }
+                    });
+                });
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(listIssuesBtn, false);
+            }
+        });
+    }
     handleForm('cloneForm', '/api/workspace/clone');
     handleForm('downloadForm', '/api/workspace/download');
     handleForm('uploadFileForm', '/api/workspace/modify/upload', 'POST', true);

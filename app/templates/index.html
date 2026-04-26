@@ -38,6 +38,9 @@
                 <button class="nav-link" id="prs-tab" data-bs-toggle="tab" data-bs-target="#prs" type="button" role="tab" aria-controls="prs" aria-selected="false">Pull Requests</button>
             </li>
             <li class="nav-item">
+                <button class="nav-link" id="issues-tab" data-bs-toggle="tab" data-bs-target="#issues" type="button" role="tab" aria-controls="issues" aria-selected="false">Issues</button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link" id="workspace-tab" data-bs-toggle="tab" data-bs-target="#workspace" type="button" role="tab" aria-controls="workspace" aria-selected="false">Workspace</button>
             </li>
             <li class="nav-item">
@@ -103,12 +106,47 @@
                 </form>
             </div>
 
+            <div class="tab-pane fade" id="issues" role="tabpanel" aria-labelledby="issues-tab">
+                <h3>Issues</h3>
+                <form id="listIssuesForm" class="mb-3">
+                    <label for="issuesRepoFullName" class="form-label">Repository Full Name</label>
+                    <div class="input-group w-50">
+                        <input type="text" id="issuesRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" required>
+                        <button type="submit" id="listIssuesBtn" class="btn btn-secondary">List Issues</button>
+                    </div>
+                </form>
+                <table class="table" id="issuesTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Title</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <hr>
+                <h3>Create Issue</h3>
+                <form id="createIssueForm">
+                    <div class="mb-3">
+                        <label for="issueTitle" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="issueTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="issueBody" class="form-label">Body</label>
+                        <textarea class="form-control" id="issueBody" name="body" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Issue</button>
+                </form>
+            </div>
+
             <div class="tab-pane fade" id="prs" role="tabpanel" aria-labelledby="prs-tab">
                 <h3>Pull Requests</h3>
                 <form id="listPrsForm" class="mb-3">
                     <label for="repoFullName" class="form-label">Repository Full Name</label>
                     <div class="input-group w-50">
-                        <input type="text" id="repoFullName" class="form-control" placeholder="owner/repo" required>
+                        <input type="text" id="repoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" required>
                         <button type="submit" id="listPrsBtn" class="btn btn-secondary">List PRs</button>
                     </div>
                 </form>
