@@ -5,15 +5,9 @@ import tempfile
 from flask import Blueprint, request, session, jsonify
 from github import Github
 from werkzeug.utils import secure_filename
-from ..workspace.utils import render_template_dir
+from ..workspace.utils import render_template_dir, mask_token
 
 bp = Blueprint('repos', __name__)
-
-def mask_token(s):
-    token = session.get('github_token')
-    if token and isinstance(s, str):
-        return s.replace(token, '********')
-    return s
 
 def get_github_client():
     token = session.get('github_token')
