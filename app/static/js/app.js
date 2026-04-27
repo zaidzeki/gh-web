@@ -684,7 +684,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 branchBadge.style.display = 'inline-block';
 
                 if (data.active_issue) {
-                    issueBadge.textContent = `Issue #${data.active_issue}`;
+                    const issueText = data.issue_title ? `Issue #${data.active_issue}: ${data.issue_title}` : `Issue #${data.active_issue}`;
+                    issueBadge.textContent = issueText;
                     issueBadge.style.display = 'inline-block';
                     const commitInput = document.getElementById('commitMessage');
                     if (commitInput && !commitInput.value) {
@@ -1027,6 +1028,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
+    const prTabBtn = document.getElementById('prs-tab');
+    if (prTabBtn) {
+        prTabBtn.addEventListener('shown.bs.tab', async () => {
+            try {
+                const response = await fetch('/api/workspace/status');
+                const data = await response.json();
+                if (response.ok && data.active_issue) {
+                    const titleInput = document.getElementById('prTitle');
+                    const headInput = document.getElementById('prHead');
+                    const baseInput = document.getElementById('prBase');
+                    const bodyInput = document.getElementById('prBody');
+
+                    if (titleInput && !titleInput.value && data.issue_title) {
+                        titleInput.value = `Fix: ${data.issue_title}`;
+                    }
+                    if (headInput && !headInput.value) {
+                        headInput.value = data.branch;
+                    }
+                    if (baseInput && !baseInput.value && data.default_branch) {
+                        baseInput.value = data.default_branch;
+                    }
+                    if (bodyInput && !bodyInput.value) {
+                        bodyInput.value = `Closes #${data.active_issue}`;
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to pre-fill PR form:', error);
             }
         });
     }

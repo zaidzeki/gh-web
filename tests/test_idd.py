@@ -27,6 +27,9 @@ def test_setup_issue_fix(mock_repo_class, mock_clone, mock_github, client):
     # Mock Github repo for default branch
     mock_gh_repo = MagicMock()
     mock_gh_repo.default_branch = 'main'
+    mock_issue = MagicMock()
+    mock_issue.title = 'Test Issue'
+    mock_gh_repo.get_issue.return_value = mock_issue
     mock_github.return_value.get_repo.return_value = mock_gh_repo
 
     # Mock git Repo instance
@@ -73,6 +76,9 @@ def test_setup_issue_fix_existing_branch(mock_exists, mock_repo_class, mock_gith
     # Mock Github repo
     mock_gh_repo = MagicMock()
     mock_gh_repo.default_branch = 'main'
+    mock_issue = MagicMock()
+    mock_issue.title = 'Test Issue'
+    mock_gh_repo.get_issue.return_value = mock_issue
     mock_github.return_value.get_repo.return_value = mock_gh_repo
 
     # Mock exists for .git

@@ -15,3 +15,7 @@
 ## 2026-04-26 - Mocking Filesystem Utilities in Flask Routes
 **Learning:** When testing Flask routes that perform directory creation (e.g., `os.makedirs`), patching the global `os.path.exists` can cause unexpected `FileNotFoundError` if internal library calls or the test runner itself rely on that function.
 **Action:** Always patch `os.path.exists` and `os.makedirs` locally within the specific module under test (e.g., `app.workspace.routes.os.path.exists`) to isolate the mock and prevent environment-related side effects.
+
+## 2026-04-27 - Flask Session Serialization and Mocking
+**Learning:** Storing complex objects (or mocks of them) in the Flask session can trigger `TypeError: Object of type MagicMock is not JSON serializable` during the response finalization phase when `itsdangerous` attempts to sign and dump the session.
+**Action:** Always extract and store primitive values (strings, integers, dictionaries of primitives) from external API objects before putting them into the Flask session, especially in logic triggered by automated workflows like IDD. Ensure test mocks also provide these primitives to avoid breaking session serialization in unit tests.
