@@ -8,15 +8,9 @@ from flask import Blueprint, request, session, jsonify, current_app
 from github import Github
 import git
 from werkzeug.utils import secure_filename
-from .utils import get_template_manifest, render_template_dir, is_safe_path
+from .utils import get_template_manifest, render_template_dir, is_safe_path, mask_token
 
 bp = Blueprint('workspace', __name__)
-
-def mask_token(s):
-    token = session.get('github_token')
-    if token and isinstance(s, str):
-        return s.replace(token, '********')
-    return s
 
 def get_github_client():
     token = session.get('github_token')
@@ -37,24 +31,6 @@ def get_workspace_dir(repo_name):
     os.makedirs(repo_workspace, exist_ok=True)
     return repo_workspace
 
-def is_safe_path(basedir, path, follow_symlinks=True):
-    basedir = os.path.realpath(basedir)
-    if follow_symlinks:
-        matchpath = os.path.realpath(path)
-    else:
-        matchpath = os.path.abspath(path)
-
-    if os.path.commonpath([basedir, matchpath]) != basedir:
-        return False
-
-    # Prevent access to .git directory and its contents
-    rel_path = os.path.relpath(matchpath, basedir)
-    parts = rel_path.split(os.sep)
-    if '.git' in parts:
-        return False
-
-    return True
-
 @bp.before_app_request
 def ensure_session_id():
     if 'session_id' not in session:
@@ -71,6 +47,10 @@ def clone_repo():
     repo_url = data.get('repo_url')
     if not repo_url:
         return jsonify({"error": "repo_url is required"}), 400
+
+    # SSRF Protection: Only allow official GitHub URLs
+    if not repo_url.startswith('https://github.com/') and not repo_url.startswith('http://github.com/'):
+        return jsonify({"error": "Invalid repository URL. Only github.com URLs are allowed."}), 400
 
     repo_name = repo_url.split('/')[-1].replace('.git', '')
     workspace_dir = get_workspace_dir(repo_name)

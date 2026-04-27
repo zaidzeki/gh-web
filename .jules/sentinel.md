@@ -27,3 +27,8 @@
 **Vulnerability:** Using `secure_filename` on malicious inputs like `..` or `/` returns an empty string. When this empty string is joined to a base directory (e.g., `os.path.join('/base', '')`), it results in the base directory itself being used as the target, potentially allowing operations (like deletion or listing) on the entire root or session directory instead of a specific subdirectory.
 **Learning:** `secure_filename` is not enough to ensure a path is safe if the resulting string is used to define a subdirectory. An empty result must be treated as an invalid/dangerous input.
 **Prevention:** Always validate that the output of `secure_filename` is a non-empty string before using it to construct a path.
+
+## 2025-05-22 - SSRF via Git Clone and Enhanced Token Masking
+**Vulnerability:** The repository cloning endpoint allowed any `repo_url`, enabling protocol-based SSRF (e.g., `file://`) and access to internal services. Additionally, token masking was inconsistent across modules.
+**Learning:** `git clone` can be used to read local files if protocols like `file://` are not restricted. Centralizing security logic like `mask_token` ensures consistent protection and allows for robust defense-in-depth measures like regex-based pattern matching for tokens.
+**Prevention:** Enforce strict allow-lists for external URLs in cloning operations and centralize secret-masking utilities to ensure they are applied uniformly and robustly (including handling cases outside of request contexts).

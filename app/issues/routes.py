@@ -1,13 +1,8 @@
 from flask import Blueprint, request, session, jsonify
 from github import Github
+from ..workspace.utils import mask_token
 
 bp = Blueprint('issues', __name__)
-
-def mask_token(s):
-    token = session.get('github_token')
-    if token and isinstance(s, str):
-        return s.replace(token, '********')
-    return s
 
 def get_github_client():
     token = session.get('github_token')

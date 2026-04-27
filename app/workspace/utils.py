@@ -1,7 +1,27 @@
 import os
 import json
-import jinja2
+import re
+from flask import session
 from jinja2.sandbox import SandboxedEnvironment
+
+def mask_token(s):
+    if not isinstance(s, str):
+        return s
+
+    # Mask specific session token if it exists
+    try:
+        token = session.get('github_token')
+        if token:
+            s = s.replace(token, '********')
+    except RuntimeError:
+        # Outside request context, continue with regex masking
+        pass
+
+    # Mask other common GitHub token patterns as defense-in-depth
+    # Patterns: ghp_..., github_pat_..., etc.
+    s = re.sub(r'ghp_[a-zA-Z0-9]{36}', '********', s)
+    s = re.sub(r'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}', '********', s)
+    return s
 
 def is_safe_path(basedir, path, follow_symlinks=True):
     basedir = os.path.realpath(basedir)
