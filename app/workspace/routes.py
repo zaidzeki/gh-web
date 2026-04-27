@@ -126,6 +126,8 @@ def setup_issue_fix():
 
         origin.fetch()
         gh_repo = g.get_repo(repo_full_name)
+        issue = gh_repo.get_issue(int(issue_number))
+        issue_title = issue.title
         default_branch = gh_repo.default_branch
         fix_branch = f"fix/issue-{issue_number}"
 
@@ -142,7 +144,11 @@ def setup_issue_fix():
         # Store active issue linkage in session
         if 'active_issues' not in session:
             session['active_issues'] = {}
-        session['active_issues'][repo_name] = issue_number
+        session['active_issues'][repo_name] = {
+            "number": issue_number,
+            "title": issue_title,
+            "default_branch": default_branch
+        }
 
         return jsonify({
             "message": msg,
@@ -714,7 +720,17 @@ def workspace_status():
                             pass
 
         # Check for active issue linkage
-        active_issue = session.get('active_issues', {}).get(repo_name)
+        active_issue_data = session.get('active_issues', {}).get(repo_name)
+        active_issue = None
+        issue_title = None
+        default_branch = None
+
+        if isinstance(active_issue_data, dict):
+            active_issue = active_issue_data.get('number')
+            issue_title = active_issue_data.get('title')
+            default_branch = active_issue_data.get('default_branch')
+        else:
+            active_issue = active_issue_data
 
         return jsonify({
             "is_git": True,
@@ -722,7 +738,9 @@ def workspace_status():
             "is_dirty": repo.is_dirty(),
             "untracked": len(repo.untracked_files) > 0,
             "can_push": can_push,
-            "active_issue": active_issue
+            "active_issue": active_issue,
+            "issue_title": issue_title,
+            "default_branch": default_branch
         }), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
