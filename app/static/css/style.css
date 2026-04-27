@@ -23,3 +23,10 @@ h6[role="button"] {
     padding: 2px 4px;
     margin: -2px -4px;
 }
+
+/* UX: Visual Indicator for Required Fields */
+.required-label::after {
+    content: " *";
+    color: #dc3545; /* Bootstrap danger color */
+    font-weight: bold;
+}

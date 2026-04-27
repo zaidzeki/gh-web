@@ -166,14 +166,15 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
             const prBadge = repo.open_prs_count > 0 ?
                 `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
+            const repoAriaLabel = `Open repository ${escapeHTML(repo.full_name)}${repo.open_prs_count > 0 ? ` (${repo.open_prs_count} open pull requests)` : ''}`;
 
             item.innerHTML = `
                 <div>
-                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="Open repository ${escapeHTML(repo.full_name)}">
+                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="${repoAriaLabel}">
                         ${escapeHTML(repo.full_name)}
                         ${prBadge}
                     </h6>
-                    <small class="text-muted text-truncate d-block" style="max-width: 400px;">${escapeHTML(repo.description || 'No description')}</small>
+                    <small class="text-muted text-truncate d-block" style="max-width: 400px;" title="${escapeHTML(repo.description || 'No description')}">${escapeHTML(repo.description || 'No description')}</small>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-secondary issues-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View issues for ${escapeHTML(repo.full_name)}">Issues</button>
@@ -274,14 +275,14 @@ document.addEventListener('DOMContentLoaded', () => {
             data.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'list-group-item';
-                const statusBadge = (item.is_dirty || item.untracked) ?
-                    '<span class="badge bg-warning text-dark float-end ms-2">Modified</span>' :
-                    '<span class="badge bg-success float-end ms-2">Clean</span>';
+                const isModified = item.is_dirty || item.untracked;
+                const statusText = isModified ? 'Modified' : 'Clean';
+                const statusBadge = `<span class="badge ${isModified ? 'bg-warning text-dark' : 'bg-success'} float-end ms-2">${statusText}</span>`;
 
                 div.innerHTML = `
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div class="text-truncate" style="max-width: 60%;">
-                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}" tabindex="0" role="button" aria-label="Open workspace ${escapeHTML(item.repo_name)}">${escapeHTML(item.repo_name)}</h6>
+                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}" tabindex="0" role="button" aria-label="Open workspace ${escapeHTML(item.repo_name)} (${statusText})">${escapeHTML(item.repo_name)}</h6>
                             <small class="text-muted font-monospace">${escapeHTML(item.branch)}</small>
                         </div>
                         ${statusBadge}
