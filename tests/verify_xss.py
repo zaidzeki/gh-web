@@ -48,8 +48,8 @@ def test_xss_in_alert(server, page: Page):
 
     page.click('#xssForm button[type="submit"]')
 
-    # Wait for the error alert to appear
-    page.wait_for_selector('.alert-danger')
+    # Wait for the error toast to appear
+    page.wait_for_selector('.toast.bg-danger')
 
     # Check if the script executed
     xss_executed = page.evaluate("window.xss_alert_executed || false")

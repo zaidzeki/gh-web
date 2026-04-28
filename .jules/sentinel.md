@@ -32,3 +32,8 @@
 **Vulnerability:** The repository cloning endpoint allowed any `repo_url`, enabling protocol-based SSRF (e.g., `file://`) and access to internal services. Additionally, token masking was inconsistent across modules.
 **Learning:** `git clone` can be used to read local files if protocols like `file://` are not restricted. Centralizing security logic like `mask_token` ensures consistent protection and allows for robust defense-in-depth measures like regex-based pattern matching for tokens.
 **Prevention:** Enforce strict allow-lists for external URLs in cloning operations and centralize secret-masking utilities to ensure they are applied uniformly and robustly (including handling cases outside of request contexts).
+
+## 2025-05-23 - DOM-based XSS via Attribute Injection
+**Vulnerability:** The `escapeHTML` function in `app.js` relied on `div.textContent` to escape strings. While this handles `<` and `>`, it does not escape double or single quotes. This allowed attribute injection (e.g., `onmouseover`) when dynamic data was used inside HTML attributes within `innerHTML` template strings.
+**Learning:** `textContent` is only safe for content between tags, not for content inside attributes. DOM-based XSS can occur even when "escaping" if the escaping doesn't account for the injection context.
+**Prevention:** Always use a robust escaping function that covers ampersands, tags, and BOTH types of quotes when building HTML strings, or preferably use DOM APIs like `setAttribute` and `textContent` directly instead of `innerHTML`.
