@@ -109,6 +109,9 @@ These operations apply to the repository currently active in the server's worksp
 | `GET` | `/api/workspace/diff` | Returns unified diff of uncommitted changes. |
 | `GET` | `/api/workspace/history` | Returns list of recent workspace commits. |
 | `POST` | `/api/workspace/revert` | Discards all uncommitted changes in workspace. |
+| `GET` | `/api/repos/<full_name>/issues/<n>/comments` | Fetches comments for an issue or PR. |
+| `POST` | `/api/repos/<full_name>/issues/<n>/comments` | Posts a new comment. |
+| `POST` | `/api/repos/<full_name>/prs/<n>/reviews` | Submits a formal Pull Request review. |
 
 ## 6. Frontend Structure
 

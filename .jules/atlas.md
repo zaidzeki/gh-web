@@ -21,3 +21,7 @@
 ## 2025-05-28 - [Actionable Dashboard]
 **Learning:** Discovery alone is not enough to break the "Manual Entry Wall". A dashboard that only lists repositories still requires the user to jump between tabs to perform basic maintenance like syncing with remotes or discarding local experiments.
 **Action:** Transform the Dashboard from a navigation aid into a "Control Center" by adding quick-action buttons (Sync, Discard) to the Portfolio view and surfacing PR counts in the discovery list to drive prioritization.
+
+## 2025-05-29 - [The Feedback Loop]
+**Learning:** Development is not just about moving files; it's about making decisions. A tool that helps you code but forces you to leave to discuss that code is only solving half the problem.
+**Action:** Integrate contextual conversations (comments/reviews) directly into the workspace to close the 'Feedback Loop' and keep users focused on collaborative decision-making.
