@@ -58,6 +58,27 @@ def create_pr(full_name):
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/repos/<path:full_name>/prs/<int:pr_number>/reviews', methods=['POST'])
+def submit_review(full_name, pr_number):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    body = data.get('body', '')
+    event = data.get('event')  # APPROVE, REQUEST_CHANGES, COMMENT
+
+    if not event:
+        return jsonify({"error": "Review event is required"}), 400
+
+    try:
+        repo = g.get_repo(full_name)
+        pr = repo.get_pull(pr_number)
+        pr.create_review(body=body, event=event)
+        return jsonify({"message": f"Review {event} submitted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/repos/<path:full_name>/prs/<int:pr_number>/merge', methods=['POST'])
 def merge_pr(full_name, pr_number):
     g = get_github_client()

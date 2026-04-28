@@ -404,6 +404,45 @@
         </div>
     </div>
 
+    <!-- Conversation & Review Modal -->
+    <div class="modal fade" id="conversationModal" tabindex="-1" aria-labelledby="conversationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="conversationModalLabel">Conversation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="conversationThread" class="mb-3" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Comments populated via JS -->
+                    </div>
+                    <hr>
+                    <div id="reviewControls" class="mb-3" style="display:none;">
+                        <h6>Submit Review</h6>
+                        <div class="btn-group w-100 mb-2" role="group" aria-label="Review Action">
+                            <input type="radio" class="btn-check" name="reviewEvent" id="reviewApprove" value="APPROVE" autocomplete="off">
+                            <label class="btn btn-outline-success" for="reviewApprove">Approve</label>
+
+                            <input type="radio" class="btn-check" name="reviewEvent" id="reviewComment" value="COMMENT" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="reviewComment">Comment</label>
+
+                            <input type="radio" class="btn-check" name="reviewEvent" id="reviewRequestChanges" value="REQUEST_CHANGES" autocomplete="off">
+                            <label class="btn btn-outline-danger" for="reviewRequestChanges">Request Changes</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="commentBody" class="form-label" id="commentLabel">Post a reply</label>
+                        <textarea class="form-control" id="commentBody" rows="3" placeholder="Leave a comment..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="submitCommentBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Template Parameters Modal -->
     <div class="modal fade" id="templateParamsModal" tabindex="-1" aria-labelledby="templateParamsModalLabel" aria-hidden="true">
         <div class="modal-dialog">

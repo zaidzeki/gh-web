@@ -423,6 +423,98 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const openConversation = async (repoFull, number, type = 'issue') => {
+        const thread = document.getElementById('conversationThread');
+        const modalLabel = document.getElementById('conversationModalLabel');
+        const reviewControls = document.getElementById('reviewControls');
+        const submitBtn = document.getElementById('submitCommentBtn');
+        const commentBody = document.getElementById('commentBody');
+
+        modalLabel.textContent = `${type === 'pr' ? 'Pull Request' : 'Issue'} #${number} Conversation`;
+        thread.innerHTML = '<div class="text-center p-4"><span class="spinner-border" role="status"></span></div>';
+        reviewControls.style.display = type === 'pr' ? 'block' : 'none';
+        commentBody.value = '';
+
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('conversationModal'));
+        modal.show();
+
+        const loadComments = async () => {
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/issues/${number}/comments`);
+                const comments = await response.json();
+                if (response.ok) {
+                    thread.innerHTML = '';
+                    if (comments.length === 0) {
+                        thread.innerHTML = '<p class="text-muted text-center p-3">No comments yet.</p>';
+                    }
+                    comments.forEach(c => {
+                        const div = document.createElement('div');
+                        div.className = 'card mb-2 shadow-sm';
+                        div.innerHTML = `
+                            <div class="card-header d-flex align-items-center py-1 bg-light">
+                                <img src="${escapeHTML(c.avatar_url)}" class="rounded-circle me-2" width="20" height="20" alt="${escapeHTML(c.user)}">
+                                <strong class="small">${escapeHTML(c.user)}</strong>
+                                <small class="text-muted ms-auto">${escapeHTML(new Date(c.created_at).toLocaleString())}</small>
+                            </div>
+                            <div class="card-body py-2">
+                                <p class="card-text small mb-0" style="white-space: pre-wrap;">${escapeHTML(c.body)}</p>
+                            </div>
+                        `;
+                        thread.appendChild(div);
+                    });
+                    thread.scrollTop = thread.scrollHeight;
+                } else {
+                    thread.innerHTML = `<p class="text-danger p-3">${escapeHTML(comments.error)}</p>`;
+                }
+            } catch (error) {
+                thread.innerHTML = `<p class="text-danger p-3">${escapeHTML(error.message)}</p>`;
+            }
+        };
+
+        await loadComments();
+
+        // Clear and re-attach listener
+        const newSubmitBtn = submitBtn.cloneNode(true);
+        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
+
+        newSubmitBtn.addEventListener('click', async () => {
+            const body = commentBody.value.trim();
+            if (!body) return;
+
+            toggleLoading(newSubmitBtn, true);
+            try {
+                let response;
+                if (type === 'pr') {
+                    const event = document.querySelector('input[name="reviewEvent"]:checked').value;
+                    response = await fetch(`/api/repos/${repoFull}/prs/${number}/reviews`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ body, event })
+                    });
+                } else {
+                    response = await fetch(`/api/repos/${repoFull}/issues/${number}/comments`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ body })
+                    });
+                }
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    commentBody.value = '';
+                    await loadComments();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(newSubmitBtn, false);
+            }
+        });
+    };
+
     const listIssuesForm = document.getElementById('listIssuesForm');
     if (listIssuesForm) {
         listIssuesForm.addEventListener('submit', async (e) => {
@@ -453,11 +545,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td><a href="${escapeHTML(issue.html_url)}" target="_blank">${escapeHTML(issue.title)}</a></td>
                         <td><small class="text-muted">${escapeHTML(new Date(issue.created_at).toLocaleDateString())}</small></td>
                         <td>
+                            <button class="btn btn-sm btn-outline-info comments-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="View comments for issue #${escapeHTML(String(issue.number))}">Comments</button>
                             <button class="btn btn-sm btn-outline-primary fix-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Fix issue #${escapeHTML(String(issue.number))}">Fix</button>
                             <button class="btn btn-sm btn-outline-danger close-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Close issue #${escapeHTML(String(issue.number))}">Close</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
+                });
+
+                document.querySelectorAll('.comments-issue-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openConversation(repoFull, btn.getAttribute('data-number'), 'issue');
+                    });
                 });
 
                 document.querySelectorAll('.fix-issue-btn').forEach(btn => {
@@ -1167,11 +1266,17 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${collabBadge}
                         </td>
                         <td>
+                            <button class="btn btn-sm btn-outline-info comments-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="View comments for PR #${escapeHTML(String(pr.number))}">Comments</button>
                             <button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>
                             <button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
+                });
+                document.querySelectorAll('.comments-pr-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openConversation(repoFull, btn.getAttribute('data-number'), 'pr');
+                    });
                 });
                 document.querySelectorAll('.merge-btn').forEach(btn => {
                     btn.addEventListener('click', async () => {
