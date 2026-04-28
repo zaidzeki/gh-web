@@ -19,3 +19,7 @@
 ## 2025-05-18 - [Visual Cues for Required Fields and Accessibility Parity]
 **Learning:** Visual indicators like red asterisks are essential for form usability, but they must be paired with the `required` attribute for screen reader support. Furthermore, dashboard badges (like "Modified" or "3 PRs") are often invisible to assistive technologies if they aren't part of the primary element's `aria-label`. Including this dynamic state in the `aria-label` of the interactive list item provides immediate context to all users.
 **Action:** Use a CSS-based `.required-label` for consistent visual cues across forms and ensure all dynamic visual badges are reflected in the `aria-label` of their parent interactive controls.
+
+## 2026-04-28 - [Guided Input for Conventional Commits]
+**Learning:** Providing real-time character counters with visual threshold feedback (e.g., turning red at 50 chars) significantly improves user compliance with Git subject line conventions without being restrictive.
+**Action:** Use the dynamic character counter pattern for inputs where length conventions matter (like commit subjects or PR titles) and ensure the counter is initialized during programmatic pre-fills.

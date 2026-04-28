@@ -774,6 +774,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const updateCommitCounter = () => {
+        const input = document.getElementById('commitMessage');
+        const counter = document.getElementById('commitCounter');
+        if (!input || !counter) return;
+
+        const length = input.value.length;
+        counter.textContent = `${length}/50`;
+        if (length > 50) {
+            counter.classList.remove('text-muted');
+            counter.classList.add('text-danger');
+        } else {
+            counter.classList.remove('text-danger');
+            counter.classList.add('text-muted');
+        }
+    };
+
     const refreshStatus = async () => {
         const branchBadge = document.getElementById('branchBadge');
         const issueBadge = document.getElementById('issueBadge');
@@ -795,6 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const commitInput = document.getElementById('commitMessage');
                     if (commitInput && !commitInput.value) {
                         commitInput.value = `Closes #${data.active_issue}`;
+                        updateCommitCounter();
                     }
 
                     const conversationBtn = document.getElementById('workspaceConversationBtn');
@@ -1065,7 +1082,19 @@ document.addEventListener('DOMContentLoaded', () => {
     handleForm('uploadFileForm', '/api/workspace/modify/upload', 'POST', true, refreshExplorer);
     handleForm('uploadArchiveForm', '/api/workspace/modify/archive', 'POST', true, refreshExplorer);
     handleForm('applyPatchForm', '/api/workspace/modify/patch', 'POST', true, refreshExplorer);
-    handleForm('commitForm', '/api/workspace/commit', 'POST', false, refreshExplorer);
+    handleForm('commitForm', '/api/workspace/commit', 'POST', false, (res) => {
+        refreshExplorer();
+        const commitInput = document.getElementById('commitMessage');
+        if (commitInput) {
+            commitInput.value = '';
+            updateCommitCounter();
+        }
+    });
+
+    const commitInput = document.getElementById('commitMessage');
+    if (commitInput) {
+        commitInput.addEventListener('input', updateCommitCounter);
+    }
     handleForm('branchForm', '/api/workspace/branch', 'POST', false, refreshExplorer);
 
     const pushBtn = document.getElementById('pushBtn');

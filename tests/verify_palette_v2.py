@@ -67,7 +67,7 @@ def test_dashboard_keyboard_accessibility(page: Page, server):
     # Check accessibility attributes
     expect(repo_item).to_have_attribute("tabindex", "0")
     expect(repo_item).to_have_attribute("role", "button")
-    expect(repo_item).to_have_attribute("aria-label", "Open repository test/repo1")
+    expect(repo_item).to_have_attribute("aria-label", re.compile(r"Open repository test/repo1"))
 
     # Check focus indicator
     repo_item.focus()
@@ -129,7 +129,7 @@ def test_workspace_keyboard_accessibility(page: Page, server):
     # Check accessibility attributes
     expect(workspace_item).to_have_attribute("tabindex", "0")
     expect(workspace_item).to_have_attribute("role", "button")
-    expect(workspace_item).to_have_attribute("aria-label", "Open workspace test/repo1")
+    expect(workspace_item).to_have_attribute("aria-label", re.compile(r"Open workspace test/repo1"))
 
     # Check icon-only buttons
     sync_btn = page.locator(".sync-workspace-btn[data-repo-name='test/repo1']")
