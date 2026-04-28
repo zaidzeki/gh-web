@@ -83,3 +83,33 @@ def test_commit_changes(mock_repo_class, client):
     assert "committed successfully" in response.get_json()['message']
     mock_repo.git.add.assert_called_with(all=True)
     mock_repo.index.commit.assert_called_with('feat: test')
+
+@patch('git.Repo')
+def test_workspace_status_pr_context(mock_repo_class, client):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake_token'
+        sess['session_id'] = 'test_session'
+        sess['active_repo'] = 'testrepo'
+        sess['active_issues'] = {
+            'testrepo': {
+                'number': 123,
+                'title': 'Test PR',
+                'default_branch': 'main',
+                'repo_full_name': 'owner/repo',
+                'is_pr': True
+            }
+        }
+
+    os.makedirs('/tmp/gh-web-workspaces/test_session/testrepo/.git', exist_ok=True)
+    mock_repo = MagicMock()
+    mock_repo_class.return_value = mock_repo
+    mock_repo.active_branch.name = 'review-pr-123'
+    mock_repo.is_dirty.return_value = False
+    mock_repo.untracked_files = []
+
+    response = client.get('/api/workspace/status')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['active_issue'] == 123
+    assert data['is_pr'] is True
+    assert data['repo_full_name'] == 'owner/repo'

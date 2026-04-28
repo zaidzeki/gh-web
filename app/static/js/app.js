@@ -450,10 +450,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     comments.forEach(c => {
                         const div = document.createElement('div');
                         div.className = 'card mb-2 shadow-sm';
+                        const isReview = c.type === 'review';
+                        const badgeClass = c.state === 'APPROVED' ? 'bg-success' : (c.state === 'CHANGES_REQUESTED' ? 'bg-danger' : 'bg-secondary');
+                        const reviewBadge = isReview ? `<span class="badge ${badgeClass} ms-2 small">${escapeHTML(c.state)}</span>` : '';
+
                         div.innerHTML = `
-                            <div class="card-header d-flex align-items-center py-1 bg-light">
+                            <div class="card-header d-flex align-items-center py-1 ${isReview ? 'bg-light border-info' : 'bg-light'}">
                                 <img src="${escapeHTML(c.avatar_url)}" class="rounded-circle me-2" width="20" height="20" alt="${escapeHTML(c.user)}">
                                 <strong class="small">${escapeHTML(c.user)}</strong>
+                                ${reviewBadge}
                                 <small class="text-muted ms-auto">${escapeHTML(new Date(c.created_at).toLocaleString())}</small>
                             </div>
                             <div class="card-body py-2">
@@ -784,15 +789,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 branchBadge.style.display = 'inline-block';
 
                 if (data.active_issue) {
-                    const issueText = data.issue_title ? `Issue #${data.active_issue}: ${data.issue_title}` : `Issue #${data.active_issue}`;
+                    const issueText = (data.is_pr ? 'PR #' : 'Issue #') + data.active_issue + (data.issue_title ? `: ${data.issue_title}` : '');
                     issueBadge.textContent = issueText;
                     issueBadge.style.display = 'inline-block';
                     const commitInput = document.getElementById('commitMessage');
                     if (commitInput && !commitInput.value) {
                         commitInput.value = `Closes #${data.active_issue}`;
                     }
+
+                    const conversationBtn = document.getElementById('workspaceConversationBtn');
+                    if (conversationBtn) {
+                        conversationBtn.style.display = 'inline-block';
+                        // Refresh listener
+                        const newBtn = conversationBtn.cloneNode(true);
+                        conversationBtn.parentNode.replaceChild(newBtn, conversationBtn);
+                        newBtn.addEventListener('click', () => {
+                            openConversation(data.repo_full_name, data.active_issue, data.is_pr ? 'pr' : 'issue');
+                        });
+                    }
                 } else {
                     issueBadge.style.display = 'none';
+                    const conversationBtn = document.getElementById('workspaceConversationBtn');
+                    if (conversationBtn) conversationBtn.style.display = 'none';
                 }
                 if (data.is_dirty || data.untracked) {
                     statusBadge.textContent = 'Modified';
