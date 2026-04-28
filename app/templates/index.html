@@ -257,8 +257,12 @@
                         <h4>Commit & Push</h4>
                         <form id="commitForm" class="mb-2">
                             <div class="input-group">
-                                <input type="text" class="form-control" id="commitMessage" name="commit_message" placeholder="Commit message" aria-label="Commit message" required>
+                                <input type="text" class="form-control" id="commitMessage" name="commit_message" placeholder="Commit message" aria-label="Commit message" required maxlength="100">
                                 <button type="submit" class="btn btn-success">Commit</button>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Recommended: &lt; 50 chars for subject line.</small>
+                                <small id="commitCounter" class="text-muted">0/50</small>
                             </div>
                         </form>
                         <button id="pushBtn" class="btn btn-outline-primary">Push to Remote</button>
