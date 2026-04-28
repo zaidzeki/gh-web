@@ -996,3 +996,58 @@ def workspace_revert():
         return jsonify({"message": "Workspace changes discarded successfully"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/search', methods=['GET'])
+def workspace_search():
+    repo_name = session.get('active_repo')
+    if not repo_name:
+        return jsonify({"error": "No active repository in workspace"}), 400
+
+    query = request.args.get('q')
+    if not query:
+        return jsonify({"error": "Search query 'q' is required"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+
+    try:
+        # Run ripgrep: -n (line number), -i (ignore case), --max-count 100, --heading (no, we want path per line)
+        # --no-heading, --with-filename are defaults when stdout is not a TTY or multiple files searched.
+        # Use -e to specify the pattern safely and --field-context-separator to be explicit.
+        # We use absolute path for workspace_dir, so rg will return absolute paths.
+        cmd = ['rg', '-n', '-i', '--max-count', '100', '--no-heading', '--with-filename', '-e', query, workspace_dir]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        if result.returncode == 2:
+            return jsonify({"error": mask_token(result.stderr)}), 500
+
+        matches = []
+        for line in result.stdout.splitlines():
+            # Format: path:line:content
+            # To handle Windows paths or colons in filenames, we rely on ripgrep's consistent output
+            # when using absolute paths and --with-filename.
+            # However, since we're in a Linux sandbox, a simple split on the first two colons
+            # is generally safe as long as we handle the relative pathing carefully.
+            # For better robustness, we can rsplit if we know the pattern, but rg output is path:line:text
+
+            # Find the colon after the line number. ripgrep format is filename:line:content
+            # We search for the first digit:colon pattern from the start of the line after the filename
+            match = re.match(r'^(.*):(\d+):(.*)$', line)
+            if match:
+                full_match_path = match.group(1)
+                line_num = match.group(2)
+                content = match.group(3)
+
+                # Security: Ensure path is safe and not inside .git
+                if not is_safe_path(workspace_dir, full_match_path):
+                    continue
+
+                rel_path = os.path.relpath(full_match_path, workspace_dir)
+                matches.append({
+                    "path": rel_path,
+                    "line": line_num,
+                    "content": content.strip()
+                })
+
+        return jsonify(matches), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500

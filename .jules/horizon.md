@@ -25,3 +25,7 @@
 ## 2026-06-15 - [Expansion: Issue Management & Triage]
 **Learning:** Expanding from code-centric operations (PRs, Workspaces) into task-centric operations (Issues) completes the project lifecycle within the application. The leverage was high because it reused the existing auth and repository context while providing a high-frequency "triage" use case that increases daily active value.
 **Action:** Look for "upstream" (Issues) or "downstream" (Deployments, Actions) adjacencies to bridge lifecycle gaps in the user journey.
+
+## 2026-04-27 - [Expansion: Workspace Omni-Search]
+**Learning:** Navigating a hierarchical file tree is a "dead end" for large-scale code discovery. Pivoting to a "Search-First Navigation" model by leveraging native high-performance tools like `ripgrep` turns the workspace into an actionable knowledge base. The leverage was high because it reused the existing Editor and Workspace infrastructure to provide an IDE-like jumping capability.
+**Action:** Always consider how native CLI power-tools (rg, fd, fzf) can be exposed via simple web APIs to multiply the value of existing data models.

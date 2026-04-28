@@ -726,6 +726,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const workspaceSearchForm = document.getElementById('workspaceSearchForm');
+    if (workspaceSearchForm) {
+        workspaceSearchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = workspaceSearchForm.querySelector('input[name="q"]').value;
+            const searchBtn = document.getElementById('workspaceSearchBtn');
+
+            toggleLoading(searchBtn, true);
+            try {
+                const response = await fetch(`/api/workspace/search?q=${encodeURIComponent(query)}`);
+                const results = await response.json();
+
+                if (!response.ok) {
+                    showAlert(results.error || 'Search failed', 'danger');
+                    return;
+                }
+
+                const resultsList = document.getElementById('searchResultsList');
+                resultsList.innerHTML = '';
+
+                if (results.length === 0) {
+                    resultsList.innerHTML = '<p class="text-muted p-3">No matches found.</p>';
+                } else {
+                    results.forEach(match => {
+                        const item = document.createElement('button');
+                        item.type = 'button';
+                        item.className = 'list-group-item list-group-item-action';
+                        item.innerHTML = `
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1 text-primary">${escapeHTML(match.path)}</h6>
+                                <small class="text-muted">Line ${escapeHTML(match.line)}</small>
+                            </div>
+                            <pre class="mb-1 small bg-light p-2 rounded text-truncate"><code>${escapeHTML(match.content)}</code></pre>
+                        `;
+                        item.addEventListener('click', async () => {
+                            try {
+                                const resp = await fetch(`/api/workspace/files/content?path=${encodeURIComponent(match.path)}`);
+                                const contentData = await resp.json();
+                                if (resp.ok) {
+                                    document.getElementById('fileModalLabel').textContent = `Editing: ${match.path}`;
+                                    document.getElementById('fileModalLabel').dataset.path = match.path;
+                                    document.getElementById('fileContentEditor').value = contentData.content;
+                                    bootstrap.Modal.getOrCreateInstance(document.getElementById('searchModal')).hide();
+                                    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('fileModal'));
+                                    modal.show();
+                                } else {
+                                    showAlert(contentData.error, 'danger');
+                                }
+                            } catch (err) {
+                                showAlert(err.message, 'danger');
+                            }
+                        });
+                        resultsList.appendChild(item);
+                    });
+                }
+
+                const searchModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('searchModal'));
+                searchModal.show();
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(searchBtn, false);
+            }
+        });
+    }
+
     const refreshExplorer = async () => {
         const explorer = document.getElementById('workspaceExplorer');
         if (!explorer) return;

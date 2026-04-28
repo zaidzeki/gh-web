@@ -49,6 +49,10 @@
     - [x] Implement `POST /api/workspace/setup-issue-fix` for automated branch creation.
     - [x] Add "Fix" action to Issues table in UI.
     - [x] Implement automated tab navigation and workspace refresh after "Fix" click.
+- [x] **Epic: Workspace Omni-Search**
+    - [x] Implement `GET /api/workspace/search` using `ripgrep`.
+    - [x] Create Omni-Search UI in Workspace tab.
+    - [x] Implement Search Results modal with navigation to Editor.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

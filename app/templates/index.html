@@ -271,6 +271,18 @@
                     <button type="submit" class="btn btn-primary">Save Workspace as Template</button>
                 </form>
                 <hr>
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h4 class="card-title">Omni-Search</h4>
+                        <form id="workspaceSearchForm">
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="q" placeholder="Search code (symbol, text, config)..." aria-label="Search code" required>
+                                <button type="submit" class="btn btn-primary" id="workspaceSearchBtn">Search</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div class="d-flex align-items-center">
                         <h4 class="mb-0 me-3">Workspace Explorer</h4>
@@ -367,6 +379,26 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="saveFileBtn" title="Save Changes (Ctrl+S)">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Results Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">Search Results</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="searchResultsList" class="list-group list-group-flush" style="max-height: 600px; overflow-y: auto;">
+                        <!-- Results populated via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
