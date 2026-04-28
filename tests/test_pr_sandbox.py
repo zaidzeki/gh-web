@@ -28,8 +28,10 @@ def test_stream_pr_to_workspace(mock_repo_class, mock_clone, mock_get_github, cl
     mock_get_github.return_value = mock_gh
     mock_gh_repo = MagicMock()
     mock_gh.get_repo.return_value = mock_gh_repo
+    mock_gh_repo.default_branch = 'main'
     mock_pr = MagicMock()
     mock_gh_repo.get_pull.return_value = mock_pr
+    mock_pr.title = 'PR Title'
     mock_pr.head.repo.full_name = 'owner/repo'
     mock_pr.head.ref = 'feature-branch'
 
@@ -75,8 +77,10 @@ def test_stream_pr_collaborative_mode(mock_repo_class, mock_clone, mock_get_gith
     mock_get_github.return_value = mock_gh
     mock_gh_repo = MagicMock()
     mock_gh.get_repo.return_value = mock_gh_repo
+    mock_gh_repo.default_branch = 'main'
     mock_pr = MagicMock()
     mock_gh_repo.get_pull.return_value = mock_pr
+    mock_pr.title = 'PR Title'
     mock_pr.head.repo.full_name = 'fork-owner/repo'
     mock_pr.head.ref = 'fix-branch'
 
