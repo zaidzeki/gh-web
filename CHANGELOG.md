@@ -24,3 +24,7 @@
 - Issue Linkage in IDD: Workspaces now track and display the active issue being fixed.
 - Commit Automation: Automatically pre-fills commit messages with "Closes #N" when an issue is linked.
 - Modernized Notifications: Replaced static alerts with Bootstrap Toast notifications for non-blocking feedback.
+- **Expansion: Workspace Omni-Search**
+    - High-performance code search using `ripgrep`.
+    - Integrated Search Results modal with one-click navigation to the File Editor.
+    - Context-aware result filtering with security path validation.
