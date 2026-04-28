@@ -127,7 +127,9 @@ def setup_issue_fix():
         session['active_issues'][repo_name] = {
             "number": issue_number,
             "title": issue_title,
-            "default_branch": default_branch
+            "default_branch": default_branch,
+            "repo_full_name": repo_full_name,
+            "is_pr": False
         }
 
         return jsonify({
@@ -704,11 +706,15 @@ def workspace_status():
         active_issue = None
         issue_title = None
         default_branch = None
+        repo_full_name = None
+        is_pr = False
 
         if isinstance(active_issue_data, dict):
             active_issue = active_issue_data.get('number')
             issue_title = active_issue_data.get('title')
             default_branch = active_issue_data.get('default_branch')
+            repo_full_name = active_issue_data.get('repo_full_name')
+            is_pr = active_issue_data.get('is_pr', False)
         else:
             active_issue = active_issue_data
 
@@ -720,7 +726,9 @@ def workspace_status():
             "can_push": can_push,
             "active_issue": active_issue,
             "issue_title": issue_title,
-            "default_branch": default_branch
+            "default_branch": default_branch,
+            "repo_full_name": repo_full_name,
+            "is_pr": is_pr
         }), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
@@ -924,6 +932,17 @@ def stream_pr():
             msg = f"PR #{pr_number} from {repo_full_name} is now active in workspace"
 
         session['active_repo'] = repo_name
+        # Store active PR context in session
+        if 'active_issues' not in session:
+            session['active_issues'] = {}
+        session['active_issues'][repo_name] = {
+            "number": pr_number,
+            "title": pr.title,
+            "default_branch": gh_repo.default_branch,
+            "repo_full_name": repo_full_name,
+            "is_pr": True
+        }
+
         return jsonify({
             "message": msg,
             "branch": local_branch,

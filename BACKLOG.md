@@ -53,12 +53,13 @@
     - [x] Implement `GET /api/workspace/search` using `ripgrep`.
     - [x] Create Omni-Search UI in Workspace tab.
     - [x] Implement Search Results modal with navigation to Editor.
-- [ ] **Epic: Contextual Conversations & Feedback Loop**
-    - [ ] Implement `GET /api/repos/.../issues/<n>/comments` for thread fetching.
-    - [ ] Implement `POST /api/repos/.../issues/<n>/comments` for replying.
-    - [ ] Implement `POST /api/repos/.../prs/<n>/reviews` for formal reviews.
-    - [ ] Create Unified Conversation Modal in Frontend.
-    - [ ] Integrate "Comments" actions into Issues and PR tables.
+- [x] **Epic: Contextual Conversations & Feedback Loop**
+    - [x] Implement `GET /api/repos/.../issues/<n>/comments` for thread fetching.
+    - [x] Implement `POST /api/repos/.../issues/<n>/comments` for replying.
+    - [x] Implement `POST /api/repos/.../prs/<n>/reviews` for formal reviews.
+    - [x] Create Unified Conversation Modal in Frontend.
+    - [x] Integrate "Comments" actions into Issues and PR tables.
+    - [x] Integrate contextual "Conversation" button into Workspace for active tasks.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

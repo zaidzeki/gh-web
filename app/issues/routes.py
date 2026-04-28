@@ -23,11 +23,31 @@ def get_comments(full_name, issue_number):
         results = []
         for comment in comments:
             results.append({
+                "type": "comment",
                 "user": comment.user.login,
                 "avatar_url": comment.user.avatar_url,
                 "body": comment.body,
                 "created_at": comment.created_at.isoformat() if comment.created_at else None
             })
+
+        # If it's a PR, also fetch reviews
+        if issue.pull_request:
+            pr = repo.get_pull(issue_number)
+            reviews = pr.get_reviews()
+            for review in reviews:
+                if review.body or review.state != "COMMENTED":
+                    results.append({
+                        "type": "review",
+                        "user": review.user.login,
+                        "avatar_url": review.user.avatar_url,
+                        "body": review.body or f"Review: {review.state}",
+                        "state": review.state,
+                        "created_at": review.submitted_at.isoformat() if review.submitted_at else None
+                    })
+
+        # Sort by creation date
+        results.sort(key=lambda x: x['created_at'] if x['created_at'] else '')
+
         return jsonify(results), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
