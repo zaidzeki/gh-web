@@ -37,3 +37,8 @@
 **Vulnerability:** The `escapeHTML` function in `app.js` relied on `div.textContent` to escape strings. While this handles `<` and `>`, it does not escape double or single quotes. This allowed attribute injection (e.g., `onmouseover`) when dynamic data was used inside HTML attributes within `innerHTML` template strings.
 **Learning:** `textContent` is only safe for content between tags, not for content inside attributes. DOM-based XSS can occur even when "escaping" if the escaping doesn't account for the injection context.
 **Prevention:** Always use a robust escaping function that covers ampersands, tags, and BOTH types of quotes when building HTML strings, or preferably use DOM APIs like `setAttribute` and `textContent` directly instead of `innerHTML`.
+
+## 2025-05-24 - Case-Insensitive SSRF Protection and Subdomain Support
+**Vulnerability:** Initial SSRF protection using simple string prefix matching was too restrictive (case-sensitive) and failed to support the 'www.' subdomain, while missing the 'import-template' endpoint entirely.
+**Learning:** Security allow-lists must account for common URL variations like subdomains and case sensitivity to avoid breaking legitimate user workflows while still blocking malicious protocols like 'file://'.
+**Prevention:** Use case-insensitive regular expressions for URL validation and ensure all endpoints performing remote operations (like cloning or importing) share the same robust validation logic.
