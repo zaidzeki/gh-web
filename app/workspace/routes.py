@@ -48,8 +48,8 @@ def clone_repo():
     if not repo_url:
         return jsonify({"error": "repo_url is required"}), 400
 
-    # SSRF Protection: Only allow official GitHub URLs
-    if not repo_url.startswith('https://github.com/') and not repo_url.startswith('http://github.com/'):
+    # SSRF Protection: Only allow official GitHub URLs (HTTPS preferred)
+    if not re.match(r'^https?://(www\.)?github\.com/', repo_url, re.IGNORECASE):
         return jsonify({"error": "Invalid repository URL. Only github.com URLs are allowed."}), 400
 
     repo_name = repo_url.split('/')[-1].replace('.git', '')
@@ -575,6 +575,10 @@ def import_template():
 
     if not repo_url:
         return jsonify({"error": "repo_url is required"}), 400
+
+    # SSRF Protection: Only allow official GitHub URLs (HTTPS preferred)
+    if not re.match(r'^https?://(www\.)?github\.com/', repo_url, re.IGNORECASE):
+        return jsonify({"error": "Invalid repository URL. Only github.com URLs are allowed."}), 400
 
     if not template_name:
         template_name = repo_url.split('/')[-1].replace('.git', '')
