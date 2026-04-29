@@ -9,6 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, '&#39;');
     };
 
+    const timeAgo = (date) => {
+        if (!date) return 'never';
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 31536000;
+        if (interval >= 1) return Math.floor(interval) + "y ago";
+        interval = seconds / 2592000;
+        if (interval >= 1) return Math.floor(interval) + "mo ago";
+        interval = seconds / 86400;
+        if (interval >= 1) return Math.floor(interval) + "d ago";
+        interval = seconds / 3600;
+        if (interval >= 1) return Math.floor(interval) + "h ago";
+        interval = seconds / 60;
+        if (interval >= 1) return Math.floor(interval) + "m ago";
+        return Math.floor(Math.max(0, seconds)) + "s ago";
+    };
+
     const showAlert = (message, type = 'success') => {
         const container = document.getElementById('toastContainer');
         if (!container) return;
@@ -182,8 +198,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
             const issueBadge = repo.open_issues_count > 0 ?
                 `<span class="badge bg-secondary ms-2" title="${repo.open_issues_count} open issues">${repo.open_issues_count} Issues</span>` : '';
+            const pushedStr = repo.pushed_at ? timeAgo(repo.pushed_at) : 'never';
 
-            const repoAriaLabel = `Open repository ${escapeHTML(repo.full_name)}. ${repo.open_issues_count} issues, ${repo.open_prs_count} pull requests.`;
+            const repoAriaLabel = `Open repository ${escapeHTML(repo.full_name)}. ${repo.open_issues_count} issues, ${repo.open_prs_count} pull requests. Last pushed ${pushedStr}.`;
 
             item.innerHTML = `
                 <div>
@@ -192,7 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${issueBadge}
                         ${prBadge}
                     </h6>
-                    <small class="text-muted text-truncate d-block" style="max-width: 400px;" title="${escapeHTML(repo.description || 'No description')}">${escapeHTML(repo.description || 'No description')}</small>
+                    <small class="text-muted text-truncate d-block" style="max-width: 400px;" title="${escapeHTML(repo.description || 'No description')}">
+                        <span class="badge bg-light text-dark border me-1">${pushedStr}</span>
+                        ${escapeHTML(repo.description || 'No description')}
+                    </small>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-outline-secondary issues-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View issues for ${escapeHTML(repo.full_name)}">Issues</button>
@@ -578,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div><a href="${escapeHTML(issue.html_url)}" target="_blank" class="fw-bold">${escapeHTML(issue.title)}</a></div>
                             <div class="mt-1">${labelBadges}</div>
                         </td>
-                        <td><small class="text-muted">${escapeHTML(new Date(issue.created_at).toLocaleDateString())}</small></td>
+                        <td><small class="text-muted" title="${escapeHTML(new Date(issue.created_at).toLocaleString())}">${timeAgo(issue.created_at)}</small></td>
                         <td>
                             <div class="d-flex gap-1">
                                 <button class="btn btn-sm btn-outline-info comments-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="View comments for issue #${escapeHTML(String(issue.number))}">Comments</button>

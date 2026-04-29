@@ -23,3 +23,7 @@
 ## 2026-04-28 - [Guided Input for Conventional Commits]
 **Learning:** Providing real-time character counters with visual threshold feedback (e.g., turning red at 50 chars) significantly improves user compliance with Git subject line conventions without being restrictive.
 **Action:** Use the dynamic character counter pattern for inputs where length conventions matter (like commit subjects or PR titles) and ensure the counter is initialized during programmatic pre-fills.
+
+## 2026-04-28 - [Human-Readable Relative Timestamps]
+**Learning:** Replacing static date strings with relative "time ago" formats (e.g., "2d ago") drastically reduces cognitive load for users scanning lists of repositories or issues. However, to maintain precision and accessibility, relative times should always be paired with a `title` attribute containing the full locale-specific timestamp and reflected in the `aria-label` of interactive items to ensure screen reader users have equal context.
+**Action:** Use the `timeAgo` helper for activity-based dates in lists, and always supplement with `title` tooltips and updated ARIA labels.
