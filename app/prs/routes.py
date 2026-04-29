@@ -16,9 +16,11 @@ def list_prs(full_name):
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
+    state = request.args.get('state', 'open')
+
     try:
         repo = g.get_repo(full_name)
-        prs = repo.get_pulls(state='all')
+        prs = repo.get_pulls(state=state)
         return jsonify([{
             "number": pr.number,
             "title": pr.title,
@@ -27,7 +29,8 @@ def list_prs(full_name):
             "user": pr.user.login,
             "head_repo_full_name": pr.head.repo.full_name if pr.head.repo else None,
             "head_branch": pr.head.ref,
-            "can_push": pr.head.repo.permissions.push if pr.head.repo else False
+            "can_push": pr.head.repo.permissions.push if pr.head.repo else False,
+            "labels": [{"name": l.name, "color": l.color} for l in pr.labels]
         } for pr in prs]), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
@@ -97,5 +100,33 @@ def merge_pr(full_name, pr_number):
             return jsonify({"message": "Pull Request merged successfully"}), 200
         else:
             return jsonify({"error": "Failed to merge Pull Request"}), 400
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/prs/<int:pr_number>/close', methods=['POST'])
+def close_pr(full_name, pr_number):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = g.get_repo(full_name)
+        pr = repo.get_pull(pr_number)
+        pr.edit(state='closed')
+        return jsonify({"message": f"Pull Request #{pr_number} closed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/prs/<int:pr_number>/reopen', methods=['POST'])
+def reopen_pr(full_name, pr_number):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = g.get_repo(full_name)
+        pr = repo.get_pull(pr_number)
+        pr.edit(state='open')
+        return jsonify({"message": f"Pull Request #{pr_number} reopened successfully"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

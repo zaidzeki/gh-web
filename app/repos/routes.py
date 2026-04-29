@@ -33,16 +33,19 @@ def list_repos():
             repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
-        # Pre-fetch PR counts using Search API to avoid N+1 problem
-        # Search query: "is:pr is:open user:LOGIN" returns all open PRs in user's repos
+        # Pre-fetch Issue and PR counts using Search API to avoid N+1 problem
         pr_counts = {}
+        issue_counts = {}
         try:
             open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
             for pr in open_prs:
-                # Extract repo full name from pull_request.html_url or repository.full_name
-                # search_issues returns Issue objects (which PRs are a subset of)
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
+
+            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
+            for issue in open_issues:
+                repo_name = issue.repository.full_name
+                issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1
         except Exception:
             # Fallback to 0 if search fails
             pass
@@ -55,7 +58,7 @@ def list_repos():
                 "description": repo.description,
                 "html_url": repo.html_url,
                 "stargazers_count": repo.stargazers_count,
-                "open_issues_count": repo.open_issues_count,
+                "open_issues_count": issue_counts.get(repo.full_name, 0),
                 "open_prs_count": pr_counts.get(repo.full_name, 0),
                 "pushed_at": repo.pushed_at.isoformat() if repo.pushed_at else None,
                 "private": repo.private
