@@ -58,10 +58,12 @@ def list_issues(full_name):
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
+    state = request.args.get('state', 'open')
+
     try:
         repo = g.get_repo(full_name)
         # get_issues returns both issues and PRs by default
-        issues = repo.get_issues(state='open')
+        issues = repo.get_issues(state=state)
         results = []
         for issue in issues:
             # GitHub API returns PRs as issues, but they have a 'pull_request' attribute
@@ -72,7 +74,8 @@ def list_issues(full_name):
                     "state": issue.state,
                     "html_url": issue.html_url,
                     "user": issue.user.login,
-                    "created_at": issue.created_at.isoformat() if issue.created_at else None
+                    "created_at": issue.created_at.isoformat() if issue.created_at else None,
+                    "labels": [{"name": l.name, "color": l.color} for l in issue.labels]
                 })
         return jsonify(results), 200
     except Exception as e:
@@ -137,5 +140,19 @@ def close_issue(full_name, issue_number):
         issue = repo.get_issue(issue_number)
         issue.edit(state='closed')
         return jsonify({"message": f"Issue #{issue_number} closed successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/issues/<int:issue_number>/reopen', methods=['POST'])
+def reopen_issue(full_name, issue_number):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = g.get_repo(full_name)
+        issue = repo.get_issue(issue_number)
+        issue.edit(state='open')
+        return jsonify({"message": f"Issue #{issue_number} reopened successfully"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

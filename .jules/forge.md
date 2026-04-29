@@ -1,21 +1,9 @@
-# Forge's Journal - Critical Learnings Only
+# Forge's Journal - Implementation Learnings
 
-## 2025-05-23 - Initializing Forge Journal
-**Learning:** GH-Web's server-side workspace relies on manual Git operations. While basic commit functionality exists, the lack of branch management and push capabilities prevents a full development loop from the web interface.
-**Action:** Implement branch and push operations to complete the remote-local-remote synchronization cycle.
+## 2025-05-23 - [PyGithub Deprecation]
+**Learning:** `Github(token)` uses the deprecated `login_or_token` argument. Modern `PyGithub` (v2+) prefers `auth=github.Auth.Token(token)`.
+**Action:** Use `github.Auth.Token` when initializing the GitHub client in new routes to future-proof the codebase and avoid deprecation warnings.
 
-## 2026-04-21 - Handling Git Visibility in Empty Repositories
-**Learning:** To retrieve a unified diff of all uncommitted changes (staged and unstaged) in a Git repository without any commits, diffing against 'HEAD' fails. Instead, diff against the Git empty tree hash '4b825dc642cb6eb9a060e54bf8d69288fbee4904'.
-**Action:** Use the empty tree hash for diffs and manual cleanup for reverts in brand-new workspaces to ensure correct behavior before the first commit.
-
-## 2026-04-22 - Dynamic Remote Management for PR Collaboration
-**Learning:** Enabling "Collaborative Mode" for forked PRs requires mapping local review branches to their upstream tracking remotes dynamically. Hardcoding 'origin' for pushes is a collaboration dead-end.
-**Action:** Utilize `repo.active_branch.tracking_branch().remote_name` in GitPython to identify the correct push target, and always re-inject the session-based PAT into the target remote's URL before pushing to ensure authenticated write access without persistent credential storage.
-
-## 2026-04-26 - Mocking Filesystem Utilities in Flask Routes
-**Learning:** When testing Flask routes that perform directory creation (e.g., `os.makedirs`), patching the global `os.path.exists` can cause unexpected `FileNotFoundError` if internal library calls or the test runner itself rely on that function.
-**Action:** Always patch `os.path.exists` and `os.makedirs` locally within the specific module under test (e.g., `app.workspace.routes.os.path.exists`) to isolate the mock and prevent environment-related side effects.
-
-## 2026-04-27 - Flask Session Serialization and Mocking
-**Learning:** Storing complex objects (or mocks of them) in the Flask session can trigger `TypeError: Object of type MagicMock is not JSON serializable` during the response finalization phase when `itsdangerous` attempts to sign and dump the session.
-**Action:** Always extract and store primitive values (strings, integers, dictionaries of primitives) from external API objects before putting them into the Flask session, especially in logic triggered by automated workflows like IDD. Ensure test mocks also provide these primitives to avoid breaking session serialization in unit tests.
+## 2025-05-23 - [Test Mocking Quirk]
+**Learning:** When mocking PyGithub objects for JSON serialization in the backend, ensure the mock user object has an explicit `avatar_url` attribute to avoid 500 errors during API response generation in unit tests.
+**Action:** Always verify mock objects have all attributes accessed during serialization.

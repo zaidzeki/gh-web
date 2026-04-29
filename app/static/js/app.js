@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileDiv.classList.add('d-flex');
                 if (loginForm) loginForm.classList.add('d-none');
 
-                refreshDashboardRepos();
+                await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
             } else {
                 profileDiv.classList.add('d-none');
@@ -149,6 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             allRepos = repos;
             renderRepoList(repos);
+
+            // Update datalist for autosuggest
+            const datalist = document.getElementById('userReposList');
+            if (datalist) {
+                datalist.innerHTML = '';
+                repos.forEach(repo => {
+                    const opt = document.createElement('option');
+                    opt.value = repo.full_name;
+                    datalist.appendChild(opt);
+                });
+            }
         } catch (error) {
             repoList.innerHTML = `<p class="text-danger p-3">Error: ${escapeHTML(error.message)}</p>`;
         }
@@ -169,12 +180,16 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
             const prBadge = repo.open_prs_count > 0 ?
                 `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
-            const repoAriaLabel = `Open repository ${escapeHTML(repo.full_name)}${repo.open_prs_count > 0 ? ` (${repo.open_prs_count} open pull requests)` : ''}`;
+            const issueBadge = repo.open_issues_count > 0 ?
+                `<span class="badge bg-secondary ms-2" title="${repo.open_issues_count} open issues">${repo.open_issues_count} Issues</span>` : '';
+
+            const repoAriaLabel = `Open repository ${escapeHTML(repo.full_name)}. ${repo.open_issues_count} issues, ${repo.open_prs_count} pull requests.`;
 
             item.innerHTML = `
                 <div>
                     <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="${repoAriaLabel}">
                         ${escapeHTML(repo.full_name)}
+                        ${issueBadge}
                         ${prBadge}
                     </h6>
                     <small class="text-muted text-truncate d-block" style="max-width: 400px;" title="${escapeHTML(repo.description || 'No description')}">${escapeHTML(repo.description || 'No description')}</small>
@@ -529,11 +544,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const listIssuesBtn = document.getElementById('listIssuesBtn');
             const repoFull = document.getElementById('issuesRepoFullName').value;
+            const state = document.querySelector('input[name="state"]:checked').value;
             if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
 
             toggleLoading(listIssuesBtn, true);
             try {
-                const response = await fetch(`/api/repos/${repoFull}/issues`);
+                const response = await fetch(`/api/repos/${repoFull}/issues?state=${state}`);
                 const issues = await response.json();
 
                 if (!response.ok) {
@@ -544,18 +560,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tbody = document.querySelector('#issuesTable tbody');
                 tbody.innerHTML = '';
                 if (issues.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No open issues found.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No ${state} issues found.</td></tr>`;
                 }
                 issues.forEach(issue => {
                     const tr = document.createElement('tr');
+                    const labelBadges = (issue.labels || []).map(l =>
+                        `<span class="badge rounded-pill me-1" style="background-color: #${l.color}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
+                    ).join('');
+
+                    const triageBtn = issue.state === 'open' ?
+                        `<button class="btn btn-sm btn-outline-danger close-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Close issue #${escapeHTML(String(issue.number))}">Close</button>` :
+                        `<button class="btn btn-sm btn-outline-warning reopen-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Reopen issue #${escapeHTML(String(issue.number))}">Reopen</button>`;
+
                     tr.innerHTML = `
                         <td>${escapeHTML(String(issue.number))}</td>
-                        <td><a href="${escapeHTML(issue.html_url)}" target="_blank">${escapeHTML(issue.title)}</a></td>
+                        <td>
+                            <div><a href="${escapeHTML(issue.html_url)}" target="_blank" class="fw-bold">${escapeHTML(issue.title)}</a></div>
+                            <div class="mt-1">${labelBadges}</div>
+                        </td>
                         <td><small class="text-muted">${escapeHTML(new Date(issue.created_at).toLocaleDateString())}</small></td>
                         <td>
-                            <button class="btn btn-sm btn-outline-info comments-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="View comments for issue #${escapeHTML(String(issue.number))}">Comments</button>
-                            <button class="btn btn-sm btn-outline-primary fix-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Fix issue #${escapeHTML(String(issue.number))}">Fix</button>
-                            <button class="btn btn-sm btn-outline-danger close-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Close issue #${escapeHTML(String(issue.number))}">Close</button>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-info comments-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="View comments for issue #${escapeHTML(String(issue.number))}">Comments</button>
+                                ${issue.state === 'open' ? `<button class="btn btn-sm btn-outline-primary fix-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Fix issue #${escapeHTML(String(issue.number))}">Fix</button>` : ''}
+                                ${triageBtn}
+                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -587,6 +616,29 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const workspaceTab = document.getElementById('workspace-tab');
                                 bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
                                 refreshExplorer();
+                            } else {
+                                showAlert(res.error, 'danger');
+                            }
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        } finally {
+                            toggleLoading(btn, false);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.reopen-issue-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const num = btn.getAttribute('data-number');
+                        toggleLoading(btn, true);
+                        try {
+                            const resp = await fetch(`/api/repos/${repoFull}/issues/${num}/reopen`, {
+                                method: 'POST'
+                            });
+                            const res = await resp.json();
+                            if (resp.ok) {
+                                showAlert(res.message);
+                                listIssuesBtn.click();
                             } else {
                                 showAlert(res.error, 'danger');
                             }
@@ -1285,11 +1337,12 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const listPrsBtn = document.getElementById('listPrsBtn');
             const repoFull = document.getElementById('repoFullName').value;
+            const state = document.querySelector('input[name="prState"]:checked').value;
             if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
 
             toggleLoading(listPrsBtn, true);
             try {
-                const response = await fetch(`/api/repos/${repoFull}/prs`);
+                const response = await fetch(`/api/repos/${repoFull}/prs?state=${state}`);
                 const prs = await response.json();
 
                 if (!response.ok) {
@@ -1300,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tbody = document.querySelector('#prsTable tbody');
                 tbody.innerHTML = '';
                 if (prs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No open pull requests found.</td></tr>';
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No ${state} pull requests found.</td></tr>`;
                 }
                 prs.forEach(pr => {
                     const tr = document.createElement('tr');
@@ -1308,17 +1361,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         '<span class="badge bg-info text-dark ms-1" title="You can push changes to this PR branch">Collaborative</span>' :
                         '<span class="badge bg-secondary ms-1" title="Read-only access to this PR branch">Read-Only</span>';
 
+                    const labelBadges = (pr.labels || []).map(l =>
+                        `<span class="badge rounded-pill me-1" style="background-color: #${l.color}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
+                    ).join('');
+
+                    const triageBtn = pr.state === 'open' ?
+                        `<button class="btn btn-sm btn-outline-danger close-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Close PR #${escapeHTML(String(pr.number))}">Close</button>` :
+                        `<button class="btn btn-sm btn-outline-warning reopen-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Reopen PR #${escapeHTML(String(pr.number))}">Reopen</button>`;
+
                     tr.innerHTML = `
                         <td>${escapeHTML(String(pr.number))}</td>
-                        <td><a href="${escapeHTML(pr.html_url)}" target="_blank">${escapeHTML(pr.title)}</a></td>
+                        <td>
+                            <div><a href="${escapeHTML(pr.html_url)}" target="_blank" class="fw-bold">${escapeHTML(pr.title)}</a></div>
+                            <div class="mt-1">${labelBadges}</div>
+                        </td>
                         <td>
                             ${escapeHTML(pr.state)}
                             ${collabBadge}
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-outline-info comments-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="View comments for PR #${escapeHTML(String(pr.number))}">Comments</button>
-                            <button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>
-                            <button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-info comments-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="View comments for PR #${escapeHTML(String(pr.number))}">Comments</button>
+                                ${pr.state === 'open' ? `<button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>` : ''}
+                                ${pr.state === 'open' ? `<button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>` : ''}
+                                ${triageBtn}
+                            </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -1340,6 +1407,53 @@ document.addEventListener('DOMContentLoaded', () => {
                             const res = await resp.json();
                             if (resp.ok) showAlert(res.message);
                             else showAlert(res.error, 'danger');
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        } finally {
+                            toggleLoading(btn, false);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.close-pr-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const num = btn.getAttribute('data-number');
+                        if (!confirm(`Close pull request #${num}?`)) return;
+                        toggleLoading(btn, true);
+                        try {
+                            const resp = await fetch(`/api/repos/${repoFull}/prs/${num}/close`, {
+                                method: 'POST'
+                            });
+                            const res = await resp.json();
+                            if (resp.ok) {
+                                showAlert(res.message);
+                                listPrsBtn.click();
+                            } else {
+                                showAlert(res.error, 'danger');
+                            }
+                        } catch (error) {
+                            showAlert(error.message, 'danger');
+                        } finally {
+                            toggleLoading(btn, false);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.reopen-pr-btn').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const num = btn.getAttribute('data-number');
+                        toggleLoading(btn, true);
+                        try {
+                            const resp = await fetch(`/api/repos/${repoFull}/prs/${num}/reopen`, {
+                                method: 'POST'
+                            });
+                            const res = await resp.json();
+                            if (resp.ok) {
+                                showAlert(res.message);
+                                listPrsBtn.click();
+                            } else {
+                                showAlert(res.error, 'danger');
+                            }
                         } catch (error) {
                             showAlert(error.message, 'danger');
                         } finally {
