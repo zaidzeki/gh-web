@@ -510,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <span class="text-muted small">${escapeHTML(task.repo)}#${escapeHTML(String(task.number))}</span>
                                 ${statusBadges}
                             </div>
-                            <h6 class="mb-0 text-truncate"><a href="${escapeHTML(task.html_url)}" target="_blank" class="text-decoration-none">${escapeHTML(task.title)}</a></h6>
+                            <h6 class="mb-0 text-truncate"><a href="${escapeHTML(task.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(task.title)}</a></h6>
                             <small class="text-muted" title="${new Date(task.updated_at).toLocaleString()}">Updated ${timeAgo(task.updated_at)}</small>
                         </div>
                     </div>
@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.innerHTML = `
                         <td>${escapeHTML(String(issue.number))}</td>
                         <td>
-                            <div><a href="${escapeHTML(issue.html_url)}" target="_blank" class="fw-bold">${escapeHTML(issue.title)}</a></div>
+                            <div><a href="${escapeHTML(issue.html_url)}" target="_blank" rel="noopener noreferrer" class="fw-bold">${escapeHTML(issue.title)}</a></div>
                             <div class="mt-1">${labelBadges}</div>
                         </td>
                         <td><small class="text-muted" title="${escapeHTML(new Date(issue.created_at).toLocaleString())}">${timeAgo(issue.created_at)}</small></td>
@@ -1577,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.innerHTML = `
                         <td>${escapeHTML(String(pr.number))}</td>
                         <td>
-                            <div><a href="${escapeHTML(pr.html_url)}" target="_blank" class="fw-bold">${escapeHTML(pr.title)}</a></div>
+                            <div><a href="${escapeHTML(pr.html_url)}" target="_blank" rel="noopener noreferrer" class="fw-bold">${escapeHTML(pr.title)}</a></div>
                             <div class="mt-1">${labelBadges}</div>
                         </td>
                         <td>
