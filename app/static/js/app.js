@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${prBadge}
                     </h6>
                     <small class="text-muted text-truncate d-block" style="max-width: 400px;" title="${escapeHTML(repo.description || 'No description')}">
-                        <span class="badge bg-light text-dark border me-1">${pushedStr}</span>
+                        <span class="badge bg-light text-dark border me-1" title="${repo.pushed_at ? new Date(repo.pushed_at).toLocaleString() : 'Never'}">${pushedStr}</span>
                         ${escapeHTML(repo.description || 'No description')}
                     </small>
                 </div>
@@ -511,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${statusBadges}
                             </div>
                             <h6 class="mb-0 text-truncate"><a href="${escapeHTML(task.html_url)}" target="_blank" class="text-decoration-none">${escapeHTML(task.title)}</a></h6>
-                            <small class="text-muted">Updated ${timeAgo(task.updated_at)}</small>
+                            <small class="text-muted" title="${new Date(task.updated_at).toLocaleString()}">Updated ${timeAgo(task.updated_at)}</small>
                         </div>
                     </div>
                     <div class="d-flex gap-2">
