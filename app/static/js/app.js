@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
+                refreshTaskInbox();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -455,6 +456,144 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 toggleLoading(syncAllWorkspacesBtn, false);
             }
+        });
+    }
+
+    const refreshTaskInbox = async () => {
+        const inbox = document.getElementById('taskInboxList');
+        if (!inbox) return;
+
+        try {
+            const response = await fetch('/api/tasks');
+            const tasks = await response.json();
+
+            if (!response.ok) {
+                inbox.innerHTML = `<p class="text-danger p-3 mb-0">${escapeHTML(tasks.error || 'Failed to fetch tasks')}</p>`;
+                return;
+            }
+
+            if (tasks.length === 0) {
+                inbox.innerHTML = '<p class="text-muted p-3 mb-0">No active tasks found. You&#39;re all caught up!</p>';
+                return;
+            }
+
+            inbox.innerHTML = '';
+            tasks.forEach(task => {
+                const item = document.createElement('div');
+                item.className = 'list-group-item d-flex justify-content-between align-items-center py-3';
+
+                const typeIcon = task.type === 'pr' ? '🌿' : '🎫';
+                const categoryBadge = task.category === 'review_requested' ?
+                    '<span class="badge bg-danger">Action Required</span>' :
+                    (task.category === 'assigned' ? '<span class="badge bg-primary">In Progress</span>' : '<span class="badge bg-secondary">My PR</span>');
+
+                let statusBadges = '';
+                if (task.ci_status) {
+                    const ciClass = task.ci_status === 'success' ? 'bg-success' : (task.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+                    statusBadges += `<span class="badge ${ciClass} ms-1">CI: ${task.ci_status.toUpperCase()}</span>`;
+                }
+                if (task.review_status) {
+                    const revClass = task.review_status === 'approved' ? 'bg-success' : (task.review_status === 'changes_requested' ? 'bg-danger' : 'bg-warning text-dark');
+                    statusBadges += `<span class="badge ${revClass} ms-1">Review: ${task.review_status.replace('_', ' ').toUpperCase()}</span>`;
+                }
+
+                const actionBtn = task.type === 'pr' ?
+                    `<button class="btn btn-sm btn-outline-primary review-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Review</button>` :
+                    `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
+
+                item.innerHTML = `
+                    <div class="d-flex align-items-start gap-3 w-75">
+                        <span class="fs-4" aria-hidden="true">${typeIcon}</span>
+                        <div class="text-truncate">
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                ${categoryBadge}
+                                <span class="text-muted small">${escapeHTML(task.repo)}#${escapeHTML(String(task.number))}</span>
+                                ${statusBadges}
+                            </div>
+                            <h6 class="mb-0 text-truncate"><a href="${escapeHTML(task.html_url)}" target="_blank" class="text-decoration-none">${escapeHTML(task.title)}</a></h6>
+                            <small class="text-muted">Updated ${timeAgo(task.updated_at)}</small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-info comments-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}" data-type="${task.type}">Comments</button>
+                        ${actionBtn}
+                    </div>
+                `;
+                inbox.appendChild(item);
+            });
+
+            inbox.querySelectorAll('.comments-task-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    openConversation(btn.dataset.repo, btn.dataset.number, btn.dataset.type);
+                });
+            });
+
+            inbox.querySelectorAll('.fix-task-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    toggleLoading(btn, true);
+                    try {
+                        const resp = await fetch('/api/workspace/setup-issue-fix', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                repo_full_name: btn.dataset.repo,
+                                issue_number: btn.dataset.number
+                            })
+                        });
+                        const res = await resp.json();
+                        if (resp.ok) {
+                            showAlert(res.message);
+                            bootstrap.Tab.getOrCreateInstance(document.getElementById('workspace-tab')).show();
+                            refreshExplorer();
+                        } else {
+                            showAlert(res.error, 'danger');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    } finally {
+                        toggleLoading(btn, false);
+                    }
+                });
+            });
+
+            inbox.querySelectorAll('.review-task-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    toggleLoading(btn, true);
+                    try {
+                        const resp = await fetch('/api/workspace/stream-pr', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                repo_full_name: btn.dataset.repo,
+                                pr_number: btn.dataset.number
+                            })
+                        });
+                        const res = await resp.json();
+                        if (resp.ok) {
+                            showAlert(res.message);
+                            bootstrap.Tab.getOrCreateInstance(document.getElementById('workspace-tab')).show();
+                            refreshExplorer();
+                        } else {
+                            showAlert(res.error, 'danger');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    } finally {
+                        toggleLoading(btn, false);
+                    }
+                });
+            });
+
+        } catch (error) {
+            inbox.innerHTML = `<p class="text-danger p-3 mb-0">Error: ${escapeHTML(error.message)}</p>`;
+        }
+    };
+
+    const refreshTasksBtn = document.getElementById('refreshTasksBtn');
+    if (refreshTasksBtn) {
+        refreshTasksBtn.addEventListener('click', () => {
+            toggleLoading(refreshTasksBtn, true);
+            refreshTaskInbox().finally(() => toggleLoading(refreshTasksBtn, false));
         });
     }
 
