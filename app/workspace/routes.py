@@ -630,6 +630,8 @@ def workspace_portfolio():
         return jsonify([]), 200
 
     portfolio = []
+    active_issues = session.get('active_issues', {})
+
     try:
         for repo_dir in sorted(os.listdir(workspace_root)):
             repo_path = os.path.join(workspace_root, repo_dir)
@@ -642,6 +644,7 @@ def workspace_portfolio():
 
             try:
                 repo = git.Repo(repo_path)
+                active_branch = repo.active_branch
 
                 # Try to resolve full name from remote URL
                 full_name = None
@@ -653,18 +656,98 @@ def workspace_portfolio():
                 except Exception:
                     pass
 
+                # Calculate ahead/behind if tracking branch exists
+                ahead = 0
+                behind = 0
+                tracking = None
+                try:
+                    tracking = active_branch.tracking_branch()
+                except Exception:
+                    pass
+
+                if tracking:
+                    try:
+                        # repo.git.rev_list('HEAD...origin/main', count=True, left_right=True)
+                        # but we need it more simply:
+                        ahead_behind = repo.git.rev_list('--left-right', '--count', f'{active_branch.name}...{tracking.name}')
+                        ahead, behind = map(int, ahead_behind.split())
+                    except Exception:
+                        pass
+
+                last_commit_subject = ""
+                try:
+                    last_commit_subject = repo.head.commit.summary
+                except Exception:
+                    pass
+
+                # Active issue metadata
+                issue_data = active_issues.get(repo_dir)
+                active_issue = None
+                if isinstance(issue_data, dict):
+                    active_issue = {
+                        "number": issue_data.get('number'),
+                        "title": issue_data.get('title'),
+                        "is_pr": issue_data.get('is_pr', False)
+                    }
+
                 portfolio.append({
                     "repo_name": repo_dir,
                     "full_name": full_name,
-                    "branch": repo.active_branch.name,
+                    "branch": active_branch.name,
                     "is_dirty": repo.is_dirty(),
-                    "untracked": len(repo.untracked_files) > 0
+                    "untracked": len(repo.untracked_files) > 0,
+                    "ahead": ahead,
+                    "behind": behind,
+                    "last_commit_subject": last_commit_subject,
+                    "active_issue": active_issue
                 })
             except Exception:
                 # Skip invalid repos
                 continue
 
         return jsonify(portfolio), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/sync-all', methods=['POST'])
+def workspace_sync_all():
+    session_id = secure_filename(session.get('session_id', 'default'))
+    if not session_id:
+        session_id = 'default'
+    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+
+    if not os.path.exists(workspace_root):
+        return jsonify({"message": "No workspaces to sync"}), 200
+
+    synced_repos = []
+    errors = []
+
+    try:
+        for repo_dir in sorted(os.listdir(workspace_root)):
+            repo_path = os.path.join(workspace_root, repo_dir)
+            git_path = os.path.join(repo_path, '.git')
+            if not os.path.exists(git_path):
+                continue
+
+            try:
+                repo = git.Repo(repo_path)
+                for remote in repo.remotes:
+                    remote.fetch()
+                synced_repos.append(repo_dir)
+            except Exception as e:
+                errors.append(f"{repo_dir}: {str(e)}")
+
+        if errors:
+            return jsonify({
+                "message": f"Synced {len(synced_repos)} repositories with some errors",
+                "synced": synced_repos,
+                "errors": [mask_token(e) for e in errors]
+            }), 207
+
+        return jsonify({
+            "message": f"Successfully synced {len(synced_repos)} repositories",
+            "synced": synced_repos
+        }), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
@@ -722,6 +805,19 @@ def workspace_status():
         else:
             active_issue = active_issue_data
 
+        ci_status = None
+        if repo_full_name:
+            g = get_github_client()
+            if g:
+                try:
+                    gh_repo = g.get_repo(repo_full_name)
+                    # Fetch combined status for current HEAD
+                    sha = repo.head.commit.hexsha
+                    combined = gh_repo.get_combined_status(sha)
+                    ci_status = combined.state # success, failure, pending, etc.
+                except Exception:
+                    pass
+
         return jsonify({
             "is_git": True,
             "branch": repo.active_branch.name,
@@ -732,7 +828,8 @@ def workspace_status():
             "issue_title": issue_title,
             "default_branch": default_branch,
             "repo_full_name": repo_full_name,
-            "is_pr": is_pr
+            "is_pr": is_pr,
+            "ci_status": ci_status
         }), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
