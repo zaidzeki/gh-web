@@ -71,6 +71,7 @@ def test_workspace_portfolio(client):
         mock_repo.is_dirty.return_value = False
         mock_repo.untracked_files = []
         mock_repo.remotes.origin.url = 'https://github.com/owner/test-repo.git'
+        mock_repo.head.commit.summary = 'Initial commit'
         mock_repo_class.return_value = mock_repo
 
         response = client.get('/api/workspace/portfolio')
