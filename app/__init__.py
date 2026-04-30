@@ -25,12 +25,14 @@ def create_app(test_config=None):
     from .prs import routes as prs_routes
     from .issues import routes as issues_routes
     from .workspace import routes as workspace_routes
+    from .tasks import routes as tasks_routes
 
     app.register_blueprint(auth_routes.bp)
     app.register_blueprint(repos_routes.bp)
     app.register_blueprint(prs_routes.bp)
     app.register_blueprint(issues_routes.bp)
     app.register_blueprint(workspace_routes.bp)
+    app.register_blueprint(tasks_routes.bp)
 
     @app.route('/')
     def index():
