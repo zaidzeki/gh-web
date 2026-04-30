@@ -60,11 +60,11 @@
     - [x] Create Unified Conversation Modal in Frontend.
     - [x] Integrate "Comments" actions into Issues and PR tables.
     - [x] Integrate contextual "Conversation" button into Workspace for active tasks.
-- [ ] **Epic: Task Orchestration & Unified Inbox**
-    - [ ] Implement `GET /api/tasks` for multi-category aggregation.
-    - [ ] Enrich task data with CI and Review status.
-    - [ ] Create Task Inbox UI on the Dashboard.
-    - [ ] Integrate "Fix" and "Review" quick-actions into the Task Inbox.
+- [x] **Epic: Task Orchestration & Unified Inbox**
+    - [x] Implement `GET /api/tasks` for multi-category aggregation.
+    - [x] Enrich task data with CI and Review status.
+    - [x] Create Task Inbox UI on the Dashboard.
+    - [x] Integrate "Fix" and "Review" quick-actions into the Task Inbox.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

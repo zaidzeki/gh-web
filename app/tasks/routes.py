@@ -1,5 +1,5 @@
 from flask import Blueprint, request, session, jsonify
-from github import Github
+import github
 from ..workspace.utils import mask_token
 
 bp = Blueprint('tasks', __name__)
@@ -8,7 +8,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    auth = github.Auth.Token(token)
+    return github.Github(auth=auth)
 
 @bp.route('/api/tasks', methods=['GET'])
 def list_tasks():
@@ -20,16 +21,18 @@ def list_tasks():
         user = g.get_user()
         login = user.login
 
-        # Aggregation: Fetch from three categories
+        # Aggregation: Fetch from three categories with prioritization:
         # 1. Action Required: Review requested
-        # 2. In Progress: Assigned to me
+        # 2. In Progress: Assigned to me (Issues or PRs)
         # 3. My PRs: Authored by me
 
-        action_required = g.search_issues(f"is:pr is:open review-requested:{login}")
-        in_progress = g.search_issues(f"is:issue is:open assignee:{login}")
-        my_prs = g.search_issues(f"is:pr is:open author:{login}")
+        # Limit to top 20 each to avoid performance/rate-limit issues
+        action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
+        in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
+        my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
 
         tasks = []
+        task_ids = set()
 
         def normalize(issue_or_pr, category):
             repo_full_name = issue_or_pr.repository.full_name
@@ -58,33 +61,38 @@ def list_tasks():
                         task["ci_status"] = combined.state
                     except: pass
 
-                    # Review Status
-                    if category == "authored":
-                        try:
-                            reviews = pr.get_reviews()
-                            states = [r.state for r in reviews if r.state != "COMMENTED"]
-                            if "CHANGES_REQUESTED" in states:
-                                task["review_status"] = "changes_requested"
-                            elif "APPROVED" in states:
-                                task["review_status"] = "approved"
-                            elif states:
-                                task["review_status"] = "pending"
-                        except: pass
+                    # Review Status (fetched for all PRs)
+                    try:
+                        reviews = pr.get_reviews()
+                        states = [r.state for r in reviews if r.state != "COMMENTED"]
+                        # Prioritize CHANGES_REQUESTED over APPROVED
+                        if "CHANGES_REQUESTED" in states:
+                            task["review_status"] = "changes_requested"
+                        elif "APPROVED" in states:
+                            task["review_status"] = "approved"
+                        elif states:
+                            task["review_status"] = "pending"
+                    except: pass
                 except: pass
 
             return task
 
         for item in action_required:
-            tasks.append(normalize(item, "review_requested"))
+            task = normalize(item, "review_requested")
+            tasks.append(task)
+            task_ids.add(task["id"])
 
         for item in in_progress:
-            tasks.append(normalize(item, "assigned"))
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "assigned"))
+                task_ids.add(task_id)
 
         for item in my_prs:
-            # Avoid duplicates if I'm assigned to my own PR or review requested (rare but possible)
             task_id = f"{item.repository.full_name}#{item.number}"
-            if not any(t["id"] == task_id for t in tasks):
+            if task_id not in task_ids:
                 tasks.append(normalize(item, "authored"))
+                task_ids.add(task_id)
 
         # Sort by updated_at desc
         tasks.sort(key=lambda x: x['updated_at'] if x['updated_at'] else '', reverse=True)
