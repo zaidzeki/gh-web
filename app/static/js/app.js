@@ -317,14 +317,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusText = isModified ? 'Modified' : 'Clean';
                 const statusBadge = `<span class="badge ${isModified ? 'bg-warning text-dark' : 'bg-success'} float-end ms-2">${statusText}</span>`;
 
+                const aheadBadge = item.ahead > 0 ? `<span class="badge bg-info text-dark ms-1" title="${item.ahead} commits ahead">↑${item.ahead}</span>` : '';
+                const behindBadge = item.behind > 0 ? `<span class="badge bg-danger ms-1" title="${item.behind} commits behind">↓${item.behind}</span>` : '';
+
+                let activeTaskHtml = '';
+                if (item.active_issue) {
+                    const taskType = item.active_issue.is_pr ? 'PR' : 'Issue';
+                    activeTaskHtml = `<div class="small mt-1 text-truncate"><span class="badge bg-dark">${taskType} #${escapeHTML(String(item.active_issue.number))}</span> ${escapeHTML(item.active_issue.title)}</div>`;
+                }
+
                 div.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
                         <div class="text-truncate" style="max-width: 60%;">
-                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}" tabindex="0" role="button" aria-label="Open workspace ${escapeHTML(item.repo_name)} (${statusText})">${escapeHTML(item.repo_name)}</h6>
+                            <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}" tabindex="0" role="button" aria-label="Open workspace ${escapeHTML(item.repo_name)} (${statusText})">
+                                ${escapeHTML(item.repo_name)}
+                                ${aheadBadge}${behindBadge}
+                            </h6>
                             <small class="text-muted font-monospace">${escapeHTML(item.branch)}</small>
                         </div>
                         ${statusBadge}
                     </div>
+                    ${activeTaskHtml}
+                    <div class="small text-muted text-truncate mb-2" title="${escapeHTML(item.last_commit_subject || '')}">${escapeHTML(item.last_commit_subject || 'No commits')}</div>
                     <div class="d-flex gap-1 justify-content-end">
                         <button class="btn btn-sm btn-outline-primary sync-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Sync (Fetch)" aria-label="Sync workspace ${escapeHTML(item.repo_name)}">🔄</button>
                         <button class="btn btn-sm btn-outline-danger revert-workspace-btn" data-repo-name="${escapeHTML(item.repo_name)}" title="Discard Changes" aria-label="Discard changes for workspace ${escapeHTML(item.repo_name)}">🗑️</button>
@@ -420,6 +434,27 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPortfolioBtn.addEventListener('click', () => {
             toggleLoading(refreshPortfolioBtn, true);
             refreshWorkspacePortfolio().finally(() => toggleLoading(refreshPortfolioBtn, false));
+        });
+    }
+
+    const syncAllWorkspacesBtn = document.getElementById('syncAllWorkspacesBtn');
+    if (syncAllWorkspacesBtn) {
+        syncAllWorkspacesBtn.addEventListener('click', async () => {
+            toggleLoading(syncAllWorkspacesBtn, true);
+            try {
+                const response = await fetch('/api/workspace/sync-all', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok || response.status === 207) {
+                    showAlert(result.message);
+                    refreshWorkspacePortfolio();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(syncAllWorkspacesBtn, false);
+            }
         });
     }
 
@@ -869,6 +904,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const branchBadge = document.getElementById('branchBadge');
         const issueBadge = document.getElementById('issueBadge');
         const statusBadge = document.getElementById('statusBadge');
+        const ciStatusBadge = document.getElementById('ciStatusBadge');
         const collabBadge = document.getElementById('collabBadge');
         if (!branchBadge || !statusBadge) return;
 
@@ -912,6 +948,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusBadge.className = 'badge bg-success';
                 }
                 statusBadge.style.display = 'inline-block';
+
+                if (ciStatusBadge) {
+                    if (data.ci_status) {
+                        ciStatusBadge.textContent = `CI: ${data.ci_status.toUpperCase()}`;
+                        ciStatusBadge.className = `badge bg-${data.ci_status === 'success' ? 'success' : (data.ci_status === 'failure' ? 'danger' : 'secondary')}`;
+                        ciStatusBadge.style.display = 'inline-block';
+                    } else {
+                        ciStatusBadge.style.display = 'none';
+                    }
+                }
 
                 if (collabBadge) {
                     if (data.can_push) {
