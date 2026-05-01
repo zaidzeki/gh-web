@@ -33,3 +33,7 @@
 ## 2026-04-30 - [Expansion: Portfolio Health & Governance]
 **Learning:** The 'Portfolio' list was previously a "dead end" representing only disk usage. By enriching it with local Git divergence (ahead/behind) and linking it to the session-based IDD context (active Issue/PR), we've pivoted the view from simple management to proactive repository governance. Surfacing CI status directly in the active workspace completes the "triage-to-health" feedback loop.
 **Action:** Always look for ways to decorate "List" views with real-time metadata from adjacent systems (Git, GitHub API, Session context) to transform static containers into actionable dashboards.
+
+## 2026-04-30 - [Expansion: Release & Changelog Orchestration]
+**Learning:** Software delivery "leaks" out of the application during the final mile of tagging and changelog generation. Moving into the "Production Readiness" phase by automating releases reuses 90% of existing GitHub integration while completing the project lifecycle loop. The "Automated Release Notes" engine in the GitHub API is a high-leverage "bridge" feature that removes the need for custom changelog logic.
+**Action:** Always identify "leakage points" where users are forced to return to the parent platform (GitHub) and bridge them to keep the entire workflow in-app.
