@@ -27,6 +27,7 @@ def create_app(test_config=None):
     from .workspace import routes as workspace_routes
     from .tasks import routes as tasks_routes
     from .releases import routes as releases_routes
+    from .actions import routes as actions_routes
 
     app.register_blueprint(auth_routes.bp)
     app.register_blueprint(repos_routes.bp)
@@ -35,6 +36,7 @@ def create_app(test_config=None):
     app.register_blueprint(workspace_routes.bp)
     app.register_blueprint(tasks_routes.bp)
     app.register_blueprint(releases_routes.bp)
+    app.register_blueprint(actions_routes.bp)
 
     @app.after_request
     def add_security_headers(response):

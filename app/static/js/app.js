@@ -218,6 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="d-flex gap-1">
                     <button class="btn btn-sm btn-outline-secondary issues-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View issues for ${escapeHTML(repo.full_name)}">Issues</button>
                     <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View pull requests for ${escapeHTML(repo.full_name)}">PRs</button>
+                    <button class="btn btn-sm btn-outline-secondary actions-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View actions for ${escapeHTML(repo.full_name)}">Actions</button>
                     <button class="btn btn-sm btn-outline-secondary releases-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View releases for ${escapeHTML(repo.full_name)}">Releases</button>
                     <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="Clone repository ${escapeHTML(repo.full_name)}">Clone</button>
                 </div>
@@ -251,6 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const issuesTab = document.getElementById('issues-tab');
                 bootstrap.Tab.getOrCreateInstance(issuesTab).show();
                 document.getElementById('listIssuesBtn').click();
+            });
+        });
+
+        repoList.querySelectorAll('.actions-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const repo = btn.getAttribute('data-repo');
+                document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
+                const actionsTab = document.getElementById('actions-tab');
+                bootstrap.Tab.getOrCreateInstance(actionsTab).show();
+                document.getElementById('listActionsBtn').click();
             });
         });
 
@@ -1761,6 +1772,158 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 toggleLoading(listBtn, false);
             }
+        });
+    }
+
+    const refreshActions = async (repoFull) => {
+        const workflowsList = document.getElementById('workflowsList');
+        const runsTableBody = document.querySelector('#runsTable tbody');
+        if (!workflowsList || !runsTableBody) return;
+
+        workflowsList.innerHTML = '<div class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+        runsTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></td></tr>';
+
+        try {
+            // Fetch Workflows
+            const wfResponse = await fetch(`/api/repos/${repoFull}/actions/workflows`);
+            const workflows = await wfResponse.json();
+
+            if (wfResponse.ok) {
+                workflowsList.innerHTML = '';
+                if (workflows.length === 0) {
+                    workflowsList.innerHTML = '<p class="text-muted p-3 text-center border rounded">No workflows found.</p>';
+                } else {
+                    workflows.forEach(wf => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                        const isActive = wf.state === 'active';
+                        item.innerHTML = `
+                            <div class="text-truncate me-2">
+                                <h6 class="mb-0 small fw-bold">${escapeHTML(wf.name)}</h6>
+                                <small class="text-muted font-monospace" style="font-size: 0.75rem;">${escapeHTML(wf.path.split('/').pop())}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary dispatch-wf-btn" data-id="${wf.id}" data-name="${escapeHTML(wf.name)}" ${isActive ? '' : 'disabled'} title="Run Workflow">▶️</button>
+                        `;
+                        workflowsList.appendChild(item);
+                    });
+
+                    workflowsList.querySelectorAll('.dispatch-wf-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            document.getElementById('dispatchWorkflowId').value = btn.dataset.id;
+                            document.getElementById('dispatchModalLabel').textContent = `Dispatch: ${btn.dataset.name}`;
+                            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('dispatchModal'));
+                            modal.show();
+                        });
+                    });
+                }
+            } else {
+                workflowsList.innerHTML = `<p class="text-danger p-3 small">${escapeHTML(workflows.error)}</p>`;
+            }
+
+            // Fetch Runs
+            await refreshRuns(repoFull);
+
+        } catch (error) {
+            showAlert(error.message, 'danger');
+        }
+    };
+
+    let allRuns = [];
+    const refreshRuns = async (repoFull) => {
+        const runsTableBody = document.querySelector('#runsTable tbody');
+        try {
+            const response = await fetch(`/api/repos/${repoFull}/actions/runs`);
+            const runs = await response.json();
+            if (response.ok) {
+                allRuns = runs;
+                renderRuns(runs);
+            } else {
+                runsTableBody.innerHTML = `<tr><td colspan="4" class="text-danger text-center p-3">${escapeHTML(runs.error)}</td></tr>`;
+            }
+        } catch (error) {
+            runsTableBody.innerHTML = `<tr><td colspan="4" class="text-danger text-center p-3">${escapeHTML(error.message)}</td></tr>`;
+        }
+    };
+
+    const renderRuns = (runs) => {
+        const runsTableBody = document.querySelector('#runsTable tbody');
+        runsTableBody.innerHTML = '';
+        if (runs.length === 0) {
+            runsTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No runs found.</td></tr>';
+            return;
+        }
+
+        runs.forEach(run => {
+            const tr = document.createElement('tr');
+            const statusClass = run.conclusion === 'success' ? 'bg-success' : (run.conclusion === 'failure' ? 'bg-danger' : (run.status === 'completed' ? 'bg-secondary' : 'bg-warning text-dark'));
+            const statusText = run.conclusion || run.status;
+
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-bold small"><a href="${escapeHTML(run.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(run.name)}</a></div>
+                    <small class="text-muted">#${run.run_number} by ${escapeHTML(run.sha.substring(0, 7))}</small>
+                </td>
+                <td><span class="badge ${statusClass} small">${escapeHTML(statusText.toUpperCase())}</span></td>
+                <td><span class="badge bg-light text-dark border small">${escapeHTML(run.branch)}</span></td>
+                <td><small class="text-muted" title="${escapeHTML(new Date(run.updated_at).toLocaleString())}">${timeAgo(run.updated_at)}</small></td>
+            `;
+            runsTableBody.appendChild(tr);
+        });
+    };
+
+    const listActionsForm = document.getElementById('listActionsForm');
+    if (listActionsForm) {
+        listActionsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const repoFull = document.getElementById('actionsRepoFullName').value;
+            if (repoFull) refreshActions(repoFull);
+        });
+    }
+
+    const confirmDispatchBtn = document.getElementById('confirmDispatchBtn');
+    if (confirmDispatchBtn) {
+        confirmDispatchBtn.addEventListener('click', async () => {
+            const workflowId = document.getElementById('dispatchWorkflowId').value;
+            const ref = document.getElementById('dispatchRef').value;
+            const repoFull = document.getElementById('actionsRepoFullName').value;
+
+            if (!workflowId || !ref || !repoFull) return;
+
+            toggleLoading(confirmDispatchBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/actions/workflows/${workflowId}/dispatch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ref: ref })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('dispatchModal')).hide();
+                    // Refresh runs after a short delay to allow GitHub to register the dispatch
+                    setTimeout(() => refreshRuns(repoFull), 2000);
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(confirmDispatchBtn, false);
+            }
+        });
+    }
+
+    const runSearch = document.getElementById('runSearch');
+    if (runSearch) {
+        runSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filtered = allRuns.filter(r =>
+                r.name.toLowerCase().includes(query) ||
+                r.branch.toLowerCase().includes(query) ||
+                r.status.toLowerCase().includes(query) ||
+                (r.conclusion && r.conclusion.toLowerCase().includes(query))
+            );
+            renderRuns(filtered);
         });
     }
 
