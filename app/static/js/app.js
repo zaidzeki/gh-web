@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isLoading) {
             button.dataset.originalHtml = button.innerHTML;
             button.disabled = true;
-            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span class="visually-hidden">Loading...</span>';
         } else {
             if (button.dataset.originalHtml) {
                 button.innerHTML = button.dataset.originalHtml;
@@ -1105,9 +1105,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.is_dirty || data.untracked) {
                     statusBadge.textContent = 'Modified';
                     statusBadge.className = 'badge bg-warning text-dark';
+                    statusBadge.style.cursor = 'pointer';
+                    statusBadge.setAttribute('role', 'button');
+                    statusBadge.setAttribute('tabindex', '0');
+                    statusBadge.setAttribute('aria-label', 'Modified. Click to view diff.');
+
+                    if (!statusBadge.dataset.listenerAttached) {
+                        const openDiff = () => {
+                            const viewDiffBtn = document.getElementById('viewDiffBtn');
+                            if (viewDiffBtn) viewDiffBtn.click();
+                        };
+                        statusBadge.addEventListener('click', openDiff);
+                        statusBadge.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                openDiff();
+                            }
+                        });
+                        statusBadge.dataset.listenerAttached = 'true';
+                    }
                 } else {
                     statusBadge.textContent = 'Clean';
                     statusBadge.className = 'badge bg-success';
+                    statusBadge.style.cursor = 'default';
+                    statusBadge.removeAttribute('role');
+                    statusBadge.removeAttribute('tabindex');
+                    statusBadge.removeAttribute('aria-label');
                 }
                 statusBadge.style.display = 'inline-block';
 
