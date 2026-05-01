@@ -22,13 +22,29 @@ def get_workspace_dir(repo_name):
     session_id = secure_filename(session.get('session_id', 'default'))
     if not session_id:
         session_id = 'default'
-    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+
+    # Ensure base workspace root exists with restricted permissions (0700)
+    # to prevent other users on the system from accessing cloned repo data.
+    base_dir = '/tmp/gh-web-workspaces'
+    os.makedirs(base_dir, mode=0o700, exist_ok=True)
+    try:
+        os.chmod(base_dir, 0o700)
+    except OSError:
+        pass
+
+    workspace_root = os.path.join(base_dir, session_id)
     # Sanitize repo_name to prevent path traversal via malicious repository names
     safe_repo_name = secure_filename(repo_name)
     if not safe_repo_name:
         raise ValueError("Invalid repository name")
     repo_workspace = os.path.join(workspace_root, safe_repo_name)
-    os.makedirs(repo_workspace, exist_ok=True)
+
+    # Ensure individual repo workspaces are also restricted
+    os.makedirs(repo_workspace, mode=0o700, exist_ok=True)
+    try:
+        os.chmod(repo_workspace, 0o700)
+    except OSError:
+        pass
     return repo_workspace
 
 @bp.before_app_request
