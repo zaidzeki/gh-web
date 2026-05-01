@@ -50,6 +50,9 @@
             <li class="nav-item">
                 <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab" aria-controls="templates" aria-selected="false">Templates</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab" aria-controls="actions" aria-selected="false">Actions</button>
+            </li>
         </ul>
 
         <div class="tab-content border-start border-end border-bottom p-3">
@@ -439,6 +442,55 @@
                     </div>
                 </div>
             </div>
+
+            <div class="tab-pane fade" id="actions" role="tabpanel" aria-labelledby="actions-tab">
+                <h3>GitHub Actions</h3>
+                <form id="listActionsForm" class="mb-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-9">
+                            <label for="actionsRepoFullName" class="form-label required-label">Repository Full Name</label>
+                            <input type="text" id="actionsRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" id="listActionsBtn" class="btn btn-secondary w-100">Refresh Actions</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="row">
+                    <div class="col-md-4 border-end">
+                        <h4>Workflows</h4>
+                        <div id="workflowsList" class="list-group mb-4" style="max-height: 500px; overflow-y: auto;">
+                            <p class="text-muted p-3 text-center border rounded">List workflows to see available automations.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4>Workflow Runs</h4>
+                            <div class="input-group input-group-sm w-50">
+                                <span class="input-group-text">🔍</span>
+                                <input type="text" id="runSearch" class="form-control" placeholder="Filter runs..." aria-label="Filter runs">
+                            </div>
+                        </div>
+                        <div id="runsContainer" style="max-height: 500px; overflow-y: auto;" class="border rounded">
+                            <table class="table table-hover mb-0" id="runsTable">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>Run</th>
+                                        <th>Status</th>
+                                        <th>Branch</th>
+                                        <th>Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted p-3">List runs to see CI/CD history.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -554,6 +606,37 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submitCommentBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispatch Workflow Modal -->
+    <div class="modal fade" id="dispatchModal" tabindex="-1" aria-labelledby="dispatchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-primary bg-primary text-white">
+                    <h5 class="modal-title" id="dispatchModalLabel">Dispatch Workflow</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="dispatchForm">
+                        <input type="hidden" id="dispatchWorkflowId" name="workflow_id">
+                        <div class="mb-3">
+                            <label for="dispatchRef" class="form-label required-label">Use workflow from (branch/tag/SHA)</label>
+                            <input type="text" class="form-control" id="dispatchRef" name="ref" value="main" required>
+                        </div>
+                        <div id="dispatchInputsContainer">
+                            <!-- Dynamic inputs would go here if we had a way to parse workflow YAML -->
+                            <div class="alert alert-info py-2 small">
+                                Note: This trigger uses default workflow inputs.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmDispatchBtn">Run Workflow</button>
                 </div>
             </div>
         </div>
