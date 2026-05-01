@@ -27,3 +27,7 @@
 ## 2026-04-28 - [Human-Readable Relative Timestamps]
 **Learning:** Replacing static date strings with relative "time ago" formats (e.g., "2d ago") drastically reduces cognitive load for users scanning lists of repositories or issues. However, to maintain precision and accessibility, relative times should always be paired with a `title` attribute containing the full locale-specific timestamp and reflected in the `aria-label` of interactive items to ensure screen reader users have equal context.
 **Action:** Use the `timeAgo` helper for activity-based dates in lists, and always supplement with `title` tooltips and updated ARIA labels.
+
+## 2025-05-19 - [Interactive Status Badges & Loading Accessibility]
+**Learning:** Static visual status indicators (like "Modified" badges) can be converted into high-value interaction shortcuts (like "View Diff") to reduce clicks. However, they must be made keyboard-accessible with appropriate roles and event listeners. Additionally, icon-only loading spinners must always include visually-hidden text for screen reader parity.
+**Action:** Always provide keyboard accessibility (roles, tabindex, event listeners) for interactive badges and include `<span class="visually-hidden">Loading...</span>` in all spinner components.
