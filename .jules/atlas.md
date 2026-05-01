@@ -25,3 +25,7 @@
 ## 2025-05-29 - [The Feedback Loop]
 **Learning:** Development is not just about moving files; it's about making decisions. A tool that helps you code but forces you to leave to discuss that code is only solving half the problem.
 **Action:** Integrate contextual conversations (comments/reviews) directly into the workspace to close the 'Feedback Loop' and keep users focused on collaborative decision-making.
+
+## 2025-05-30 - [The Verification Gap]
+**Learning:** Development velocity is meaningless if the code fails silently in production. There is a "Verification Gap" between merging a PR and confirming the health of the deployment. High-trust tools must surface CI/CD status proactively.
+**Action:** Expand the 'Control Center' vision to include Workflow Orchestration, enabling users to monitor run history and trigger manual dispatches directly from the GH-Web dashboard.
