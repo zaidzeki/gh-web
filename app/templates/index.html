@@ -45,6 +45,9 @@
                 <button class="nav-link" id="workspace-tab" data-bs-toggle="tab" data-bs-target="#workspace" type="button" role="tab" aria-controls="workspace" aria-selected="false">Workspace</button>
             </li>
             <li class="nav-item">
+                <button class="nav-link" id="releases-tab" data-bs-toggle="tab" data-bs-target="#releases" type="button" role="tab" aria-controls="releases" aria-selected="false">Releases</button>
+            </li>
+            <li class="nav-item">
                 <button class="nav-link" id="templates-tab" data-bs-toggle="tab" data-bs-target="#templates" type="button" role="tab" aria-controls="templates" aria-selected="false">Templates</button>
             </li>
         </ul>
@@ -355,6 +358,60 @@
                 <div id="workspaceExplorer" class="border p-2 bg-light" style="max-height: 400px; overflow-y: auto;">
                     <p class="text-muted">No repository active.</p>
                 </div>
+            </div>
+
+            <div class="tab-pane fade" id="releases" role="tabpanel" aria-labelledby="releases-tab">
+                <h3>Releases</h3>
+                <form id="listReleasesForm" class="mb-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-9">
+                            <label for="releasesRepoFullName" class="form-label required-label">Repository Full Name</label>
+                            <input type="text" id="releasesRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" id="listReleasesBtn" class="btn btn-secondary w-100">List Releases</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="releasesList" class="list-group mb-4" style="max-height: 400px; overflow-y: auto;">
+                    <p class="text-muted p-3 text-center border rounded">List releases to see history.</p>
+                </div>
+                <hr>
+                <h3>Create Release</h3>
+                <form id="createReleaseForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="releaseTagName" class="form-label required-label">Tag Name</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="releaseTagName" name="tag_name" placeholder="v1.0.0" required>
+                                <button class="btn btn-outline-secondary" type="button" id="generateNotesBtn">Generate Notes</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="releaseName" class="form-label required-label">Release Name</label>
+                            <input type="text" class="form-control" id="releaseName" name="name" placeholder="First Stable Release" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="releaseTarget" class="form-label">Target Commitish (Optional)</label>
+                        <input type="text" class="form-control" id="releaseTarget" name="target_commitish" placeholder="main or branch name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="releaseBody" class="form-label">Release Notes</label>
+                        <textarea class="form-control" id="releaseBody" name="body" rows="6" placeholder="Describe the changes..."></textarea>
+                    </div>
+                    <div class="mb-3 d-flex gap-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="draft" id="releaseDraft">
+                            <label class="form-check-label" for="releaseDraft">Draft</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="prerelease" id="releasePrerelease">
+                            <label class="form-check-label" for="releasePrerelease">Pre-release</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Release</button>
+                </form>
             </div>
 
             <div class="tab-pane fade" id="templates" role="tabpanel" aria-labelledby="templates-tab">

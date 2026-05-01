@@ -215,9 +215,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${escapeHTML(repo.description || 'No description')}
                     </small>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-1">
                     <button class="btn btn-sm btn-outline-secondary issues-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View issues for ${escapeHTML(repo.full_name)}">Issues</button>
                     <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View pull requests for ${escapeHTML(repo.full_name)}">PRs</button>
+                    <button class="btn btn-sm btn-outline-secondary releases-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View releases for ${escapeHTML(repo.full_name)}">Releases</button>
                     <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="Clone repository ${escapeHTML(repo.full_name)}">Clone</button>
                 </div>
             `;
@@ -242,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+
         repoList.querySelectorAll('.issues-action').forEach(btn => {
             btn.addEventListener('click', () => {
                 const repo = btn.getAttribute('data-repo');
@@ -249,6 +251,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const issuesTab = document.getElementById('issues-tab');
                 bootstrap.Tab.getOrCreateInstance(issuesTab).show();
                 document.getElementById('listIssuesBtn').click();
+            });
+        });
+
+        repoList.querySelectorAll('.releases-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const repo = btn.getAttribute('data-repo');
+                document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
+                const releasesTab = document.getElementById('releases-tab');
+                bootstrap.Tab.getOrCreateInstance(releasesTab).show();
+                document.getElementById('listReleasesBtn').click();
             });
         });
 
@@ -1700,6 +1712,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(listPrsBtn, false);
+            }
+        });
+    }
+
+    const listReleasesForm = document.getElementById('listReleasesForm');
+    if (listReleasesForm) {
+        listReleasesForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const listBtn = document.getElementById('listReleasesBtn');
+            const repoFull = document.getElementById('releasesRepoFullName').value;
+            if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
+
+            toggleLoading(listBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/releases`);
+                const releases = await response.json();
+
+                if (!response.ok) {
+                    showAlert(releases.error || 'Failed to fetch releases', 'danger');
+                    return;
+                }
+
+                const list = document.getElementById('releasesList');
+                list.innerHTML = '';
+                if (releases.length === 0) {
+                    list.innerHTML = '<p class="text-muted p-3 text-center border rounded">No releases found.</p>';
+                }
+                releases.forEach(r => {
+                    const div = document.createElement('div');
+                    div.className = 'list-group-item';
+                    const badge = r.draft ? '<span class="badge bg-warning text-dark me-2">Draft</span>' : (r.prerelease ? '<span class="badge bg-info text-dark me-2">Pre-release</span>' : '<span class="badge bg-success me-2">Latest</span>');
+                    div.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <h6 class="mb-1 text-primary">
+                                ${badge}
+                                <a href="${escapeHTML(r.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(r.name || r.tag_name)}</a>
+                            </h6>
+                            <small class="text-muted font-monospace">${escapeHTML(r.tag_name)}</small>
+                        </div>
+                        <p class="mb-1 small text-truncate" style="max-width: 90%;">${escapeHTML(r.body || 'No description provided.')}</p>
+                        <small class="text-muted">${r.published_at ? new Date(r.published_at).toLocaleString() : 'Not published yet'}</small>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(listBtn, false);
+            }
+        });
+    }
+
+    const generateNotesBtn = document.getElementById('generateNotesBtn');
+    if (generateNotesBtn) {
+        generateNotesBtn.addEventListener('click', async () => {
+            const repoFull = document.getElementById('releasesRepoFullName').value;
+            const tagName = document.getElementById('releaseTagName').value;
+            const target = document.getElementById('releaseTarget').value;
+
+            if (!repoFull || !tagName) {
+                return showAlert('Repo Full Name and Tag Name are required to generate notes', 'warning');
+            }
+
+            toggleLoading(generateNotesBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/releases/generate-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tag_name: tagName, target_commitish: target })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    document.getElementById('releaseName').value = result.name || '';
+                    document.getElementById('releaseBody').value = result.body || '';
+                    showAlert('Release notes generated successfully');
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(generateNotesBtn, false);
+            }
+        });
+    }
+
+    const createReleaseForm = document.getElementById('createReleaseForm');
+    if (createReleaseForm) {
+        createReleaseForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = createReleaseForm.querySelector('button[type="submit"]');
+            const repoFull = document.getElementById('releasesRepoFullName').value;
+            if (!repoFull) return showAlert('Repo Full Name is required', 'danger');
+
+            toggleLoading(submitBtn, true);
+            const formData = new URLSearchParams(new FormData(createReleaseForm));
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/releases`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    document.getElementById('listReleasesBtn').click();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(submitBtn, false);
             }
         });
     }
