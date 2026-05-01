@@ -42,3 +42,8 @@
 **Vulnerability:** Initial SSRF protection using simple string prefix matching was too restrictive (case-sensitive) and failed to support the 'www.' subdomain, while missing the 'import-template' endpoint entirely.
 **Learning:** Security allow-lists must account for common URL variations like subdomains and case sensitivity to avoid breaking legitimate user workflows while still blocking malicious protocols like 'file://'.
 **Prevention:** Use case-insensitive regular expressions for URL validation and ensure all endpoints performing remote operations (like cloning or importing) share the same robust validation logic.
+
+## 2025-05-25 - Workspace Isolation via Strict Directory Permissions
+**Vulnerability:** Workspace directories in /tmp were created with default umask permissions (e.g., 0775), potentially allowing other users on a shared server to read sensitive repository data or credentials.
+**Learning:** Depending solely on 'mode' in 'os.makedirs' is unreliable if the directory already exists or if the system umask is permissive. An explicit 'os.chmod' ensures the desired restricted state.
+**Prevention:** Always follow 'os.makedirs' with an explicit 'os.chmod(path, 0o700)' for directories containing sensitive user data to enforce owner-only access regardless of the environment's default umask.
