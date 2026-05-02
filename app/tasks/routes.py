@@ -31,6 +31,10 @@ def list_tasks():
         in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
         my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
 
+        # Discovery: Recently pushed repositories to check for pending deployments
+        # We limit to top 10 repos to avoid excessive API calls
+        recent_repos = user.get_repos(sort='pushed', direction='desc')[:10]
+
         tasks = []
         task_ids = set()
 
@@ -93,6 +97,29 @@ def list_tasks():
             if task_id not in task_ids:
                 tasks.append(normalize(item, "authored"))
                 task_ids.add(task_id)
+
+        # Pending Deployment Approvals
+        for repo in recent_repos:
+            try:
+                # We look for deployments in 'waiting' state (this often maps to 'waiting' in status)
+                # or workflow runs with status='waiting'
+                runs = repo.get_workflow_runs(status='waiting')
+                for run in runs:
+                    task = {
+                        "id": f"deploy-{repo.full_name}-{run.id}",
+                        "type": "deploy",
+                        "category": "review_requested", # Treat as high priority
+                        "title": f"Deployment Approval: {run.name}",
+                        "repo": repo.full_name,
+                        "number": run.run_number,
+                        "html_url": run.html_url,
+                        "updated_at": run.updated_at.isoformat() if run.updated_at else None,
+                        "ci_status": run.status,
+                        "review_status": "waiting"
+                    }
+                    tasks.append(task)
+            except:
+                pass
 
         # Sort by updated_at desc
         tasks.sort(key=lambda x: x['updated_at'] if x['updated_at'] else '', reverse=True)
