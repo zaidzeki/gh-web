@@ -11,6 +11,7 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
 
 ## 3. User Stories
 - **As a Developer,** I want to see a list of my most recently active repositories so that I can quickly jump back into my work.
+- **As an Enterprise Developer,** I want to browse repositories in my GitHub Organizations and Teams so that I can manage professional projects alongside personal ones.
 - **As a Maintainer,** I want to see which of my repositories have open PRs so that I can prioritize my review time.
 - **As a Power User,** I want to see a list of all my active workspaces and their current Git status (clean/dirty) so that I don't lose track of uncommitted changes.
 - **As a New User,** I want to see my GitHub profile and a list of my repositories immediately after login so that I know the app is correctly connected to my account.
@@ -20,12 +21,13 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
 ### 4.1. The Portfolio Dashboard
 - **UI:** A new "Dashboard" tab (or a revamped "Repositories" tab).
 - **Sections:**
-    - **Personal Repositories:** A searchable/filterable list of repos owned by the user, enriched with **open PR counts** to drive prioritization.
+    - **Repository Portfolio:** A searchable/filterable list of repos (Personal + Organizations), enriched with **open PR counts** and **CI status** to drive prioritization.
     - **Active Workspaces:** A list of repositories currently cloned in the server-side workspace with their branch, status, and **quick actions (Sync, Discard)**.
 
 ### 4.2. Repository Discovery API
-- **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org`)
+- **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org` and `org_name=<name>`)
 - **Behavior:** Fetches repositories from GitHub using the user's PAT.
+- **Org Support:** Automatically discovers user's organizations and provides a selector to switch contexts.
 - **Metadata:** Includes repo name, description, star count, open issues/PR count, and a flag indicating if a local workspace exists.
 
 ### 4.3. User Profile API

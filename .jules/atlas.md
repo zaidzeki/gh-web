@@ -29,3 +29,11 @@
 ## 2025-05-30 - [The Verification Gap]
 **Learning:** Development velocity is meaningless if the code fails silently in production. There is a "Verification Gap" between merging a PR and confirming the health of the deployment. High-trust tools must surface CI/CD status proactively.
 **Action:** Expand the 'Control Center' vision to include Workflow Orchestration, enabling users to monitor run history and trigger manual dispatches directly from the GH-Web dashboard.
+
+## 2025-05-31 - [The Delivery Gap]
+**Learning:** Releasing a product is just the beginning of its life in production. Users need to know *where* their code is running (Staging, Production) and what version is currently deployed. Without environment visibility, the "Value Delivered" claim remains an assumption.
+**Action:** Spec out an Environment Governance module that tracks GitHub Deployments and environments, completing the path from Issue to Production.
+
+## 2025-06-01 - [The Organizational Blind Spot]
+**Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. A tool that only discovers "User Repos" misses the bulk of enterprise work.
+**Action:** Update the Repository Discovery engine to include Organization and Team-based repository listing to unlock enterprise value.

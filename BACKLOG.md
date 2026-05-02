@@ -76,6 +76,16 @@
     - [x] Implement `POST /api/workspace/templates/<template_name>/publish` for template distribution.
     - [x] Add "Publish" action to Template Library in UI.
     - [x] Create Publish Template modal with repository configuration.
+- [ ] **Epic: Continuous Delivery & Environment Governance**
+    - [ ] Implement `GET /api/repos/.../environments` for environment discovery.
+    - [ ] Implement `GET /api/repos/.../deployments` for tracking history and status.
+    - [ ] Implement `POST /api/repos/.../deployments` for triggering promotions.
+    - [ ] Create Environments Tab UI with Environment Cards.
+    - [ ] Integrate deployment approvals into Task Inbox.
+- [ ] **Epic: Organization & Team Discovery**
+    - [ ] Implement `GET /api/user/orgs` for organization discovery.
+    - [ ] Update `GET /api/repos` to support `org_name` filtering.
+    - [ ] Add Organization selector to Dashboard UI.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
@@ -84,3 +94,6 @@
 ## P3: Polish
 - [ ] Sphinx documentation.
 - [ ] 100% test coverage.
+- [ ] Implement Logout & Session Clearing.
+- [ ] Implement Pagination for Task Inbox and Repo List.
+- [ ] Surface CI status badges in Dashboard Repository list.
