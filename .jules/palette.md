@@ -31,3 +31,7 @@
 ## 2025-05-19 - [Interactive Status Badges & Loading Accessibility]
 **Learning:** Static visual status indicators (like "Modified" badges) can be converted into high-value interaction shortcuts (like "View Diff") to reduce clicks. However, they must be made keyboard-accessible with appropriate roles and event listeners. Additionally, icon-only loading spinners must always include visually-hidden text for screen reader parity.
 **Action:** Always provide keyboard accessibility (roles, tabindex, event listeners) for interactive badges and include `<span class="visually-hidden">Loading...</span>` in all spinner components.
+
+## 2025-05-20 - [Contextual Search Shortcuts & Modal Auto-focus]
+**Learning:** For power users, global keyboard shortcuts like `/` for search significantly reduce navigation friction. However, these must be context-aware (focusing different inputs based on the active tab) and must safely ignore keypresses when the user is already in an input. Furthermore, Bootstrap modals must explicitly handle autofocus via the `shown.bs.modal` event to ensure keyboard and screen reader users are correctly positioned.
+**Action:** Implement contextual keyboard shortcuts with visual hints (`<kbd>`) and always use `shown.bs.modal` listeners to manage focus when opening complex modals.
