@@ -66,12 +66,16 @@
     - [x] Create Task Inbox UI on the Dashboard.
     - [x] Integrate "Fix" and "Review" quick-actions into the Task Inbox.
 - [ ] **Epic: Workflow & CI/CD Orchestration**
-    - [ ] Implement `GET /api/repos/.../actions/workflows` for discovery.
-    - [ ] Implement `GET /api/repos/.../actions/runs` for monitoring.
-    - [ ] Implement `POST /api/repos/.../actions/workflows/<id>/dispatch` for manual triggers.
-    - [ ] Create Actions Tab UI with searchable run history.
-    - [ ] Implement dynamic dispatch forms based on workflow inputs.
+    - [x] Implement `GET /api/repos/.../actions/workflows` for discovery.
+    - [x] Implement `GET /api/repos/.../actions/runs` for monitoring.
+    - [x] Implement `POST /api/repos/.../actions/workflows/<id>/dispatch` for manual triggers.
+    - [x] Create Actions Tab UI with searchable run history.
+    - [x] Implement dynamic dispatch forms based on workflow inputs.
     - [ ] Integrate CI status badges into Dashboard and Workspace header.
+- [x] **Epic: Collaborative Scaffolding**
+    - [x] Implement `POST /api/workspace/templates/<template_name>/publish` for template distribution.
+    - [x] Add "Publish" action to Template Library in UI.
+    - [x] Create Publish Template modal with repository configuration.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

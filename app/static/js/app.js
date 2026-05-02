@@ -935,9 +935,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.className = 'list-group-item d-flex justify-content-between align-items-center';
                     item.innerHTML = `
                         <span>${t}</span>
-                        <button class="btn btn-sm btn-outline-danger delete-template-btn" data-template="${t}" aria-label="Delete template ${escapeHTML(t)}" title="Delete template ${escapeHTML(t)}">Delete</button>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary publish-template-btn" data-template="${t}" aria-label="Publish template ${escapeHTML(t)} to GitHub" title="Publish to GitHub">Publish</button>
+                            <button class="btn btn-sm btn-outline-danger delete-template-btn" data-template="${t}" aria-label="Delete template ${escapeHTML(t)}" title="Delete template ${escapeHTML(t)}">Delete</button>
+                        </div>
                     `;
                     libraryList.appendChild(item);
+                });
+
+                libraryList.querySelectorAll('.publish-template-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const t = btn.getAttribute('data-template');
+                        document.getElementById('publishTemplateOriginalName').value = t;
+                        document.getElementById('publishRepoName').value = t;
+                        document.getElementById('publishRepoDescription').value = `Template published from GH-Web: ${t}`;
+                        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('publishTemplateModal'));
+                        modal.show();
+                    });
                 });
 
                 libraryList.querySelectorAll('.delete-template-btn').forEach(btn => {
@@ -2010,6 +2024,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
+    const confirmPublishBtn = document.getElementById('confirmPublishBtn');
+    if (confirmPublishBtn) {
+        confirmPublishBtn.addEventListener('click', async () => {
+            const originalName = document.getElementById('publishTemplateOriginalName').value;
+            const repoName = document.getElementById('publishRepoName').value;
+            const description = document.getElementById('publishRepoDescription').value;
+            const visibility = document.querySelector('input[name="visibility"]:checked').value;
+
+            if (!repoName) return showAlert('Repository name is required', 'danger');
+
+            toggleLoading(confirmPublishBtn, true);
+            try {
+                const response = await fetch(`/api/workspace/templates/${encodeURIComponent(originalName)}/publish`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: repoName,
+                        description: description,
+                        visibility: visibility
+                    })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('publishTemplateModal')).hide();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(confirmPublishBtn, false);
             }
         });
     }

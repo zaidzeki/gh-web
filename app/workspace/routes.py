@@ -426,6 +426,73 @@ def delete_template(template_name):
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/workspace/templates/<template_name>/publish', methods=['POST'])
+def publish_template(template_name):
+    g = get_github_client()
+    token = session.get('github_token')
+    if not g or not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    template_name = secure_filename(template_name)
+    if not template_name:
+        return jsonify({"error": "Invalid template name"}), 400
+
+    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    template_path = os.path.join(templates_root, template_name)
+
+    if not os.path.exists(template_path):
+        return jsonify({"error": "Template not found"}), 404
+
+    data = request.get_json() or request.form
+    repo_name = data.get('name') or template_name
+    description = data.get('description', f"Template published from GH-Web: {template_name}")
+    private = data.get('visibility') == 'private'
+
+    try:
+        # 1. Create the repository on GitHub
+        user = g.get_user()
+        repo = user.create_repo(
+            repo_name,
+            description=description,
+            private=private
+        )
+
+        # 2. Push template content
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Clone the new (empty) repository
+            import urllib.parse
+            encoded_token = urllib.parse.quote(token)
+            auth_url = repo.clone_url.replace('https://github.com/', f'https://{encoded_token}@github.com/')
+            local_repo = git.Repo.clone_from(auth_url, tmp_dir)
+
+            # Copy template content (excluding manifest if desired, but here we include it)
+            for item in os.listdir(template_path):
+                s = os.path.join(template_path, item)
+                d = os.path.join(tmp_dir, item)
+                if os.path.isdir(s):
+                    shutil.copytree(s, d)
+                else:
+                    shutil.copy2(s, d)
+
+            # Configure identity
+            with local_repo.config_writer() as cw:
+                cw.set_value("user", "name", user.name or user.login or "GH-Web User")
+                cw.set_value("user", "email", user.email or "gh-web@example.com")
+
+            # Commit and push
+            local_repo.git.add(A=True)
+            local_repo.index.commit(f"Initial commit of template: {template_name}")
+            local_repo.git.push('origin', 'main')
+
+        return jsonify({
+            "message": f"Template '{template_name}' published successfully as {repo.full_name}",
+            "full_name": repo.full_name,
+            "html_url": repo.html_url
+        }), 201
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/files', methods=['GET'])
 def list_workspace_files():
     repo_name = session.get('active_repo')

@@ -37,3 +37,7 @@
 ## 2026-04-30 - [Expansion: Release & Changelog Orchestration]
 **Learning:** Software delivery "leaks" out of the application during the final mile of tagging and changelog generation. Moving into the "Production Readiness" phase by automating releases reuses 90% of existing GitHub integration while completing the project lifecycle loop. The "Automated Release Notes" engine in the GitHub API is a high-leverage "bridge" feature that removes the need for custom changelog logic.
 **Action:** Always identify "leakage points" where users are forced to return to the parent platform (GitHub) and bridge them to keep the entire workflow in-app.
+
+## 2026-05-02 - [Expansion: Collaborative Scaffolding]
+**Learning:** Local assets (like templates) are a "dead end" for growth if they remain isolated to a single user's server instance. Pivoting to a "Shared Platform" by allowing users to publish local templates as GitHub repositories creates a virtuous cycle of discovery and standardization. The leverage was high because it reused 90% of the existing repository creation and git push logic.
+**Action:** Always look for ways to turn "single-player" assets into "multi-player" collaborative tools to increase network effects and product stickiness.
