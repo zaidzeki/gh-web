@@ -15,3 +15,11 @@
 ## 2026-05-01 - [Playwright & Bootstrap Tabs]
 **Learning:** When verifying UI changes using Playwright, Bootstrap's `fade` class transitions may require a brief manual wait (e.g., `time.sleep(1)`) after clicking a tab to ensure elements are rendered and visible for assertions or screenshots.
 **Action:** Use `time.sleep(1)` or a specific `wait_for` after switching tabs in Playwright verification scripts.
+
+## 2026-05-02 - [PyGithub PaginatedList Mocking]
+**Learning:** PyGithub methods like `get_deployments()` return a `PaginatedList`, which has a `totalCount` attribute. Mocking these with a standard list in unit tests will cause `AttributeError` if the code accesses `totalCount`.
+**Action:** Mock the return value of such methods with a `MagicMock` that has `totalCount` set and `__getitem__` implemented to return items.
+
+## 2026-05-02 - [Playwright Mocking Strategy]
+**Learning:** For frontend verification and UI testing in this repo, using `page.route` to mock backend API responses is much more reliable than trying to authenticate a real session. It decouples UI validation from backend state and live GitHub API behavior.
+**Action:** Prefer `page.route` for all external data dependencies in Playwright scripts.

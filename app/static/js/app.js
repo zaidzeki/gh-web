@@ -220,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View pull requests for ${escapeHTML(repo.full_name)}">PRs</button>
                     <button class="btn btn-sm btn-outline-secondary actions-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View actions for ${escapeHTML(repo.full_name)}">Actions</button>
                     <button class="btn btn-sm btn-outline-secondary releases-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View releases for ${escapeHTML(repo.full_name)}">Releases</button>
+                    <button class="btn btn-sm btn-outline-secondary environments-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View environments for ${escapeHTML(repo.full_name)}">Envs</button>
                     <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="Clone repository ${escapeHTML(repo.full_name)}">Clone</button>
                 </div>
             `;
@@ -272,6 +273,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const releasesTab = document.getElementById('releases-tab');
                 bootstrap.Tab.getOrCreateInstance(releasesTab).show();
                 document.getElementById('listReleasesBtn').click();
+            });
+        });
+
+        repoList.querySelectorAll('.environments-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const repo = btn.getAttribute('data-repo');
+                document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
+                const envsTab = document.getElementById('environments-tab');
+                bootstrap.Tab.getOrCreateInstance(envsTab).show();
+                document.getElementById('listEnvironmentsBtn').click();
             });
         });
 
@@ -505,7 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.className = 'list-group-item d-flex justify-content-between align-items-center py-3';
 
-                const typeIcon = task.type === 'pr' ? '🌿' : '🎫';
+                const typeIcon = task.type === 'pr' ? '🌿' : (task.type === 'deploy' ? '🚀' : '🎫');
                 const categoryBadge = task.category === 'review_requested' ?
                     '<span class="badge bg-danger">Action Required</span>' :
                     (task.category === 'assigned' ? '<span class="badge bg-primary">In Progress</span>' : '<span class="badge bg-secondary">My PR</span>');
@@ -520,9 +531,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusBadges += `<span class="badge ${revClass} ms-1">Review: ${task.review_status.replace('_', ' ').toUpperCase()}</span>`;
                 }
 
-                const actionBtn = task.type === 'pr' ?
-                    `<button class="btn btn-sm btn-outline-primary review-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Review</button>` :
-                    `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
+                let actionBtn = '';
+                if (task.type === 'pr') {
+                    actionBtn = `<button class="btn btn-sm btn-outline-primary review-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Review</button>`;
+                } else if (task.type === 'deploy') {
+                    actionBtn = `<button class="btn btn-sm btn-outline-primary approve-deploy-task-btn" data-repo="${escapeHTML(task.repo)}">Approve</button>`;
+                } else {
+                    actionBtn = `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
+                }
 
                 item.innerHTML = `
                     <div class="d-flex align-items-start gap-3 w-75">
@@ -576,6 +592,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     } finally {
                         toggleLoading(btn, false);
                     }
+                });
+            });
+
+            inbox.querySelectorAll('.approve-deploy-task-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const repo = btn.getAttribute('data-repo');
+                    document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
+                    const envsTab = document.getElementById('environments-tab');
+                    bootstrap.Tab.getOrCreateInstance(envsTab).show();
+                    document.getElementById('listEnvironmentsBtn').click();
                 });
             });
 
@@ -2024,6 +2050,169 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
+    const refreshEnvironments = async (repoFull) => {
+        const container = document.getElementById('environmentsContainer');
+        const deploymentsTableBody = document.querySelector('#deploymentsTable tbody');
+        if (!container || !deploymentsTableBody) return;
+
+        container.innerHTML = '<div class="text-center p-3 w-100"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+        deploymentsTableBody.innerHTML = '<tr><td colspan="4" class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></td></tr>';
+
+        try {
+            const envResponse = await fetch(`/api/repos/${repoFull}/environments`);
+            const environments = await envResponse.json();
+
+            if (envResponse.ok) {
+                container.innerHTML = '';
+                if (environments.length === 0) {
+                    container.innerHTML = '<p class="text-muted p-3 text-center border rounded w-100">No environments defined.</p>';
+                } else {
+                    environments.forEach(env => {
+                        const card = document.createElement('div');
+                        card.className = 'card shadow-sm';
+                        card.style.width = '18rem';
+                        card.innerHTML = `
+                            <div class="card-body">
+                                <h5 class="card-title text-primary text-truncate">${escapeHTML(env.name)}</h5>
+                                <p class="card-text small text-muted mb-2">Created ${timeAgo(env.created_at)}</p>
+                                <div id="env-status-${env.id}" class="mb-3">
+                                    <span class="spinner-border spinner-border-sm" role="status"></span> <small>Loading status...</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary deploy-to-env-btn" data-env="${escapeHTML(env.name)}">Deploy</button>
+                                    <a href="${escapeHTML(env.html_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">View on GitHub</a>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+
+                        // Async load latest deployment for this environment
+                        fetch(`/api/repos/${repoFull}/deployments?environment=${encodeURIComponent(env.name)}`)
+                            .then(res => res.json())
+                            .then(deployments => {
+                                const statusDiv = document.getElementById(`env-status-${env.id}`);
+                                if (deployments.length > 0) {
+                                    const latest = deployments[0];
+                                    const statusClass = latest.status === 'success' ? 'bg-success' : (latest.status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+                                    statusDiv.innerHTML = `
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge ${statusClass}">${escapeHTML(latest.status.toUpperCase())}</span>
+                                            <small class="text-muted font-monospace">${escapeHTML(latest.sha.substring(0, 7))}</small>
+                                        </div>
+                                        <div class="small mt-1 text-truncate" title="${escapeHTML(latest.description || '')}">${escapeHTML(latest.description || 'No description')}</div>
+                                    `;
+                                } else {
+                                    statusDiv.innerHTML = '<span class="text-muted small">No deployments yet</span>';
+                                }
+                            });
+                    });
+
+                    container.querySelectorAll('.deploy-to-env-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            document.getElementById('deployEnv').value = btn.dataset.env;
+                            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deployModal'));
+                            modal.show();
+                        });
+                    });
+                }
+            } else {
+                container.innerHTML = `<p class="text-danger p-3 small w-100">${escapeHTML(environments.error)}</p>`;
+            }
+
+            await refreshDeployments(repoFull);
+        } catch (error) {
+            showAlert(error.message, 'danger');
+        }
+    };
+
+    const refreshDeployments = async (repoFull) => {
+        const tableBody = document.querySelector('#deploymentsTable tbody');
+        try {
+            const response = await fetch(`/api/repos/${repoFull}/deployments`);
+            const deployments = await response.json();
+            if (response.ok) {
+                tableBody.innerHTML = '';
+                if (deployments.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">No deployments found.</td></tr>';
+                    return;
+                }
+                deployments.forEach(dep => {
+                    const tr = document.createElement('tr');
+                    const statusClass = dep.status === 'success' ? 'bg-success' : (dep.status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="fw-bold small">${escapeHTML(dep.task)} #${dep.id}</div>
+                            <small class="text-muted">${escapeHTML(dep.sha.substring(0, 7))} by ${escapeHTML(dep.creator)}</small>
+                        </td>
+                        <td><span class="badge bg-info text-dark small">${escapeHTML(dep.environment)}</span></td>
+                        <td><span class="badge ${statusClass} small">${escapeHTML(dep.status.toUpperCase())}</span></td>
+                        <td><small class="text-muted" title="${escapeHTML(new Date(dep.created_at).toLocaleString())}">${timeAgo(dep.created_at)}</small></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-danger text-center p-3">${escapeHTML(deployments.error)}</td></tr>`;
+            }
+        } catch (error) {
+            tableBody.innerHTML = `<tr><td colspan="4" class="text-danger text-center p-3">${escapeHTML(error.message)}</td></tr>`;
+        }
+    };
+
+    const listEnvironmentsForm = document.getElementById('listEnvironmentsForm');
+    if (listEnvironmentsForm) {
+        listEnvironmentsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const repoFull = document.getElementById('environmentsRepoFullName').value;
+            if (repoFull) refreshEnvironments(repoFull);
+        });
+    }
+
+    const triggerDeployBtn = document.getElementById('triggerDeployBtn');
+    if (triggerDeployBtn) {
+        triggerDeployBtn.addEventListener('click', () => {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deployModal'));
+            modal.show();
+        });
+    }
+
+    const confirmDeployBtn = document.getElementById('confirmDeployBtn');
+    if (confirmDeployBtn) {
+        confirmDeployBtn.addEventListener('click', async () => {
+            const repoFull = document.getElementById('environmentsRepoFullName').value;
+            const ref = document.getElementById('deployRef').value;
+            const environment = document.getElementById('deployEnv').value;
+            const description = document.getElementById('deployDescription').value;
+            const autoMerge = document.getElementById('deployAutoMerge').checked;
+
+            if (!repoFull || !ref || !environment) {
+                return showAlert('Repo, Ref and Environment are required', 'warning');
+            }
+
+            toggleLoading(confirmDeployBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/deployments`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ref, environment, description, auto_merge: autoMerge
+                    })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('deployModal')).hide();
+                    setTimeout(() => refreshEnvironments(repoFull), 2000);
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(confirmDeployBtn, false);
             }
         });
     }
