@@ -663,6 +663,48 @@
         </div>
     </div>
 
+    <!-- Publish Template Modal -->
+    <div class="modal fade" id="publishTemplateModal" tabindex="-1" aria-labelledby="publishTemplateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-primary bg-primary text-white">
+                    <h5 class="modal-title" id="publishTemplateModalLabel">Publish Template to GitHub</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="publishTemplateForm">
+                        <input type="hidden" id="publishTemplateOriginalName" name="original_name">
+                        <div class="mb-3">
+                            <label for="publishRepoName" class="form-label required-label">Repository Name</label>
+                            <input type="text" class="form-control" id="publishRepoName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="publishRepoDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="publishRepoDescription" name="description" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Visibility</label>
+                            <div class="d-flex gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="visibility" id="publishVisibilityPublic" value="public" checked>
+                                    <label class="form-check-label" for="publishVisibilityPublic">Public</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="visibility" id="publishVisibilityPrivate" value="private">
+                                    <label class="form-check-label" for="publishVisibilityPrivate">Private</label>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmPublishBtn">Publish to GitHub</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='vendors/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
