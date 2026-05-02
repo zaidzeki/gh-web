@@ -2063,4 +2063,42 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Modal auto-focus improvements
+    const fileModalEl = document.getElementById('fileModal');
+    if (fileModalEl) {
+        fileModalEl.addEventListener('shown.bs.modal', () => {
+            const editor = document.getElementById('fileContentEditor');
+            if (editor) editor.focus();
+        });
+    }
+
+    const searchModalEl = document.getElementById('searchModal');
+    if (searchModalEl) {
+        searchModalEl.addEventListener('shown.bs.modal', () => {
+            const firstResult = document.querySelector('#searchResultsList .list-group-item-action');
+            if (firstResult) firstResult.focus();
+        });
+    }
+
+    // Global keyboard shortcut for search
+    document.addEventListener('keydown', (e) => {
+        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            const activeTab = document.querySelector('#mainTabs .nav-link.active')?.id;
+            let targetInput = null;
+
+            if (activeTab === 'dashboard-tab') {
+                targetInput = document.getElementById('dashboardRepoSearch');
+            } else if (activeTab === 'actions-tab') {
+                targetInput = document.getElementById('runSearch');
+            } else if (activeTab === 'workspace-tab') {
+                targetInput = document.getElementById('workspaceOmniSearch');
+            }
+
+            if (targetInput) {
+                e.preventDefault();
+                targetInput.focus();
+            }
+        }
+    });
 });
