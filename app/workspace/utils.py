@@ -18,8 +18,8 @@ def mask_token(s):
         pass
 
     # Mask other common GitHub token patterns as defense-in-depth
-    # Patterns: ghp_..., github_pat_..., etc.
-    s = re.sub(r'ghp_[a-zA-Z0-9]{36}', '********', s)
+    # Patterns: ghp_ (Personal), gho_ (OAuth), ghu_ (User), ghs_ (Server), ghr_ (Runner), github_pat_...
+    s = re.sub(r'gh[pours]_[a-zA-Z0-9]{36}', '********', s)
     s = re.sub(r'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}', '********', s)
     return s
 
