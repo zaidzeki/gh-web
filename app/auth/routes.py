@@ -35,3 +35,19 @@ def get_user_profile():
         }), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/user/orgs', methods=['GET'])
+def get_user_orgs():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        user = g.get_user()
+        orgs = user.get_orgs()
+        return jsonify([{
+            "login": org.login,
+            "avatar_url": org.avatar_url
+        } for org in orgs]), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500

@@ -22,14 +22,22 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org')
 
     try:
         user = g.get_user()
+        owner_name = org_name if org_name else user.login
+        owner_type = "org" if org_name else "user"
+
         if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+            # Filtered search within specified context
+            repos = g.search_repositories(f"{owner_type}:{owner_name} {search_query}")
+        elif org_name:
+            # List org repos
+            org = g.get_organization(org_name)
+            repos = org.get_repos(sort='pushed', direction='desc')
         else:
-            # Default to recently pushed
+            # Default to user's recently pushed
             repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
@@ -37,12 +45,14 @@ def list_repos():
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
+            # Search issues/PRs for the specific owner (user or org)
+            # Scalability: Limit to top 100 most recent items to avoid API timeouts in large orgs
+            open_prs = g.search_issues(f"is:pr is:open {owner_type}:{owner_name}", sort='updated')[:100]
             for pr in open_prs:
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
+            open_issues = g.search_issues(f"is:issue is:open {owner_type}:{owner_name}", sort='updated')[:100]
             for issue in open_issues:
                 repo_name = issue.repository.full_name
                 issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1
