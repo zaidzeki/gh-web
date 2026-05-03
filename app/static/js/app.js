@@ -2063,4 +2063,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Global Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Global / shortcut for contextual search
+        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) && !document.querySelector('.modal.show')) {
+            const activeTabEl = document.querySelector('#mainTabs .nav-link.active');
+            if (!activeTabEl) return;
+
+            const activeTab = activeTabEl.id;
+            let searchInputId = '';
+
+            switch (activeTab) {
+                case 'dashboard-tab':
+                    searchInputId = 'dashboardRepoSearch';
+                    break;
+                case 'actions-tab':
+                    searchInputId = 'runSearch';
+                    break;
+                case 'workspace-tab':
+                    searchInputId = 'workspaceOmniSearch';
+                    break;
+            }
+
+            if (searchInputId) {
+                const input = document.getElementById(searchInputId);
+                if (input) {
+                    e.preventDefault();
+                    input.focus();
+                    input.select();
+                }
+            }
+        }
+    });
 });
