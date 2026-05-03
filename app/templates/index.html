@@ -79,6 +79,7 @@
                             <div class="input-group w-50">
                                 <span class="input-group-text" id="repoSearchIcon" aria-hidden="true">🔍</span>
                                 <input type="text" id="dashboardRepoSearch" class="form-control" placeholder="Filter repositories..." aria-label="Filter repositories">
+                                <span class="input-group-text d-none d-md-block" title="Press / to focus"><kbd>/</kbd></span>
                             </div>
                         </div>
                         <div id="dashboardRepoList" class="list-group mb-4" style="max-height: 500px; overflow-y: auto;">
@@ -340,7 +341,8 @@
                         <h4 class="card-title">Omni-Search</h4>
                         <form id="workspaceSearchForm">
                             <div class="input-group">
-                                <input type="text" class="form-control" name="q" placeholder="Search code (symbol, text, config)..." aria-label="Search code" required>
+                                <input type="text" class="form-control" id="workspaceOmniSearch" name="q" placeholder="Search code (symbol, text, config)..." aria-label="Search code" required>
+                                <span class="input-group-text d-none d-md-block" title="Press / to focus"><kbd>/</kbd></span>
                                 <button type="submit" class="btn btn-primary" id="workspaceSearchBtn">Search</button>
                             </div>
                         </form>
@@ -469,6 +471,7 @@
                             <div class="input-group input-group-sm w-50">
                                 <span class="input-group-text">🔍</span>
                                 <input type="text" id="runSearch" class="form-control" placeholder="Filter runs..." aria-label="Filter runs">
+                                <span class="input-group-text d-none d-md-block" title="Press / to focus"><kbd>/</kbd></span>
                             </div>
                         </div>
                         <div id="runsContainer" style="max-height: 500px; overflow-y: auto;" class="border rounded">
