@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
+                refreshOrgs();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -150,12 +151,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let allRepos = [];
+    let currentOrgContext = '';
+
     const refreshDashboardRepos = async (search = '') => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
         try {
-            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            let url = `/api/repos?`;
+            if (currentOrgContext) url += `org=${encodeURIComponent(currentOrgContext)}&`;
+            if (search) url += `search=${encodeURIComponent(search)}&`;
+
             const response = await fetch(url);
             const repos = await response.json();
 
@@ -481,6 +487,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    const refreshOrgs = async () => {
+        const menu = document.getElementById('orgDropdownMenu');
+        if (!menu) return;
+
+        try {
+            const response = await fetch('/api/user/orgs');
+            const orgs = await response.json();
+
+            if (response.ok) {
+                // Keep the "Personal" item and the divider
+                const personalItem = menu.querySelector('li:nth-child(1)');
+                const divider = menu.querySelector('li:nth-child(2)');
+                menu.innerHTML = '';
+                menu.appendChild(personalItem);
+                menu.appendChild(divider);
+
+                orgs.forEach(org => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a class="dropdown-item context-item d-flex align-items-center gap-2" href="#" data-org="${escapeHTML(org.login)}">
+                            <img src="${escapeHTML(org.avatar_url)}" width="20" height="20" class="rounded-circle" alt="">
+                            ${escapeHTML(org.login)}
+                        </a>
+                    `;
+                    menu.appendChild(li);
+                });
+
+                menu.querySelectorAll('.context-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const org = item.getAttribute('data-org');
+                        const orgName = org || 'Personal';
+
+                        // Update state
+                        currentOrgContext = org;
+
+                        // Update UI
+                        document.getElementById('currentContextName').textContent = orgName;
+                        menu.querySelectorAll('.context-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+
+                        // Refresh repos
+                        refreshDashboardRepos();
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch organizations:', error);
+        }
+    };
 
     const refreshTaskInbox = async () => {
         const inbox = document.getElementById('taskInboxList');

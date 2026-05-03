@@ -82,9 +82,9 @@
     - [ ] Implement `POST /api/repos/.../deployments` for triggering promotions.
     - [ ] Create Environments Tab UI with Environment Cards.
     - [ ] Integrate deployment approvals into Task Inbox.
-- [ ] **Epic: Organization & Team Discovery**
+- [ ] **Epic: Organization & Team Discovery** (See [detailed backlog](docs/product/org_discovery_backlog.md))
     - [ ] Implement `GET /api/user/orgs` for organization discovery.
-    - [ ] Update `GET /api/repos` to support `org_name` filtering.
+    - [ ] Update `GET /api/repos` to support `org` filtering.
     - [ ] Add Organization selector to Dashboard UI.
 
 ## P2: Feature

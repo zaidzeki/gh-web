@@ -8,7 +8,7 @@ The Repository Discovery module enables users to explore their GitHub portfolio 
 ### 2.1. Discovery Engine
 Responsible for fetching repository metadata from the GitHub API using the user's PAT.
 - **Service:** `app/repos/routes.py`
-- **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
+- **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')` or `Github.get_organization(name).get_repos()`
 - **Metadata Enrichment:** Returns `open_issues_count` to provide a quick summary of pending work (PRs and issues).
 - **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading. Subsequent data can be loaded via pagination.
 
@@ -22,10 +22,10 @@ Scans the server-side filesystem to identify repositories that have been "sandbo
     4. Extract `active_branch`, `is_dirty`, and `untracked_files`.
     5. Correlate with GitHub repository names.
 
-### 2.3. User Profile Integration
-Fetches the authenticated user's profile to personalize the application.
-- **Service:** `app/auth/routes.py` or a new `app/user/routes.py`.
-- **Method:** `Github.get_user()`
+### 2.3. User Profile & Organization Integration
+Fetches the authenticated user's profile and organizations to personalize the application and enable context switching.
+- **Service:** `app/auth/routes.py`
+- **Method:** `Github.get_user()` and `Github.get_user().get_orgs()`
 
 ## 3. Data Flow
 

@@ -4,7 +4,7 @@
 GH-Web currently functions as a "point-and-click" tool for specific repositories the user already knows about. It lacks a global overview of the user's GitHub presence, forcing manual entry of repository names and preventing users from seeing the bigger picture of their work (active PRs, clean vs. dirty workspaces, available repositories).
 
 ## 2. Objectives
-- **Accelerate Discovery:** Allow users to browse and search their own repositories and starred repositories.
+- **Accelerate Discovery:** Allow users to browse and search their own repositories, starred repositories, and Organization-owned repositories.
 - **Surface Actionable Data:** Highlight repositories with open pull requests that require attention.
 - **Centralize Workspace Management:** Provide a "Control Center" for all active server-side workspaces.
 - **Personalize the Experience:** Show the user's GitHub profile and status to make the application feel like a professional home.
@@ -25,16 +25,21 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
     - **Active Workspaces:** A list of repositories currently cloned in the server-side workspace with their branch, status, and **quick actions (Sync, Discard)**.
 
 ### 4.2. Repository Discovery API
-- **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org` and `org_name=<name>`)
+- **Endpoint:** `GET /api/repos` (with optional `org=<name>` and `search=<query>`)
 - **Behavior:** Fetches repositories from GitHub using the user's PAT.
-- **Org Support:** Automatically discovers user's organizations and provides a selector to switch contexts.
-- **Metadata:** Includes repo name, description, star count, open issues/PR count, and a flag indicating if a local workspace exists.
+- **Org Support:** If `org` is provided, fetches repositories for that specific organization. Otherwise, defaults to the authenticated user's repositories.
+- **Metadata:** Includes repo name, description, star count, open issues/PR count, and pushed timestamp.
 
-### 4.3. User Profile API
+### 4.3. Organization Discovery API
+- **Endpoint:** `GET /api/user/orgs`
+- **Behavior:** Returns a list of organizations the user belongs to, including login and avatar URL.
+- **Goal:** Populates the context switcher in the UI to allow seamless browsing of enterprise/group assets.
+
+### 4.4. User Profile API
 - **Endpoint:** `GET /api/user`
 - **Behavior:** Returns basic profile info (login, avatar URL, bio) to personalize the UI header.
 
-### 4.4. Workspace Portfolio API
+### 4.5. Workspace Portfolio API
 - **Endpoint:** `GET /api/workspace/portfolio`
 - **Behavior:** Scans the server-side `/tmp/gh-web-workspaces/<session_id>` directory and returns the status of every active repository.
 
