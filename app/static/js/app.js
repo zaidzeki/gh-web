@@ -1964,6 +1964,53 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Global '/' to focus search based on context
+        if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+            const activeTabEl = document.querySelector('#mainTabs .nav-link.active');
+            if (!activeTabEl) return;
+
+            const activeTab = activeTabEl.id;
+            let searchInput = null;
+
+            if (activeTab === 'dashboard-tab') {
+                searchInput = document.getElementById('dashboardRepoSearch');
+            } else if (activeTab === 'workspace-tab') {
+                searchInput = document.getElementById('workspaceOmniSearch');
+            } else if (activeTab === 'actions-tab') {
+                searchInput = document.getElementById('runSearch');
+            }
+
+            if (searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        }
+    });
+
+    // Modal focus management
+    const modalFocusMap = {
+        'fileModal': '#fileContentEditor',
+        'searchModal': '#searchResultsList .list-group-item:first-child',
+        'dispatchModal': '#dispatchRef',
+        'publishTemplateModal': '#publishRepoName',
+        'templateParamsModal': '#dynamicParamsContainer input:first-child',
+        'historyModal': '#historyList .list-group-item:first-child',
+        'conversationModal': '#commentBody',
+        'diffModal': '#copyDiffBtn'
+    };
+
+    Object.keys(modalFocusMap).forEach(modalId => {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            modalEl.addEventListener('shown.bs.modal', () => {
+                const target = modalEl.querySelector(modalFocusMap[modalId]);
+                if (target) target.focus();
+            });
+        }
+    });
+
     const generateNotesBtn = document.getElementById('generateNotesBtn');
     if (generateNotesBtn) {
         generateNotesBtn.addEventListener('click', async () => {
