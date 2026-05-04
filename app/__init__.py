@@ -44,6 +44,7 @@ def create_app(test_config=None):
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
         # Tighten CSP: add frame-ancestors 'none' to prevent clickjacking and form-action 'self' to restrict form submissions.
         response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://avatars.githubusercontent.com; frame-ancestors 'none'; form-action 'self';"
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         return response
 
     @app.route('/')
