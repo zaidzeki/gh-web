@@ -75,7 +75,19 @@
                 <div class="row">
                     <div class="col-md-8">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3>Your Repositories</h3>
+                            <div class="d-flex align-items-center gap-3">
+                                <h3 class="mb-0">Repositories</h3>
+                                <div class="dropdown" id="orgContextSwitcherContainer" style="display:none;">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center gap-2" type="button" id="orgContextSwitcher" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span>Personal</span>
+                                    </button>
+                                    <ul class="dropdown-menu shadow" aria-labelledby="orgContextSwitcher" id="orgContextList">
+                                        <li><a class="dropdown-item active" href="#" data-org="">Personal</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <!-- Organizations populated via JS -->
+                                    </ul>
+                                </div>
+                            </div>
                             <div class="input-group w-50">
                                 <span class="input-group-text" id="repoSearchIcon" aria-hidden="true">🔍</span>
                                 <input type="text" id="dashboardRepoSearch" class="form-control" placeholder="Filter repositories..." aria-label="Filter repositories">

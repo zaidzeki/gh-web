@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.handleForm = handleForm;
     window.showAlert = showAlert;
 
+    let currentOrg = '';
     const initDashboard = async () => {
         const profileDiv = document.getElementById('userProfile');
         const loginForm = document.getElementById('loginForm');
@@ -136,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileDiv.classList.add('d-flex');
                 if (loginForm) loginForm.classList.add('d-none');
 
+                await refreshDashboardOrgs();
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
@@ -149,13 +151,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const refreshDashboardOrgs = async () => {
+        const container = document.getElementById('orgContextSwitcherContainer');
+        const list = document.getElementById('orgContextList');
+        if (!container || !list) return;
+
+        try {
+            const response = await fetch('/api/user/orgs');
+            const orgs = await response.json();
+
+            if (response.ok && orgs.length > 0) {
+                container.style.display = 'block';
+                // Remove existing org items (keep Personal and Divider)
+                while (list.children.length > 2) {
+                    list.removeChild(list.lastChild);
+                }
+
+                orgs.forEach(org => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-org="${escapeHTML(org.login)}">
+                            <img src="${escapeHTML(org.avatar_url)}" width="20" height="20" class="rounded-circle">
+                            ${escapeHTML(org.login)}
+                        </a>
+                    `;
+                    list.appendChild(li);
+                });
+
+                list.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const org = item.getAttribute('data-org');
+                        if (org === currentOrg) return;
+
+                        // Update active state
+                        list.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                        item.classList.add('active');
+
+                        // Update button text
+                        const btn = document.getElementById('orgContextSwitcher');
+                        btn.querySelector('span').textContent = org || 'Personal';
+
+                        currentOrg = org;
+                        refreshDashboardRepos();
+                    });
+                });
+            } else {
+                container.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to fetch organizations:', error);
+        }
+    };
+
     let allRepos = [];
     const refreshDashboardRepos = async (search = '') => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
         try {
-            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            const params = new URLSearchParams();
+            if (search) params.set('search', search);
+            if (currentOrg) params.set('org_name', currentOrg);
+
+            const queryString = params.toString();
+            const url = queryString ? `/api/repos?${queryString}` : '/api/repos';
+
             const response = await fetch(url);
             const repos = await response.json();
 
