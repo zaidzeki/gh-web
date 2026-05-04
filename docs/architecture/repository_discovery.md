@@ -22,10 +22,16 @@ Scans the server-side filesystem to identify repositories that have been "sandbo
     4. Extract `active_branch`, `is_dirty`, and `untracked_files`.
     5. Correlate with GitHub repository names.
 
-### 2.3. User Profile Integration
-Fetches the authenticated user's profile to personalize the application.
-- **Service:** `app/auth/routes.py` or a new `app/user/routes.py`.
-- **Method:** `Github.get_user()`
+### 2.3. User Profile & Organization Discovery
+Fetches the authenticated user's profile and discovered organizations to personalize the experience.
+- **Service:** `app/auth/routes.py`
+- **User Method:** `Github.get_user()`
+- **Organization Method:** `Github.get_user().get_orgs()`
+- **Org API:** `GET /api/user/orgs`
+    - Returns a list of Org objects: `[{"login": "org1", "avatar_url": "..."}, ...]`.
+- **Caching Strategy:**
+    - Organization list is cached in the Flask session for 1 hour to prevent redundant API calls during context switching.
+    - Repository counts for each Org are fetched lazily and cached.
 
 ## 3. Data Flow
 

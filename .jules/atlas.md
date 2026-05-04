@@ -37,3 +37,7 @@
 ## 2025-06-01 - [The Organizational Blind Spot]
 **Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. A tool that only discovers "User Repos" misses the bulk of enterprise work.
 **Action:** Update the Repository Discovery engine to include Organization and Team-based repository listing to unlock enterprise value.
+
+## 2025-06-02 - [The Delivery Gap]
+**Learning:** A "Release" is not the final state of code; a running environment is. Bridging the gap between the GitHub Release API and the Deployment API is critical for user trust and operational visibility.
+**Action:** Spec out an Environment Governance module that tracks GitHub Deployments, enabling users to verify "Live" status directly from the dashboard.

@@ -77,15 +77,21 @@
     - [x] Add "Publish" action to Template Library in UI.
     - [x] Create Publish Template modal with repository configuration.
 - [ ] **Epic: Continuous Delivery & Environment Governance**
-    - [ ] Implement `GET /api/repos/.../environments` for environment discovery.
-    - [ ] Implement `GET /api/repos/.../deployments` for tracking history and status.
-    - [ ] Implement `POST /api/repos/.../deployments` for triggering promotions.
-    - [ ] Create Environments Tab UI with Environment Cards.
-    - [ ] Integrate deployment approvals into Task Inbox.
+    - [ ] **User Story:** As a Developer, I want to see which version is live in each environment so I can verify my changes.
+        - **Acceptance Criteria:** Environments tab displays cards for each environment with state, ref (tag/SHA), and relative timestamp.
+    - [ ] **User Story:** As a Product Lead, I want to see the Production version on the Dashboard.
+        - **Acceptance Criteria:** Repository list items display a "Production" badge with the latest successful deployment tag.
+    - [ ] **User Story:** As an Ops Engineer, I want to promote a specific release to Production.
+        - **Acceptance Criteria:** "Deploy to..." modal allows selecting a target environment and a source ref.
+    - [ ] **User Story:** As an Approver, I want to approve pending deployments from my inbox.
+        - **Acceptance Criteria:** Task Inbox surfaces "Waiting" deployments; clicking "Approve" updates the deployment status on GitHub.
+    - [ ] Implement backend endpoints: `GET /environments`, `GET /deployments`, `POST /deployments`, `POST /deployments/<id>/status`.
 - [ ] **Epic: Organization & Team Discovery**
-    - [ ] Implement `GET /api/user/orgs` for organization discovery.
-    - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+    - [ ] **User Story:** As a professional developer, I want to manage repositories in my GitHub Organizations.
+        - **Acceptance Criteria:** Dashboard header includes an Organization selector; switching context refreshes the repo list.
+    - [ ] **User Story:** As a user with many organizations, I want to quickly find the right context.
+        - **Acceptance Criteria:** Organization selector includes a search/filter input if the user has more than 5 organizations.
+    - [ ] Implement backend endpoints: `GET /api/user/orgs`, and update `GET /api/repos` for `org_name` filtering.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
