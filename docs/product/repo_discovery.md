@@ -24,7 +24,15 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
     - **Repository Portfolio:** A searchable/filterable list of repos (Personal + Organizations), enriched with **open PR counts** and **CI status** to drive prioritization.
     - **Active Workspaces:** A list of repositories currently cloned in the server-side workspace with their branch, status, and **quick actions (Sync, Discard)**.
 
-### 4.2. Repository Discovery API
+### 4.2. Organization Context Switcher
+- **UI Component:** A searchable dropdown menu in the Dashboard header (next to the Repository list title).
+- **Functionality:**
+    - Displays "Personal" as the default context.
+    - Lists all discovered Organizations where the user has repository access.
+    - Provides a "Search Organizations" filter within the dropdown for users with 10+ Orgs.
+    - Switching context triggers a loading state and refreshes the Repository Portfolio with the Org's repositories.
+
+### 4.3. Repository Discovery API
 - **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org` and `org_name=<name>`)
 - **Behavior:** Fetches repositories from GitHub using the user's PAT.
 - **Org Support:** Automatically discovers user's organizations and provides a selector to switch contexts.
