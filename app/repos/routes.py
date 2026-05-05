@@ -5,7 +5,7 @@ import tempfile
 from flask import Blueprint, request, session, jsonify
 from github import Github
 from werkzeug.utils import secure_filename
-from ..workspace.utils import render_template_dir, mask_token
+from ..workspace.utils import render_template_dir, mask_token, get_templates_root
 
 bp = Blueprint('repos', __name__)
 
@@ -109,7 +109,8 @@ def create_repo():
         )
 
         if template_name:
-            templates_root = os.path.expanduser('~/.zekiprod/templates')
+            # Ensure template storage exists with restricted permissions
+            templates_root = get_templates_root()
             template_path = os.path.join(templates_root, template_name)
 
             if os.path.exists(template_path):

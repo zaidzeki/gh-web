@@ -4,6 +4,21 @@ import re
 from flask import session
 from jinja2.sandbox import SandboxedEnvironment
 
+def get_templates_root():
+    """
+    Returns the path to the template storage directory, ensuring it and its
+    parent exist with restricted permissions (0700).
+    """
+    root = os.path.expanduser('~/.zekiprod')
+    templates_root = os.path.join(root, 'templates')
+    os.makedirs(templates_root, mode=0o700, exist_ok=True)
+    try:
+        os.chmod(root, 0o700)
+        os.chmod(templates_root, 0o700)
+    except OSError:
+        pass
+    return templates_root
+
 def mask_token(s):
     if not isinstance(s, str):
         return s
