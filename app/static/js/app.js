@@ -2063,4 +2063,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Global Keyboard Shortcut: '/' to focus contextual search
+    document.addEventListener('keydown', (e) => {
+        // Don't trigger if user is typing in an input, textarea or contentEditable
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
+
+        if (e.key === '/') {
+            const activeTab = document.querySelector('#mainTabs .nav-link.active');
+            if (!activeTab) return;
+
+            let targetInput = null;
+            if (activeTab.id === 'dashboard-tab') {
+                targetInput = document.getElementById('dashboardRepoSearch');
+            } else if (activeTab.id === 'actions-tab') {
+                targetInput = document.getElementById('runSearch');
+            } else if (activeTab.id === 'workspace-tab') {
+                targetInput = document.getElementById('workspaceOmniSearch');
+            }
+
+            if (targetInput) {
+                e.preventDefault();
+                targetInput.focus();
+            }
+        }
+    });
+
+    // UX: Modal Auto-focus and Keyboard Accessibility
+    const setupModalFocus = (modalId, focusSelector) => {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            modalEl.addEventListener('shown.bs.modal', () => {
+                const target = modalEl.querySelector(focusSelector);
+                if (target) target.focus();
+            });
+        }
+    };
+
+    setupModalFocus('fileModal', '#fileContentEditor');
+    setupModalFocus('dispatchModal', '#dispatchRef');
+    setupModalFocus('publishTemplateModal', '#publishRepoName');
+    setupModalFocus('conversationModal', '#commentBody');
+    setupModalFocus('templateParamsModal', 'input, textarea, select');
 });

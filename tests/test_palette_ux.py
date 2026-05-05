@@ -70,3 +70,42 @@ def test_tree_item_accessibility(page: Page, server):
     # For now, let's verify the code by checking the HTML structure if we can trigger a mock response.
     # But since we're in a real browser, let's just ensure the app.js loaded correctly.
     pass
+
+def test_global_search_shortcut(page: Page, server):
+    page.goto(server)
+
+    # Test Dashboard Tab
+    page.press("body", "/")
+    expect(page.locator("#dashboardRepoSearch")).to_be_focused()
+
+    # Test Actions Tab
+    page.click("#actions-tab")
+    page.press("body", "/")
+    expect(page.locator("#runSearch")).to_be_focused()
+
+    # Test Workspace Tab
+    page.click("#workspace-tab")
+    page.press("body", "/")
+    expect(page.locator("#workspaceOmniSearch")).to_be_focused()
+
+def test_modal_auto_focus(page: Page, server):
+    page.goto(server)
+    page.click("#workspace-tab")
+
+    # Trigger Diff Modal (it should focus something or just open)
+    # Actually let's test a modal with an input we defined
+
+    # File Modal
+    # We can't easily trigger it without a file, but we can call the JS function if we're desperate
+    # or just check if the listener is registered.
+
+    # Conversation Modal
+    page.evaluate("bootstrap.Modal.getOrCreateInstance(document.getElementById('conversationModal')).show()")
+    time.sleep(0.5) # Wait for animation
+    expect(page.locator("#commentBody")).to_be_focused()
+    page.keyboard.press("Escape")
+
+    # Dispatch Modal
+    page.evaluate("bootstrap.Modal.getOrCreateInstance(document.getElementById('dispatchModal')).show()")
+    time.sleep(0.5)
+    expect(page.locator("#dispatchRef")).to_be_focused()
