@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
+                refreshOrgContexts();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -150,12 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let allRepos = [];
+    let currentOrg = '';
+
     const refreshDashboardRepos = async (search = '') => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
         try {
-            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (currentOrg) params.append('org_name', currentOrg);
+
+            const url = `/api/repos${params.toString() ? '?' + params.toString() : ''}`;
             const response = await fetch(url);
             const repos = await response.json();
 
@@ -487,7 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inbox) return;
 
         try {
-            const response = await fetch('/api/tasks');
+            const url = currentOrg ? `/api/tasks?org_name=${encodeURIComponent(currentOrg)}` : '/api/tasks';
+            const response = await fetch(url);
             const tasks = await response.json();
 
             if (!response.ok) {
@@ -619,6 +627,65 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshTaskInbox().finally(() => toggleLoading(refreshTasksBtn, false));
         });
     }
+
+    const refreshOrgContexts = async () => {
+        const container = document.getElementById('orgContextSwitcherContainer');
+        const list = document.getElementById('orgContextList');
+        if (!container || !list) return;
+
+        try {
+            const response = await fetch('/api/user/orgs');
+            const orgs = await response.json();
+
+            if (response.ok && orgs.length > 0) {
+                container.style.display = 'block';
+                // Keep the first two items: Personal and the divider
+                while (list.children.length > 2) {
+                    list.removeChild(list.lastChild);
+                }
+
+                orgs.forEach(org => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <a class="dropdown-item d-flex align-items-center" href="#" data-org="${escapeHTML(org.login)}">
+                            <img src="${escapeHTML(org.avatar_url)}" class="rounded-circle me-2" width="20" height="20">
+                            ${escapeHTML(org.login)}
+                        </a>
+                    `;
+                    list.appendChild(li);
+                });
+
+                list.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const org = item.getAttribute('data-org');
+                        const orgNameDisplay = org || 'Personal';
+
+                        if (org === currentOrg) return;
+
+                        currentOrg = org;
+                        document.getElementById('orgContextSwitcher').textContent = orgNameDisplay;
+
+                        list.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
+                        item.classList.add('active');
+
+                        // Refresh Dashboard
+                        const reposHeading = document.querySelector('#dashboard h3:first-of-type');
+                        if (reposHeading) {
+                            reposHeading.textContent = org ? `${org} Repositories` : 'Your Repositories';
+                        }
+
+                        refreshDashboardRepos();
+                        refreshTaskInbox();
+                    });
+                });
+            } else {
+                container.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Failed to fetch orgs:', error);
+        }
+    };
 
     initDashboard();
 

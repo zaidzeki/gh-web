@@ -3,7 +3,7 @@ import shutil
 import git
 import tempfile
 from flask import Blueprint, request, session, jsonify
-from github import Github
+from github import Github, Auth
 from werkzeug.utils import secure_filename
 from ..workspace.utils import render_template_dir, mask_token
 
@@ -13,7 +13,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    auth = Auth.Token(token)
+    return Github(auth=auth)
 
 @bp.route('/api/repos', methods=['GET'])
 def list_repos():
@@ -22,14 +23,22 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org_name')
 
     try:
         user = g.get_user()
+        context_name = org_name if org_name else user.login
+        context_type = "org" if org_name else "user"
+
         if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+            # Filtered search within context
+            repos = g.search_repositories(f"{context_type}:{context_name} {search_query}")
+        elif org_name:
+            # Org repos
+            org = g.get_organization(org_name)
+            repos = org.get_repos(sort='pushed', direction='desc')
         else:
-            # Default to recently pushed
+            # Default to recently pushed user repos
             repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
@@ -37,12 +46,19 @@ def list_repos():
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
+            # Scalability: Cap aggregation at top 100 most recently updated items for orgs
+            search_limit = 100 if org_name else None
+
+            open_prs = g.search_issues(f"is:pr is:open {context_type}:{context_name}", sort="updated")
+            if search_limit:
+                open_prs = open_prs[:search_limit]
             for pr in open_prs:
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
+            open_issues = g.search_issues(f"is:issue is:open {context_type}:{context_name}", sort="updated")
+            if search_limit:
+                open_issues = open_issues[:search_limit]
             for issue in open_issues:
                 repo_name = issue.repository.full_name
                 issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1

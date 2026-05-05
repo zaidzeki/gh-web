@@ -142,7 +142,7 @@ def test_list_repos_distinct_counts(client):
         mock_issue = MagicMock()
         mock_issue.repository.full_name = 'owner/repo'
 
-        def search_side_effect(query):
+        def search_side_effect(query, **kwargs):
             if 'is:pr' in query:
                 return [mock_pr, mock_pr] # 2 PRs
             if 'is:issue' in query:

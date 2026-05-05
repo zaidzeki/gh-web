@@ -17,9 +17,14 @@ def list_tasks():
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
+    org_name = request.args.get('org_name')
+
     try:
         user = g.get_user()
         login = user.login
+
+        # Contextual filtering
+        context_filter = f"org:{org_name}" if org_name else f"user:{login}"
 
         # Aggregation: Fetch from three categories with prioritization:
         # 1. Action Required: Review requested
@@ -27,9 +32,9 @@ def list_tasks():
         # 3. My PRs: Authored by me
 
         # Limit to top 20 each to avoid performance/rate-limit issues
-        action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
-        in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
-        my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
+        action_required = g.search_issues(f"is:pr is:open review-requested:{login} {context_filter}")[:20]
+        in_progress = g.search_issues(f"is:open assignee:{login} {context_filter}")[:20]
+        my_prs = g.search_issues(f"is:pr is:open author:{login} {context_filter}")[:20]
 
         tasks = []
         task_ids = set()

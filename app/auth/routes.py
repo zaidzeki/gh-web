@@ -3,12 +3,13 @@ from ..workspace.utils import mask_token
 
 bp = Blueprint('auth', __name__)
 
-from github import Github
+from github import Github, Auth
 def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    auth = Auth.Token(token)
+    return Github(auth=auth)
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -33,5 +34,29 @@ def get_user_profile():
             "name": user.name,
             "html_url": user.html_url
         }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/user/orgs', methods=['GET'])
+def get_user_orgs():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # Use session cache for performance and rate-limit friendliness
+    if 'user_orgs' in session:
+        return jsonify(session['user_orgs']), 200
+
+    try:
+        user = g.get_user()
+        orgs = user.get_orgs()
+        org_list = [{
+            "login": org.login,
+            "avatar_url": org.avatar_url,
+            "description": org.description
+        } for org in orgs]
+
+        session['user_orgs'] = org_list
+        return jsonify(org_list), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

@@ -13,6 +13,16 @@
             <a class="navbar-brand" href="#">GH-Web</a>
             <div class="d-flex align-items-center">
                 <div id="userProfile" class="me-3 d-none align-items-center text-light">
+                    <div class="dropdown me-3" id="orgContextSwitcherContainer" style="display:none;">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="orgContextSwitcher" data-bs-toggle="dropdown" aria-expanded="false">
+                            Personal
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="orgContextSwitcher" id="orgContextList">
+                            <li><a class="dropdown-item active" href="#" data-org="">Personal</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <!-- Orgs populated via JS -->
+                        </ul>
+                    </div>
                     <img id="userAvatar" src="" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
                     <span id="userLogin" class="fw-bold"></span>
                 </div>

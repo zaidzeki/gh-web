@@ -41,3 +41,7 @@
 ## 2026-05-02 - [Expansion: Collaborative Scaffolding]
 **Learning:** Local assets (like templates) are a "dead end" for growth if they remain isolated to a single user's server instance. Pivoting to a "Shared Platform" by allowing users to publish local templates as GitHub repositories creates a virtuous cycle of discovery and standardization. The leverage was high because it reused 90% of the existing repository creation and git push logic.
 **Action:** Always look for ways to turn "single-player" assets into "multi-player" collaborative tools to increase network effects and product stickiness.
+
+## 2026-05-04 - [Expansion: Organization & Team Discovery]
+**Learning:** Personal productivity tools often suffer from an "Organizational Blind Spot" when transitioning to professional contexts. By introducing a simple context-switching abstraction (Organization context) and reusing the existing repository and task management infrastructure, we pivot from a "solo tool" to an "enterprise cockpit." Capping metadata aggregation in large org contexts is critical for maintaining performance parity with personal views.
+**Action:** When expanding to enterprise contexts, prioritize high-trust discovery (Orgs/Teams) and enforce scalability caps on expensive aggregations to preserve UI responsiveness.
