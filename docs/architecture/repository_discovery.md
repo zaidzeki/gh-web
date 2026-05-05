@@ -8,39 +8,42 @@ The Repository Discovery module enables users to explore their GitHub portfolio 
 ### 2.1. Discovery Engine
 Responsible for fetching repository metadata from the GitHub API using the user's PAT.
 - **Service:** `app/repos/routes.py`
-- **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
-- **Metadata Enrichment:** Returns `open_issues_count` to provide a quick summary of pending work (PRs and issues).
-- **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading. Subsequent data can be loaded via pagination.
+- **Method (Personal):** `Github.get_user().get_repos(sort='pushed', direction='desc')`
+- **Method (Organization):** `Github.get_organization(org_name).get_repos(sort='pushed', direction='desc')`
+- **Metadata Enrichment:** Returns `open_issues_count` and `open_prs_count` to provide a quick summary of pending work.
+- **Scalability Standard:** Aggregation of PR/Issue counts via the Search API is capped at the top 100 most recently updated items to prevent performance degradation in large organizations.
+- **Optimization:** Initial results are limited to ensure fast UI loading.
 
-### 2.2. Workspace Portfolio Scanner & Control
-Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user, and provides quick maintenance actions.
+### 2.2. Organization Discovery & Context Management
+Handles the identification of GitHub Organizations and maintains the user's active context.
+- **Service:** `app/auth/routes.py` or `app/repos/routes.py`.
+- **Method:** `Github.get_user().get_orgs()`
+- **Caching Strategy:** Discovered organizations are cached in the Flask session to minimize API latency and respect rate limits.
+- **Context State:** The active context (`personal` or `org_name`) is maintained in the frontend and passed as a query parameter (`?org_name=...`) to discovery endpoints.
+
+### 2.3. Workspace Portfolio Scanner & Control
+Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user.
 - **Service:** `app/workspace/routes.py`
 - **Logic:**
     1. Identify the session-specific root: `/tmp/gh-web-workspaces/<session_id>/`.
     2. List all subdirectories.
     3. For each subdirectory containing a `.git` folder, instantiate a `git.Repo` object.
-    4. Extract `active_branch`, `is_dirty`, and `untracked_files`.
-    5. Correlate with GitHub repository names.
-
-### 2.3. User Profile Integration
-Fetches the authenticated user's profile to personalize the application.
-- **Service:** `app/auth/routes.py` or a new `app/user/routes.py`.
-- **Method:** `Github.get_user()`
+    4. Extract `active_branch`, `is_dirty`, and `ahead`/`behind` counts relative to tracking branches.
 
 ## 3. Data Flow
 
 ### 3.1. Dashboard Initialization
 1.  Frontend requests `GET /api/user` to display profile info.
-2.  Frontend requests `GET /api/repos` to list the user's GitHub repositories.
-3.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
-4.  UI merges the data: Repositories that are already in the workspace are highlighted with a "Open in Workspace" or "Active" badge.
+2.  Frontend requests `GET /api/user/orgs` to populate the context switcher.
+3.  Frontend requests `GET /api/repos` (with optional `org_name`) to list repositories.
+4.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
 
-### 3.2. Repository Filtering
-1.  User types into a search bar.
-2.  Frontend performs client-side filtering on the initially loaded 30 repositories.
-3.  If no match is found, frontend can trigger a server-side search: `GET /api/repos?search=<query>`.
+### 3.2. Context Switching
+1.  User selects an organization from the `#orgContextSwitcher` dropdown.
+2.  Frontend updates the internal `currentContext`.
+3.  Frontend triggers a refresh of all contextual components (Dashboard Repo List, Task Inbox, PR List).
 
 ## 4. Security & Performance
 - **Token Usage:** The GitHub PAT is retrieved from the session for every request.
-- **Lazy Loading:** Workspace Git status checks (which involve filesystem I/O) should be performed efficiently, possibly caching the result if the folder hasn't been modified.
-- **Concurrency:** Ensure that scanning multiple Git repositories in a single request does not block the Flask worker for an extended period.
+- **Search API Optimization:** Using `g.search_issues()` with `user:{login}` or `org:{org_name}` filters for efficient count aggregation.
+- **UI Responsiveness:** Context switching uses the `toggleLoading` utility to provide visual feedback during API transitions.

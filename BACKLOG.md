@@ -84,8 +84,12 @@
     - [ ] Integrate deployment approvals into Task Inbox.
 - [ ] **Epic: Organization & Team Discovery**
     - [ ] Implement `GET /api/user/orgs` for organization discovery.
+    - [ ] Implement session-based caching for organization lists.
     - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+    - [ ] Update Issue/PR count aggregation to support organization context.
+    - [ ] Implement Search result capping (100 items) for scalability.
+    - [ ] Create Context Switcher dropdown in application header.
+    - [ ] Integrate context-aware refresh for Dashboard and Task Inbox.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
