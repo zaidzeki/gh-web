@@ -53,6 +53,9 @@
             <li class="nav-item">
                 <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab" aria-controls="actions" aria-selected="false">Actions</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" id="environments-tab" data-bs-toggle="tab" data-bs-target="#environments" type="button" role="tab" aria-controls="environments" aria-selected="false">Environments</button>
+            </li>
         </ul>
 
         <div class="tab-content border-start border-end border-bottom p-3">
@@ -491,6 +494,50 @@
                     </div>
                 </div>
             </div>
+
+            <div class="tab-pane fade" id="environments" role="tabpanel" aria-labelledby="environments-tab">
+                <h3>Environments & Deployments</h3>
+                <form id="listEnvironmentsForm" class="mb-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-9">
+                            <label for="envsRepoFullName" class="form-label required-label">Repository Full Name</label>
+                            <input type="text" id="envsRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" id="listEnvsBtn" class="btn btn-secondary w-100">Refresh Environments</button>
+                        </div>
+                    </div>
+                </form>
+                <div id="environmentsContainer" class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                    <div class="col-12 w-100">
+                        <p class="text-muted p-4 text-center border rounded">List environments to see deployment status.</p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4>Recent Deployments</h4>
+                        <div id="deploymentsHistoryContainer" class="border rounded" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover mb-0" id="deploymentsTable">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Environment</th>
+                                        <th>Ref</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted p-3">Refresh to see deployment history.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -606,6 +653,38 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submitCommentBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deployment/Promotion Modal -->
+    <div class="modal fade" id="deployModal" tabindex="-1" aria-labelledby="deployModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-success bg-success text-white">
+                    <h5 class="modal-title" id="deployModalLabel">Trigger Deployment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="deployForm">
+                        <div class="mb-3">
+                            <label for="deployEnvironment" class="form-label required-label">Target Environment</label>
+                            <input type="text" class="form-control" id="deployEnvironment" name="environment" required readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployRef" class="form-label required-label">Ref (branch, tag, or SHA)</label>
+                            <input type="text" class="form-control" id="deployRef" name="ref" placeholder="main" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployDescription" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="deployDescription" name="description" placeholder="Deployed via GH-Web">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmDeployBtn">Deploy Now</button>
                 </div>
             </div>
         </div>

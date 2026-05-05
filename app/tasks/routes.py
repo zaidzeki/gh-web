@@ -31,6 +31,37 @@ def list_tasks():
         in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
         my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
 
+        # Fetch Deployments waiting for approval
+        # Note: GitHub doesn't have a direct "search" for deployments by reviewer as easily as issues.
+        # But we can look for 'waiting' deployments in recently active repos.
+        waiting_deployments = []
+        try:
+            # We'll check the top 10 recently pushed repos for waiting deployments
+            repos = user.get_repos(sort='pushed', direction='desc')[:10]
+            for repo in repos:
+                # get_deployments doesn't have a state filter for 'waiting' directly in the query
+                # so we check recent ones.
+                deps = repo.get_deployments()[:10]
+                for dep in deps:
+                    statuses = dep.get_statuses()
+                    for status in statuses:
+                        if status.state == 'waiting':
+                            waiting_deployments.append({
+                                "id": f"deploy-{dep.id}",
+                                "type": "deployment",
+                                "category": "review_requested",
+                                "title": f"Deployment to {dep.environment} waiting for approval",
+                                "repo": repo.full_name,
+                                "number": dep.id,
+                                "html_url": f"{repo.html_url}/deployments",
+                                "updated_at": status.updated_at.isoformat() if status.updated_at else None,
+                                "ci_status": None,
+                                "review_status": "pending"
+                            })
+                        break # Only check latest status
+        except:
+            pass
+
         tasks = []
         task_ids = set()
 
@@ -81,6 +112,11 @@ def list_tasks():
             task = normalize(item, "review_requested")
             tasks.append(task)
             task_ids.add(task["id"])
+
+        for task in waiting_deployments:
+            if task["id"] not in task_ids:
+                tasks.append(task)
+                task_ids.add(task["id"])
 
         for item in in_progress:
             task_id = f"{item.repository.full_name}#{item.number}"
