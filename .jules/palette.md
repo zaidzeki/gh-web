@@ -31,3 +31,7 @@
 ## 2025-05-19 - [Interactive Status Badges & Loading Accessibility]
 **Learning:** Static visual status indicators (like "Modified" badges) can be converted into high-value interaction shortcuts (like "View Diff") to reduce clicks. However, they must be made keyboard-accessible with appropriate roles and event listeners. Additionally, icon-only loading spinners must always include visually-hidden text for screen reader parity.
 **Action:** Always provide keyboard accessibility (roles, tabindex, event listeners) for interactive badges and include `<span class="visually-hidden">Loading...</span>` in all spinner components.
+
+## 2025-05-20 - [Contextual Search Shortcuts & Discoverability]
+**Learning:** Implementing a global keyboard shortcut (like `/` for search) across a multi-tab interface requires contextual awareness to focus the relevant input for the current view. Discoverability is significantly enhanced by pairing the shortcut logic with semantic `<kbd>` visual indicators and updating `aria-label` attributes to explicitly mention the shortcut (e.g., "Filter repositories (Press / to focus)").
+**Action:** When adding global shortcuts, ensure they are context-aware, don't interfere with typing in inputs/textareas/selects or contenteditable elements, and are advertised through both visual and accessible labels.

@@ -2063,4 +2063,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Global keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Global '/' shortcut for search
+        if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            const activeTab = document.querySelector('#mainTabs .nav-link.active');
+            if (!activeTab) return;
+
+            let targetInput = null;
+            if (activeTab.id === 'dashboard-tab') targetInput = document.getElementById('dashboardRepoSearch');
+            else if (activeTab.id === 'workspace-tab') targetInput = document.getElementById('workspaceOmniSearch');
+            else if (activeTab.id === 'actions-tab') targetInput = document.getElementById('runSearch');
+
+            if (targetInput) {
+                e.preventDefault();
+                targetInput.focus();
+            }
+        }
+    });
 });
