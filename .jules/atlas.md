@@ -34,6 +34,6 @@
 **Learning:** Releasing a product is just the beginning of its life in production. Users need to know *where* their code is running (Staging, Production) and what version is currently deployed. Without environment visibility, the "Value Delivered" claim remains an assumption.
 **Action:** Spec out an Environment Governance module that tracks GitHub Deployments and environments, completing the path from Issue to Production.
 
-## 2025-06-01 - [The Organizational Blind Spot]
-**Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. A tool that only discovers "User Repos" misses the bulk of enterprise work.
-**Action:** Update the Repository Discovery engine to include Organization and Team-based repository listing to unlock enterprise value.
+## 2025-06-01 - [Scalable Contextual Discovery]
+**Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. However, discovering "all" repositories in large enterprises (thousands of repos) creates a performance bottleneck and "Discovery Noise."
+**Action:** Implement Contextual Switching between Personal and Organization views. Enforce metadata aggregation caps (e.g., top 100 items) and session-based caching of organizational lists to maintain dashboard responsiveness in large-scale environments.

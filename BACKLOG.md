@@ -83,9 +83,11 @@
     - [ ] Create Environments Tab UI with Environment Cards.
     - [ ] Integrate deployment approvals into Task Inbox.
 - [ ] **Epic: Organization & Team Discovery**
-    - [ ] Implement `GET /api/user/orgs` for organization discovery.
-    - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+    - [ ] Implement `GET /api/user/orgs` for organization discovery with session caching.
+    - [ ] Update `GET /api/repos` to support `org_name` and `search` filtering.
+    - [ ] Implement metadata aggregation caps (top 100) for large organizations.
+    - [ ] Add Organization context switcher dropdown to the Dashboard UI header.
+    - [ ] Integrate organizational filtering into the Unified Task Inbox.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
@@ -95,5 +97,5 @@
 - [ ] Sphinx documentation.
 - [ ] 100% test coverage.
 - [ ] Implement Logout & Session Clearing.
-- [ ] Implement Pagination for Task Inbox and Repo List.
+- [ ] Implement Pagination for Task Inbox and Repo List (P3).
 - [ ] Surface CI status badges in Dashboard Repository list.

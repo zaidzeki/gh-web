@@ -25,9 +25,9 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
     - **Active Workspaces:** A list of repositories currently cloned in the server-side workspace with their branch, status, and **quick actions (Sync, Discard)**.
 
 ### 4.2. Repository Discovery API
-- **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org` and `org_name=<name>`)
+- **Endpoint:** `GET /api/repos` (with optional `filter=user|starred|org`, `org_name=<name>`, and `search=<query>`)
 - **Behavior:** Fetches repositories from GitHub using the user's PAT.
-- **Org Support:** Automatically discovers user's organizations and provides a selector to switch contexts.
+- **Org Support:** Automatically discovers user's organizations via `GET /api/user/orgs` and provides a global `#orgContextSwitcher` to switch the entire dashboard's discovery context.
 - **Metadata:** Includes repo name, description, star count, open issues/PR count, and a flag indicating if a local workspace exists.
 
 ### 4.3. User Profile API
@@ -41,7 +41,8 @@ GH-Web currently functions as a "point-and-click" tool for specific repositories
 ## 5. Acceptance Criteria
 - [ ] Users can see their GitHub avatar and login in the navbar.
 - [ ] Users can browse a list of their top 30 repositories without manual entry.
-- [ ] Users can search their repositories via a filter input.
+- [ ] Users can search their repositories via a filter input, with server-side fallback for large organizations.
+- [ ] Users can toggle context between "Personal" and discovered Organizations using the header context switcher.
 - [ ] The dashboard lists all active workspaces with their current branch and "Dirty/Clean" status.
 - [ ] Clicking a repository in the list automatically populates it as the target for PR listing or cloning.
 
