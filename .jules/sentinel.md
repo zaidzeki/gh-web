@@ -47,3 +47,8 @@
 **Vulnerability:** Workspace directories in /tmp were created with default umask permissions (e.g., 0775), potentially allowing other users on a shared server to read sensitive repository data or credentials.
 **Learning:** Depending solely on 'mode' in 'os.makedirs' is unreliable if the directory already exists or if the system umask is permissive. An explicit 'os.chmod' ensures the desired restricted state.
 **Prevention:** Always follow 'os.makedirs' with an explicit 'os.chmod(path, 0o700)' for directories containing sensitive user data to enforce owner-only access regardless of the environment's default umask.
+
+## 2026-05-07 - Sensitive Data Leak via Followed Symlinks during File Copy
+**Vulnerability:** Operations that copy directories or files (like saving templates or publishing to GitHub) followed symbolic links by default. An attacker with the ability to create symlinks in the workspace could link to sensitive system files (e.g., /etc/passwd or credentials outside the workspace), which would then be copied as regular files into templates or public repositories.
+**Learning:** Standard library functions like `shutil.copytree` and `shutil.copy2` follow symlinks by default. In a multi-user or sandbox environment, this can lead to unauthorized data exfiltration.
+**Prevention:** Always use `symlinks=True` with `shutil.copytree` and `follow_symlinks=False` with `shutil.copy2` when operating on user-controlled directories to ensure symlinks are preserved as links rather than followed and converted to regular files.
