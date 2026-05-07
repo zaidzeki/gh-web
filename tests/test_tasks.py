@@ -57,6 +57,7 @@ def test_list_tasks_success(mock_auth, mock_github, client):
 
     # Setup search_issues to return these mocks for different queries
     mock_g.search_issues.side_effect = [
+        [], # waiting_deployments
         [mock_pr], # review-requested
         [mock_issue], # assigned
         [] # author
@@ -103,6 +104,7 @@ def test_list_tasks_prioritization_and_deduplication(mock_auth, mock_github, cli
 
     # Setup search_issues to return same PR in all categories
     mock_g.search_issues.side_effect = [
+        [],        # waiting_deployments
         [mock_pr], # review-requested
         [mock_pr], # assigned
         [mock_pr]  # author
@@ -147,6 +149,7 @@ def test_list_tasks_review_status_enrichment(mock_auth, mock_github, client):
     mock_pr.repository.get_combined_status.side_effect = Exception("Status not found")
 
     mock_g.search_issues.side_effect = [
+        [], # waiting_deployments
         [], # review-requested
         [mock_pr], # assigned (PR in In Progress category)
         [] # author

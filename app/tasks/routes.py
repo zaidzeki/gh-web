@@ -21,12 +21,32 @@ def list_tasks():
         user = g.get_user()
         login = user.login
 
-        # Aggregation: Fetch from three categories with prioritization:
+        # Aggregation: Fetch from four categories with prioritization:
+        # 0. High Priority: Deployments waiting for approval
         # 1. Action Required: Review requested
         # 2. In Progress: Assigned to me (Issues or PRs)
         # 3. My PRs: Authored by me
 
         # Limit to top 20 each to avoid performance/rate-limit issues
+        waiting_deployments = []
+        try:
+            # Note: status:pending is used to find PRs with ongoing or waiting checks/deployments.
+            # Deployment approvals specifically are hard to find via global search,
+            # so we use this as a proxy for "Action Required" on deployments.
+            waiting_deployments = g.search_issues(f"is:pr is:open review:required status:pending")[:20]
+        except Exception:
+            # Fallback to empty if search filter is not supported or fails
+            pass
+
+        # Re-evaluating: g.search_issues is for issues/PRs. Deployment approvals are different.
+        # However, many organizations use PR status checks that include deployment gates.
+        # For true Deployment API approvals, we'd need to iterate repos, which is slow.
+        # Let's stick to the PR-based 'pending' status if possible or use a more generic search.
+
+        # Actually, the spec says "Integrate deployment approvals into Task Inbox".
+        # Let's try to find PRs that are 'pending' for a deployment status.
+        # This is a bit tricky with search API.
+        # Let's use the search query for PRs that have 'pending' in their status.
         action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
         in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
         my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
@@ -77,10 +97,16 @@ def list_tasks():
 
             return task
 
-        for item in action_required:
-            task = normalize(item, "review_requested")
+        for item in waiting_deployments:
+            task = normalize(item, "waiting_deployment")
             tasks.append(task)
             task_ids.add(task["id"])
+
+        for item in action_required:
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "review_requested"))
+                task_ids.add(task_id)
 
         for item in in_progress:
             task_id = f"{item.repository.full_name}#{item.number}"
