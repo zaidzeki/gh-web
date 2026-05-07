@@ -8,9 +8,14 @@ The Repository Discovery module enables users to explore their GitHub portfolio 
 ### 2.1. Discovery Engine
 Responsible for fetching repository metadata from the GitHub API using the user's PAT.
 - **Service:** `app/repos/routes.py`
-- **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
-- **Metadata Enrichment:** Returns `open_issues_count` to provide a quick summary of pending work (PRs and issues).
-- **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading. Subsequent data can be loaded via pagination.
+- **Methods:**
+    - **Personal:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
+    - **Organization:** `Github.get_organization(org_name).get_repos(sort='pushed', direction='desc')`
+- **Organization Discovery:** A new `GET /api/user/orgs` endpoint fetches organizations via `Github.get_user().get_orgs()`.
+- **Metadata Enrichment:** Returns `open_issues_count` and `open_prs_count`. For organizations, counts are aggregated using the `search_issues` API scoped to the organization to maintain performance.
+- **Optimization:**
+    - **Pagination:** Initial results are limited to top 30.
+    - **Caching:** Organization lists are cached in the Flask session to reduce API calls during navigation.
 
 ### 2.2. Workspace Portfolio Scanner & Control
 Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user, and provides quick maintenance actions.
@@ -31,14 +36,17 @@ Fetches the authenticated user's profile to personalize the application.
 
 ### 3.1. Dashboard Initialization
 1.  Frontend requests `GET /api/user` to display profile info.
-2.  Frontend requests `GET /api/repos` to list the user's GitHub repositories.
-3.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
-4.  UI merges the data: Repositories that are already in the workspace are highlighted with a "Open in Workspace" or "Active" badge.
+2.  Frontend requests `GET /api/user/orgs` to populate the Context Switcher.
+3.  Frontend requests `GET /api/repos` (defaulting to Personal) to list repositories.
+4.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
+5.  UI merges the data: Repositories that are already in the workspace are highlighted with a "Open in Workspace" or "Active" badge.
 
-### 3.2. Repository Filtering
-1.  User types into a search bar.
-2.  Frontend performs client-side filtering on the initially loaded 30 repositories.
-3.  If no match is found, frontend can trigger a server-side search: `GET /api/repos?search=<query>`.
+### 3.2. Context Switching & Filtering
+1.  **Switch Context:** User selects an Organization from the `#orgContextSwitcher`.
+2.  **Fetch Repos:** Frontend triggers `GET /api/repos?org_name=<org_name>`.
+3.  **Search:** User types into the search bar.
+    - Frontend performs client-side filtering.
+    - If no match, frontend triggers `GET /api/repos?search=<query>&org_name=<org_name>`.
 
 ## 4. Security & Performance
 - **Token Usage:** The GitHub PAT is retrieved from the session for every request.

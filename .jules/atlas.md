@@ -37,3 +37,7 @@
 ## 2025-06-01 - [The Organizational Blind Spot]
 **Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. A tool that only discovers "User Repos" misses the bulk of enterprise work.
 **Action:** Update the Repository Discovery engine to include Organization and Team-based repository listing to unlock enterprise value.
+
+## 2026-05-07 - [Scalable Contextual Discovery]
+**Learning:** Scalable Contextual Discovery requires separating Organization discovery from Member repository listings and enforcing performance caps (top 100 items) on metadata aggregation via search APIs to maintain dashboard responsiveness in large enterprise environments.
+**Action:** Update Repository Discovery architecture to include tiered fetching (Orgs -> Repos) and use scoped Search APIs for metadata counts to avoid N+1 timeouts.

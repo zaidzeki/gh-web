@@ -83,9 +83,12 @@
     - [ ] Create Environments Tab UI with Environment Cards.
     - [ ] Integrate deployment approvals into Task Inbox.
 - [ ] **Epic: Organization & Team Discovery**
-    - [ ] Implement `GET /api/user/orgs` for organization discovery.
-    - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+    - [ ] Implement `GET /api/user/orgs` for organization discovery and metadata fetching.
+    - [ ] Update `GET /api/repos` to support `org_name` filtering and org-scoped searching.
+    - [ ] Implement performance-optimized PR/Issue count aggregation for organizations using the Search API.
+    - [ ] Add `#orgContextSwitcher` searchable dropdown to the application header.
+    - [ ] Implement organization-aware repository cards with visual badges.
+    - [ ] Add "Personal" vs "Org" context state to the Frontend application.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
