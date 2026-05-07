@@ -11,3 +11,7 @@
 ## 2026-04-22 - [Search Forms and Table Empty States]
 **Learning:** Search or filter inputs without a surrounding `<form>` often lack native 'Enter' key submission support, leading to a frustrating user experience. Additionally, tables that render as empty without any messaging can be confused with loading states or application errors.
 **Action:** Always wrap search/filter inputs in a `<form>` and handle the `submit` event. Enforce explicit empty state rows (e.g., "No items found") in table bodies to provide clear feedback.
+
+## 2026-05-07 - [Modal Auto-focus for Accessibility]
+**Learning:** Automatically focusing the primary interactive element in a modal significantly improves the user experience for both keyboard and screen reader users by reducing navigation overhead and clearly indicating the next expected action. Bootstrap's `shown.bs.modal` event is the correct hook for this, as it ensures the element is visible and capable of receiving focus.
+**Action:** Always implement auto-focus on the primary interactive element for all new modals to maintain a high standard of accessibility and usability.

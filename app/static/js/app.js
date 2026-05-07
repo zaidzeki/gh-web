@@ -2063,4 +2063,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Modal accessibility: Auto-focus primary interactive elements
+    document.addEventListener('shown.bs.modal', (e) => {
+        const focusMap = {
+            'fileModal': '#fileContentEditor',
+            'dispatchModal': '#dispatchRef',
+            'publishTemplateModal': '#publishRepoName',
+            'conversationModal': '#commentBody',
+            'templateParamsModal': '#dynamicParamsContainer input'
+        };
+        const selector = focusMap[e.target.id];
+        if (selector) {
+            const el = e.target.querySelector(selector);
+            if (el) el.focus();
+        }
+    });
 });
