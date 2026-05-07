@@ -12,7 +12,8 @@ def get_github_client():
 
 @bp.route('/login', methods=['POST'])
 def login():
-    token = request.form.get('token')
+    data = request.get_json() or request.form
+    token = data.get('token')
     if not token:
         return jsonify({"error": "Token is required"}), 400
 
@@ -33,5 +34,25 @@ def get_user_profile():
             "name": user.name,
             "html_url": user.html_url
         }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/user/orgs', methods=['GET'])
+def list_user_orgs():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        user = g.get_user()
+        orgs = user.get_orgs()
+        results = []
+        for org in orgs:
+            results.append({
+                "login": org.login,
+                "avatar_url": org.avatar_url,
+                "description": org.description
+            })
+        return jsonify(results), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

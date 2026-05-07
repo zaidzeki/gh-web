@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.handleForm = handleForm;
     window.showAlert = showAlert;
 
-    const initDashboard = async () => {
+    window.initDashboard = async () => {
         const profileDiv = document.getElementById('userProfile');
         const loginForm = document.getElementById('loginForm');
 
@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
+                refreshUserOrgs();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -150,12 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let allRepos = [];
+    let currentOrgContext = '';
     const refreshDashboardRepos = async (search = '') => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
         try {
-            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            let url = '/api/repos?';
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (currentOrgContext) params.append('org_name', currentOrgContext);
+            url += params.toString();
+
             const response = await fetch(url);
             const repos = await response.json();
 
@@ -481,6 +488,52 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    const refreshUserOrgs = async () => {
+        const orgList = document.getElementById('orgContextList');
+        const switcherBtn = document.getElementById('orgContextSwitcher');
+        if (!orgList || !switcherBtn) return;
+
+        try {
+            const response = await fetch('/api/user/orgs');
+            const orgs = await response.json();
+
+            if (!response.ok) return;
+
+            // Keep Personal
+            orgList.innerHTML = '<li><a class="dropdown-item active" href="#" data-org="">Personal</a></li><li><hr class="dropdown-divider"></li>';
+
+            orgs.forEach(org => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-org="${escapeHTML(org.login)}">
+                        <img src="${escapeHTML(org.avatar_url)}" width="20" height="20" class="rounded">
+                        ${escapeHTML(org.login)}
+                    </a>
+                `;
+                orgList.appendChild(li);
+            });
+
+            orgList.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    orgList.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+
+                    currentOrgContext = item.getAttribute('data-org');
+                    switcherBtn.textContent = currentOrgContext || 'Personal';
+
+                    const searchInput = document.getElementById('dashboardRepoSearch');
+                    if (searchInput) searchInput.value = '';
+
+                    refreshDashboardRepos();
+                });
+            });
+
+        } catch (error) {
+            console.error('Failed to fetch organizations:', error);
+        }
+    };
 
     const refreshTaskInbox = async () => {
         const inbox = document.getElementById('taskInboxList');

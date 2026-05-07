@@ -82,10 +82,11 @@
     - [ ] Implement `POST /api/repos/.../deployments` for triggering promotions.
     - [ ] Create Environments Tab UI with Environment Cards.
     - [ ] Integrate deployment approvals into Task Inbox.
-- [ ] **Epic: Organization & Team Discovery**
-    - [ ] Implement `GET /api/user/orgs` for organization discovery.
-    - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+- [x] **Epic: Organization & Team Discovery**
+    - [x] Create Expansion Proposal (`docs/product/org_discovery_horizon.md`).
+    - [x] Implement `GET /api/user/orgs` for organization discovery.
+    - [x] Update `GET /api/repos` to support `org_name` filtering.
+    - [x] Add Organization selector to Dashboard UI.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

@@ -22,28 +22,38 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org_name')
 
     try:
         user = g.get_user()
+        context_owner = org_name if org_name else user.login
+
         if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+            # Filtered search within the selected context (User or Org)
+            repos = g.search_repositories(f"org:{context_owner} {search_query}" if org_name else f"user:{context_owner} {search_query}")
         else:
-            # Default to recently pushed
-            repos = user.get_repos(sort='pushed', direction='desc')
+            if org_name:
+                org = g.get_organization(org_name)
+                repos = org.get_repos(sort='pushed', direction='desc')
+            else:
+                repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
         # Pre-fetch Issue and PR counts using Search API to avoid N+1 problem
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
-            for pr in open_prs:
+            # Filter metadata counts by context owner to ensure accuracy in dashboard switching
+            open_prs = g.search_issues(f"is:pr is:open org:{context_owner}") if org_name else g.search_issues(f"is:pr is:open user:{context_owner}")
+            # Limit count aggregation to top 100 most recent items to avoid performance issues in large orgs
+            for i, pr in enumerate(open_prs):
+                if i >= 100: break
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
-            for issue in open_issues:
+            open_issues = g.search_issues(f"is:issue is:open org:{context_owner}") if org_name else g.search_issues(f"is:issue is:open user:{context_owner}")
+            for i, issue in enumerate(open_issues):
+                if i >= 100: break
                 repo_name = issue.repository.full_name
                 issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1
         except Exception:
