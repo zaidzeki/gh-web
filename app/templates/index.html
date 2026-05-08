@@ -53,6 +53,9 @@
             <li class="nav-item">
                 <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab" aria-controls="actions" aria-selected="false">Actions</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" id="envs-tab" data-bs-toggle="tab" data-bs-target="#envs" type="button" role="tab" aria-controls="envs" aria-selected="false">Environments</button>
+            </li>
         </ul>
 
         <div class="tab-content border-start border-end border-bottom p-3">
@@ -487,6 +490,37 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="envs" role="tabpanel" aria-labelledby="envs-tab">
+                <h3>Environments & Deployments</h3>
+                <form id="listEnvsForm" class="mb-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-9">
+                            <label for="envsRepoFullName" class="form-label required-label">Repository Full Name</label>
+                            <input type="text" id="envsRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" id="listEnvsBtn" class="btn btn-secondary w-100">Refresh Environments</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="row">
+                    <div class="col-md-12 mb-4">
+                        <h4>Target Environments</h4>
+                        <div id="environmentsContainer" class="row row-cols-1 row-cols-md-3 g-4">
+                            <div class="col">
+                                <p class="text-muted p-3 text-center border rounded w-100">List environments to see availability.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <h4>Deployment History</h4>
+                        <div id="deploymentsList" class="list-group list-group-flush border rounded" style="max-height: 400px; overflow-y: auto;">
+                            <p class="text-muted p-3 text-center">List environments to see history.</p>
                         </div>
                     </div>
                 </div>

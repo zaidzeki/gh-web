@@ -219,6 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-sm btn-outline-secondary issues-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View issues for ${escapeHTML(repo.full_name)}">Issues</button>
                     <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View pull requests for ${escapeHTML(repo.full_name)}">PRs</button>
                     <button class="btn btn-sm btn-outline-secondary actions-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View actions for ${escapeHTML(repo.full_name)}">Actions</button>
+                    <button class="btn btn-sm btn-outline-secondary envs-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View environments for ${escapeHTML(repo.full_name)}">Envs</button>
                     <button class="btn btn-sm btn-outline-secondary releases-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View releases for ${escapeHTML(repo.full_name)}">Releases</button>
                     <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="Clone repository ${escapeHTML(repo.full_name)}">Clone</button>
                 </div>
@@ -262,6 +263,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const actionsTab = document.getElementById('actions-tab');
                 bootstrap.Tab.getOrCreateInstance(actionsTab).show();
                 document.getElementById('listActionsBtn').click();
+            });
+        });
+
+        repoList.querySelectorAll('.envs-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const repo = btn.getAttribute('data-repo');
+                document.querySelectorAll('.repo-full-name-input').forEach(input => input.value = repo);
+                const envsTab = document.getElementById('envs-tab');
+                bootstrap.Tab.getOrCreateInstance(envsTab).show();
+                document.getElementById('listEnvsBtn').click();
             });
         });
 
@@ -1961,6 +1972,147 @@ document.addEventListener('DOMContentLoaded', () => {
                 (r.conclusion && r.conclusion.toLowerCase().includes(query))
             );
             renderRuns(filtered);
+        });
+    }
+
+    const refreshEnvironments = async (repoFull) => {
+        const envContainer = document.getElementById('environmentsContainer');
+        const depList = document.getElementById('deploymentsList');
+        if (!envContainer || !depList) return;
+
+        envContainer.innerHTML = '<div class="col-12 text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+        depList.innerHTML = '<div class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+
+        try {
+            const [envResp, depResp] = await Promise.all([
+                fetch(`/api/repos/${repoFull}/environments`),
+                fetch(`/api/repos/${repoFull}/deployments`)
+            ]);
+
+            const envs = await envResp.json();
+            const deps = await depResp.json();
+
+            if (envResp.ok) {
+                envContainer.innerHTML = '';
+                if (envs.length === 0) {
+                    envContainer.innerHTML = '<div class="col-12"><p class="text-muted p-3 text-center border rounded">No environments defined.</p></div>';
+                } else {
+                    envs.forEach(env => {
+                        const envDeps = deps.filter(d => d.environment === env.name);
+                        const latestDep = envDeps.length > 0 ? envDeps[0] : null;
+
+                        const col = document.createElement('div');
+                        col.className = 'col';
+
+                        let statusHtml = '<span class="badge bg-secondary">No Deployments</span>';
+                        let refHtml = '<small class="text-muted d-block mt-2">Never deployed</small>';
+
+                        if (latestDep) {
+                            const state = latestDep.latest_status ? latestDep.latest_status.state : 'queued';
+                            const stateClass = state === 'success' ? 'bg-success' : (state === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+                            statusHtml = `<span class="badge ${stateClass}">${state.toUpperCase()}</span>`;
+                            refHtml = `
+                                <div class="mt-2 small">
+                                    <div class="text-truncate fw-bold" title="${escapeHTML(latestDep.ref)}">Ref: ${escapeHTML(latestDep.ref)}</div>
+                                    <div class="text-muted font-monospace" style="font-size: 0.75rem;">${escapeHTML(latestDep.sha.substring(0, 7))}</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">${timeAgo(latestDep.created_at)}</div>
+                                </div>
+                            `;
+                        }
+
+                        col.innerHTML = `
+                            <div class="card h-100 shadow-sm border-light">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title mb-0">${escapeHTML(env.name)}</h5>
+                                        ${statusHtml}
+                                    </div>
+                                    ${refHtml}
+                                </div>
+                                <div class="card-footer bg-transparent border-top-0 d-grid">
+                                    <button class="btn btn-sm btn-outline-primary deploy-to-env-btn" data-env="${escapeHTML(env.name)}">Deploy to ${escapeHTML(env.name)}</button>
+                                </div>
+                            </div>
+                        `;
+                        envContainer.appendChild(col);
+                    });
+
+                    envContainer.querySelectorAll('.deploy-to-env-btn').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const envName = btn.dataset.env;
+                            const ref = prompt(`Enter ref (branch/tag/SHA) to deploy to ${envName}:`, 'main');
+                            if (!ref) return;
+
+                            toggleLoading(btn, true);
+                            try {
+                                const response = await fetch(`/api/repos/${repoFull}/deployments`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ ref, environment: envName })
+                                });
+                                const result = await response.json();
+                                if (response.ok) {
+                                    showAlert(result.message);
+                                    setTimeout(() => refreshEnvironments(repoFull), 2000);
+                                } else {
+                                    showAlert(result.error, 'danger');
+                                }
+                            } catch (error) {
+                                showAlert(error.message, 'danger');
+                            } finally {
+                                toggleLoading(btn, false);
+                            }
+                        });
+                    });
+                }
+            } else {
+                envContainer.innerHTML = `<div class="col-12"><p class="text-danger p-3 small">${escapeHTML(envs.error)}</p></div>`;
+            }
+
+            if (depResp.ok) {
+                depList.innerHTML = '';
+                if (deps.length === 0) {
+                    depList.innerHTML = '<p class="text-muted p-3 text-center">No deployment history found.</p>';
+                } else {
+                    deps.forEach(dep => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item py-3';
+                        const state = dep.latest_status ? dep.latest_status.state : 'queued';
+                        const stateClass = state === 'success' ? 'bg-success' : (state === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge ${stateClass} me-2">${state.toUpperCase()}</span>
+                                    <strong class="text-primary">${escapeHTML(dep.environment)}</strong>
+                                    <span class="text-muted ms-2 small">by ${escapeHTML(dep.creator ? dep.creator.login : 'unknown')}</span>
+                                </div>
+                                <small class="text-muted">${timeAgo(dep.created_at)}</small>
+                            </div>
+                            <div class="mt-2 small">
+                                <span class="badge bg-light text-dark border font-monospace">${escapeHTML(dep.sha.substring(0, 7))}</span>
+                                <span class="ms-1">${escapeHTML(dep.ref)}</span>
+                                <div class="text-muted mt-1 italic">${escapeHTML(dep.description || '')}</div>
+                            </div>
+                        `;
+                        depList.appendChild(item);
+                    });
+                }
+            } else {
+                depList.innerHTML = `<p class="text-danger p-3 small">${escapeHTML(deps.error)}</p>`;
+            }
+
+        } catch (error) {
+            showAlert(error.message, 'danger');
+        }
+    };
+
+    const listEnvsForm = document.getElementById('listEnvsForm');
+    if (listEnvsForm) {
+        listEnvsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const repoFull = document.getElementById('envsRepoFullName').value;
+            if (repoFull) refreshEnvironments(repoFull);
         });
     }
 
