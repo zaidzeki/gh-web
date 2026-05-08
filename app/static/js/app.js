@@ -2063,4 +2063,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // UX: Auto-focus on primary interactive element when modals are shown
+    const modalFocusMap = {
+        'fileModal': '#fileContentEditor',
+        'dispatchModal': '#dispatchRef',
+        'publishTemplateModal': '#publishRepoName',
+        'conversationModal': '#commentBody',
+        'templateParamsModal': '#dynamicParamsContainer input'
+    };
+
+    Object.entries(modalFocusMap).forEach(([modalId, focusSelector]) => {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            modalEl.addEventListener('shown.bs.modal', () => {
+                const focusEl = modalEl.querySelector(focusSelector);
+                if (focusEl) focusEl.focus();
+            });
+        }
+    });
 });
