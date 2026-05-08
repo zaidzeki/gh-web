@@ -75,10 +75,22 @@
                 <div class="row">
                     <div class="col-md-8">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3>Your Repositories</h3>
-                            <div class="input-group w-50">
+                            <div class="d-flex align-items-center">
+                                <h3 class="mb-0 me-3" id="repoListHeader">Your Repositories</h3>
+                                <div class="dropdown" id="orgContextSwitcherContainer" style="display:none;">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="orgContextSwitcher" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Context: Personal
+                                    </button>
+                                    <ul class="dropdown-menu shadow" aria-labelledby="orgContextSwitcher" id="orgContextList">
+                                        <li><a class="dropdown-item active" href="#" data-org="">Personal</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <!-- Orgs populated via JS -->
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="input-group w-40">
                                 <span class="input-group-text" id="repoSearchIcon" aria-hidden="true">🔍</span>
-                                <input type="text" id="dashboardRepoSearch" class="form-control" placeholder="Filter repositories..." aria-label="Filter repositories">
+                                <input type="text" id="dashboardRepoSearch" class="form-control" placeholder="Filter repositories..." aria-label="Filter repositories (Press / to focus)">
                             </div>
                         </div>
                         <div id="dashboardRepoList" class="list-group mb-4" style="max-height: 500px; overflow-y: auto;">

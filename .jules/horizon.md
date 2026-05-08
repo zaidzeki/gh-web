@@ -41,3 +41,7 @@
 ## 2026-05-02 - [Expansion: Collaborative Scaffolding]
 **Learning:** Local assets (like templates) are a "dead end" for growth if they remain isolated to a single user's server instance. Pivoting to a "Shared Platform" by allowing users to publish local templates as GitHub repositories creates a virtuous cycle of discovery and standardization. The leverage was high because it reused 90% of the existing repository creation and git push logic.
 **Action:** Always look for ways to turn "single-player" assets into "multi-player" collaborative tools to increase network effects and product stickiness.
+
+## 2025-06-01 - [Expansion: Organization & Team Discovery]
+**Learning:** Personal repository discovery is a "single-player" dead end for professional users. Pivoting to contextual switching (Personal vs. Organization) transforms the app into an enterprise cockpit. Crucially, metadata aggregation (PR/Issue counts) must be capped (e.g., top 100) when moving to organizational scale to prevent API-driven performance degradation.
+**Action:** Always implement performance caps on metadata aggregation when expanding from individual to organizational/group contexts.

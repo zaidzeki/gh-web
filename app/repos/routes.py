@@ -22,28 +22,40 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org_name')
 
     try:
         user = g.get_user()
+        is_org = bool(org_name)
+
         if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+            # Filtered search within selected context
+            search_context = f"org:{org_name}" if is_org else f"user:{user.login}"
+            repos = g.search_repositories(f"{search_context} {search_query}")
         else:
-            # Default to recently pushed
-            repos = user.get_repos(sort='pushed', direction='desc')
+            # Default to recently pushed for either user or org
+            if is_org:
+                org = g.get_organization(org_name)
+                repos = org.get_repos(sort='pushed', direction='desc')
+            else:
+                repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
         # Pre-fetch Issue and PR counts using Search API to avoid N+1 problem
+        # Capped at 100 per category for performance in large organizations
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
-            for pr in open_prs:
+            search_context = f"org:{org_name}" if is_org else f"user:{user.login}"
+            open_prs = g.search_issues(f"is:pr is:open {search_context}")
+            for i, pr in enumerate(open_prs):
+                if i >= 100: break
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
-            for issue in open_issues:
+            open_issues = g.search_issues(f"is:issue is:open {search_context}")
+            for i, issue in enumerate(open_issues):
+                if i >= 100: break
                 repo_name = issue.repository.full_name
                 issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1
         except Exception:

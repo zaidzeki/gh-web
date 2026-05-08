@@ -139,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
+                initOrgContextSwitcher();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -150,12 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     let allRepos = [];
+    let currentOrgContext = '';
+
     const refreshDashboardRepos = async (search = '') => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
         try {
-            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (currentOrgContext) params.append('org_name', currentOrgContext);
+
+            const url = `/api/repos?${params.toString()}`;
             const response = await fetch(url);
             const repos = await response.json();
 
@@ -303,17 +310,104 @@ document.addEventListener('DOMContentLoaded', () => {
             if (timeout) clearTimeout(timeout);
 
             // Client-side filtering first
-            const filtered = allRepos.filter(r => r.full_name.toLowerCase().includes(query) || (r.description && r.description.toLowerCase().includes(query)));
-            renderRepoList(filtered);
+            if (Array.isArray(allRepos)) {
+                const filtered = allRepos.filter(r => r.full_name.toLowerCase().includes(query) || (r.description && r.description.toLowerCase().includes(query)));
+                renderRepoList(filtered);
+            }
 
             // Debounced server-side search if needed
             timeout = setTimeout(() => {
-                if (query && filtered.length < 5) {
+                if (query && (!allRepos || allRepos.length < 5)) {
                     refreshDashboardRepos(query);
                 }
             }, 500);
         });
     }
+
+    const handleGlobalShortcuts = (e) => {
+        // Only trigger if not in an input/textarea/editable
+        const active = document.activeElement;
+        const isInput = active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable;
+        if (isInput) return;
+
+        if (e.key === '/') {
+            e.preventDefault();
+            // Find active tab search input
+            const activeTab = document.querySelector('#mainTabs .nav-link.active');
+            if (!activeTab) return;
+
+            let searchInput;
+            if (activeTab.id === 'dashboard-tab') searchInput = document.getElementById('dashboardRepoSearch');
+            else if (activeTab.id === 'workspace-tab') searchInput = document.querySelector('#workspaceSearchForm input[name="q"]');
+            else if (activeTab.id === 'actions-tab') searchInput = document.getElementById('runSearch');
+
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+    };
+
+    document.addEventListener('keydown', handleGlobalShortcuts);
+
+    const initOrgContextSwitcher = async () => {
+        const container = document.getElementById('orgContextSwitcherContainer');
+        const list = document.getElementById('orgContextList');
+        const switcherBtn = document.getElementById('orgContextSwitcher');
+        const header = document.getElementById('repoListHeader');
+
+        if (!container || !list) return;
+
+        try {
+            const response = await fetch('/api/user/orgs');
+            if (!response.ok) return;
+
+            const orgs = await response.json();
+            if (orgs.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+
+            // Clear existing orgs (keep Personal and divider)
+            while (list.children.length > 2) {
+                list.removeChild(list.lastChild);
+            }
+
+            orgs.forEach(org => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <a class="dropdown-item d-flex align-items-center" href="#" data-org="${escapeHTML(org.login)}">
+                        <img src="${escapeHTML(org.avatar_url)}" class="rounded me-2" width="20" height="20" alt="">
+                        <span>${escapeHTML(org.login)}</span>
+                    </a>
+                `;
+                list.appendChild(li);
+            });
+
+            list.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const org = item.getAttribute('data-org');
+
+                    // Update UI state
+                    list.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    currentOrgContext = org;
+
+                    switcherBtn.textContent = `Context: ${org || 'Personal'}`;
+                    header.textContent = org ? `Repositories in ${org}` : 'Your Repositories';
+
+                    // Refresh repo list with new context
+                    refreshDashboardRepos(dashboardRepoSearch ? dashboardRepoSearch.value : '');
+                });
+            });
+
+        } catch (error) {
+            console.error('Failed to init org context switcher:', error);
+        }
+    };
 
     const refreshWorkspacePortfolio = async () => {
         const portfolioList = document.getElementById('activeWorkspacesList');
