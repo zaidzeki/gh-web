@@ -375,10 +375,11 @@ def save_template():
 
     try:
         # Copy workspace content to template storage, excluding .git
+        # Security: set symlinks=True to prevent following symlinks and leaking external files.
         def ignore_git(path, names):
             return ['.git'] if '.git' in names else []
 
-        shutil.copytree(workspace_dir, template_path, ignore=ignore_git)
+        shutil.copytree(workspace_dir, template_path, ignore=ignore_git, symlinks=True)
         return jsonify({"message": f"Template '{template_name}' saved successfully"}), 201
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
@@ -467,13 +468,14 @@ def publish_template(template_name):
             local_repo = git.Repo.clone_from(auth_url, tmp_dir)
 
             # Copy template content (excluding manifest if desired, but here we include it)
+            # Security: Ensure symlinks are not followed to prevent data leakage.
             for item in os.listdir(template_path):
                 s = os.path.join(template_path, item)
                 d = os.path.join(tmp_dir, item)
-                if os.path.isdir(s):
-                    shutil.copytree(s, d)
+                if os.path.isdir(s) and not os.path.islink(s):
+                    shutil.copytree(s, d, symlinks=True)
                 else:
-                    shutil.copy2(s, d)
+                    shutil.copy2(s, d, follow_symlinks=False)
 
             # Configure identity
             with local_repo.config_writer() as cw:
@@ -686,7 +688,8 @@ def import_template():
         with tempfile.TemporaryDirectory() as tmp_dir:
             git.Repo.clone_from(auth_url, tmp_dir, depth=1)
             shutil.rmtree(os.path.join(tmp_dir, '.git'))
-            shutil.copytree(tmp_dir, template_path)
+            # Security: set symlinks=True to prevent following symlinks and leaking external files.
+            shutil.copytree(tmp_dir, template_path, symlinks=True)
 
         return jsonify({"message": f"Repository imported as template '{template_name}'"}), 201
     except Exception as e:

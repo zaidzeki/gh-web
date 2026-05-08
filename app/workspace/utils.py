@@ -112,8 +112,10 @@ def render_template_dir(source_path, target_path, context, is_safe_path_func=Non
                         df.write(rendered_content)
                 else:
                     import shutil
-                    shutil.copy2(source_file_path, dest_file_path)
+                    # Security: set follow_symlinks=False to prevent data leakage from external links.
+                    shutil.copy2(source_file_path, dest_file_path, follow_symlinks=False)
             except Exception:
                 # Fallback to direct copy on error
                 import shutil
-                shutil.copy2(source_file_path, dest_file_path)
+                # Security: set follow_symlinks=False to prevent data leakage from external links.
+                shutil.copy2(source_file_path, dest_file_path, follow_symlinks=False)
