@@ -84,8 +84,20 @@
     - [ ] Integrate deployment approvals into Task Inbox.
 - [ ] **Epic: Organization & Team Discovery**
     - [ ] Implement `GET /api/user/orgs` for organization discovery.
+        - **AC:** Returns a list of organizations the authenticated user belongs to.
+        - **AC:** Each item includes `login` and `avatar_url`.
     - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+        - **AC:** When `org_name` is provided, fetches repositories for that organization instead of the user.
+        - **AC:** Returns 403 Forbidden with a clear message if the user lacks access to the organization.
+    - [ ] Implement top-100 aggregation cap in `list_repos` for enterprise scalability.
+        - **AC:** PR/Issue metadata aggregation uses the `search_issues` API capped at 100 results per context.
+        - **AC:** Response includes a `capped: true` flag if the limit is reached.
+    - [ ] Create Global Context Switcher dropdown in application header.
+        - **AC:** Dropdown is searchable and keyboard-accessible.
+        - **AC:** Includes a "Personal" option to return to the user's portfolio.
+    - [ ] Persist Organization context across navigation to Issues/PRs/Actions tabs.
+        - **AC:** Selecting an organization context updates the repository search in all functional tabs.
+        - **AC:** Navigating away and back to a tab preserves the selected organization context.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

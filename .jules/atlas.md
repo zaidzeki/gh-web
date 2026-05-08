@@ -37,3 +37,7 @@
 ## 2025-06-01 - [The Organizational Blind Spot]
 **Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. A tool that only discovers "User Repos" misses the bulk of enterprise work.
 **Action:** Update the Repository Discovery engine to include Organization and Team-based repository listing to unlock enterprise value.
+
+## 2025-06-02 - [Scalable Contextual Discovery]
+**Learning:** Aggregating PR and Issue counts across an entire organization is a high-latency operation. In large enterprise environments, the "N+1 Problem" becomes a performance wall.
+**Action:** Enforce a strict pagination and aggregation cap (e.g., top 100 most recently updated items) using the Search API rather than individual repository calls to maintain dashboard responsiveness.

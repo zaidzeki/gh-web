@@ -6,11 +6,15 @@ The Repository Discovery module enables users to explore their GitHub portfolio 
 ## 2. Components
 
 ### 2.1. Discovery Engine
-Responsible for fetching repository metadata from the GitHub API using the user's PAT.
+Responsible for fetching repository metadata from the GitHub API using the user's PAT. It supports both "Personal" and "Organization" discovery modes.
+
 - **Service:** `app/repos/routes.py`
-- **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
-- **Metadata Enrichment:** Returns `open_issues_count` to provide a quick summary of pending work (PRs and issues).
-- **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading. Subsequent data can be loaded via pagination.
+- **Discovery Modes:**
+    - **Personal:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
+    - **Organization:** `Github.get_organization(org_name).get_repos(sort='pushed', direction='desc')`
+- **Metadata Enrichment:** Returns `open_issues_count` and `open_prs_count`.
+- **Scalability Standard:** In large enterprise contexts, metadata aggregation for Issues and PRs is capped at the **top 100** items (using `g.search_issues`) to maintain dashboard responsiveness.
+- **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading.
 
 ### 2.2. Workspace Portfolio Scanner & Control
 Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user, and provides quick maintenance actions.
@@ -29,11 +33,11 @@ Fetches the authenticated user's profile to personalize the application.
 
 ## 3. Data Flow
 
-### 3.1. Dashboard Initialization
-1.  Frontend requests `GET /api/user` to display profile info.
-2.  Frontend requests `GET /api/repos` to list the user's GitHub repositories.
-3.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
-4.  UI merges the data: Repositories that are already in the workspace are highlighted with a "Open in Workspace" or "Active" badge.
+### 3.1. Dashboard Initialization & Context Switching
+1.  **Identity & Discovery:** Frontend requests `GET /api/user` (Profile) and `GET /api/user/orgs` (Organizations) to populate the context switcher.
+2.  **Portfolio Listing:** Frontend requests `GET /api/repos` (Personal) or `GET /api/repos?org_name=<name>` (Org) based on the active switcher context.
+3.  **Workspace Portfolio:** Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
+4.  **UI Merging:** Repositories that are already in the workspace are highlighted. The selected Organization context is persisted across navigation to the Issues, PRs, and Actions tabs.
 
 ### 3.2. Repository Filtering
 1.  User types into a search bar.
