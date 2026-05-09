@@ -3,7 +3,7 @@ import shutil
 import git
 import tempfile
 from flask import Blueprint, request, session, jsonify
-from github import Github
+from github import Github, Auth
 from werkzeug.utils import secure_filename
 from ..workspace.utils import render_template_dir, mask_token
 
@@ -13,7 +13,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    auth = Auth.Token(token)
+    return Github(auth=auth)
 
 @bp.route('/api/repos', methods=['GET'])
 def list_repos():
@@ -22,14 +23,22 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org_name')
 
     try:
         user = g.get_user()
+        context_name = org_name if org_name else user.login
+        search_qualifier = f"org:{org_name}" if org_name else f"user:{user.login}"
+
         if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+            # Filtered search within specified context
+            repos = g.search_repositories(f"{search_qualifier} {search_query}")
+        elif org_name:
+            # Organization repos
+            org = g.get_organization(org_name)
+            repos = org.get_repos(sort='pushed', direction='desc')
         else:
-            # Default to recently pushed
+            # Default to personal recently pushed
             repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
@@ -37,12 +46,13 @@ def list_repos():
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
+            # Optimization: Cap at top 100 for large organizations
+            open_prs = g.search_issues(f"is:pr is:open {search_qualifier}", sort='updated', direction='desc')[:100]
             for pr in open_prs:
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
+            open_issues = g.search_issues(f"is:issue is:open {search_qualifier}", sort='updated', direction='desc')[:100]
             for issue in open_issues:
                 repo_name = issue.repository.full_name
                 issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1

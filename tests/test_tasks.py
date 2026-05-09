@@ -59,7 +59,8 @@ def test_list_tasks_success(mock_auth, mock_github, client):
     mock_g.search_issues.side_effect = [
         [mock_pr], # review-requested
         [mock_issue], # assigned
-        [] # author
+        [], # author
+        []  # waiting_deployment
     ]
 
     response = client.get('/api/tasks')
@@ -105,7 +106,8 @@ def test_list_tasks_prioritization_and_deduplication(mock_auth, mock_github, cli
     mock_g.search_issues.side_effect = [
         [mock_pr], # review-requested
         [mock_pr], # assigned
-        [mock_pr]  # author
+        [mock_pr], # author
+        []  # waiting_deployment
     ]
 
     response = client.get('/api/tasks')
@@ -149,7 +151,8 @@ def test_list_tasks_review_status_enrichment(mock_auth, mock_github, client):
     mock_g.search_issues.side_effect = [
         [], # review-requested
         [mock_pr], # assigned (PR in In Progress category)
-        [] # author
+        [], # author
+        []  # waiting_deployment
     ]
 
     response = client.get('/api/tasks')
