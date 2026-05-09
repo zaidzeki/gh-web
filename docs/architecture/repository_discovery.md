@@ -6,13 +6,23 @@ The Repository Discovery module enables users to explore their GitHub portfolio 
 ## 2. Components
 
 ### 2.1. Discovery Engine
-Responsible for fetching repository metadata from the GitHub API using the user's PAT.
-- **Service:** `app/repos/routes.py`
-- **Method:** `Github.get_user().get_repos(sort='pushed', direction='desc')`
-- **Metadata Enrichment:** Returns `open_issues_count` to provide a quick summary of pending work (PRs and issues).
-- **Optimization:** Initial results should be limited (e.g., top 30) to ensure fast UI loading. Subsequent data can be loaded via pagination.
+Responsible for fetching repository metadata from the GitHub API using the user's PAT. The engine supports contextual switching between Personal and Organization portfolios.
 
-### 2.2. Workspace Portfolio Scanner & Control
+- **Service:** `app/repos/routes.py`
+- **Methods:**
+    - Personal: `Github.get_user().get_repos(sort='pushed', direction='desc')`
+    - Organization: `Github.get_organization(org_name).get_repos(type='all', sort='pushed')`
+- **Metadata Enrichment:** Returns `open_issues_count` and `open_prs_count` to provide a quick summary of pending work.
+- **Optimization:**
+    - Initial results are limited (top 30) for responsiveness.
+    - **Performance Cap:** In large organizations, PR and Issue count aggregation via the Search API is capped at the top 100 most recently updated items to prevent timeouts.
+
+### 2.2. Organization Discovery
+Allows the application to discover the collaborative context for the user.
+- **Service:** `app/auth/routes.py`
+- **Method:** `Github.get_user().get_orgs()`
+
+### 2.3. Workspace Portfolio Scanner & Control
 Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user, and provides quick maintenance actions.
 - **Service:** `app/workspace/routes.py`
 - **Logic:**
@@ -22,7 +32,7 @@ Scans the server-side filesystem to identify repositories that have been "sandbo
     4. Extract `active_branch`, `is_dirty`, and `untracked_files`.
     5. Correlate with GitHub repository names.
 
-### 2.3. User Profile Integration
+### 2.4. User Profile Integration
 Fetches the authenticated user's profile to personalize the application.
 - **Service:** `app/auth/routes.py` or a new `app/user/routes.py`.
 - **Method:** `Github.get_user()`
@@ -31,11 +41,18 @@ Fetches the authenticated user's profile to personalize the application.
 
 ### 3.1. Dashboard Initialization
 1.  Frontend requests `GET /api/user` to display profile info.
-2.  Frontend requests `GET /api/repos` to list the user's GitHub repositories.
-3.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
-4.  UI merges the data: Repositories that are already in the workspace are highlighted with a "Open in Workspace" or "Active" badge.
+2.  Frontend requests `GET /api/user/orgs` to discover available organizational contexts.
+3.  Frontend requests `GET /api/repos` (Personal context by default) to list repositories.
+4.  Frontend requests `GET /api/workspace/portfolio` to list active workspaces.
+5.  UI merges the data: Repositories that are already in the workspace are highlighted with an "Active" badge.
 
-### 3.2. Repository Filtering
+### 3.2. Context Switching
+1.  User selects an organization from the Context Switcher in the header.
+2.  Frontend updates the `currentContext` state.
+3.  Frontend requests `GET /api/repos?org_name=<org_name>`.
+4.  Dashboard UI refreshes to show organization-specific repositories and metadata.
+
+### 3.3. Repository Filtering
 1.  User types into a search bar.
 2.  Frontend performs client-side filtering on the initially loaded 30 repositories.
 3.  If no match is found, frontend can trigger a server-side search: `GET /api/repos?search=<query>`.
