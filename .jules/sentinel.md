@@ -47,3 +47,8 @@
 **Vulnerability:** Workspace directories in /tmp were created with default umask permissions (e.g., 0775), potentially allowing other users on a shared server to read sensitive repository data or credentials.
 **Learning:** Depending solely on 'mode' in 'os.makedirs' is unreliable if the directory already exists or if the system umask is permissive. An explicit 'os.chmod' ensures the desired restricted state.
 **Prevention:** Always follow 'os.makedirs' with an explicit 'os.chmod(path, 0o700)' for directories containing sensitive user data to enforce owner-only access regardless of the environment's default umask.
+
+## 2025-06-03 - Symlink Leakage in Template and Workspace Operations
+**Vulnerability:** File copy operations (shutil.copytree/copy2) and template rendering followed symbolic links by default. This allowed an attacker to leak sensitive files from outside the workspace/template root (e.g., /etc/passwd) if a malicious link existed in the source.
+**Learning:** Standard library functions like `shutil.copytree` and `shutil.copy2` follow symlinks by default. In multi-tenant or workspace-based applications, this can bypass directory boundaries. In manual template rendering loops, `os.path.islink` must be used to specifically disable rendering for links.
+**Prevention:** Always set `symlinks=True` in `shutil.copytree` and `follow_symlinks=False` in `shutil.copy2` when handling untrusted directory structures. Explicitly check for symlinks in rendering loops to avoid accidental content leakage via `open()`.

@@ -97,6 +97,9 @@ def render_template_dir(source_path, target_path, context, is_safe_path_func=Non
 
             # Determine if we should render content
             should_render = True
+            if os.path.islink(source_file_path):
+                should_render = False
+
             # Basic check for text files
             ext = os.path.splitext(f)[1].lower()
             binary_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.zip', '.tar', '.gz', '.exe', '.bin']
@@ -112,8 +115,10 @@ def render_template_dir(source_path, target_path, context, is_safe_path_func=Non
                         df.write(rendered_content)
                 else:
                     import shutil
-                    shutil.copy2(source_file_path, dest_file_path)
+                    # Security: set follow_symlinks=False to avoid following symlinks.
+                    shutil.copy2(source_file_path, dest_file_path, follow_symlinks=False)
             except Exception:
                 # Fallback to direct copy on error
                 import shutil
-                shutil.copy2(source_file_path, dest_file_path)
+                # Security: set follow_symlinks=False to avoid following symlinks.
+                shutil.copy2(source_file_path, dest_file_path, follow_symlinks=False)
