@@ -2063,4 +2063,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // UX: Modal Accessibility - Auto-focus primary inputs
+    const modalFocusMap = {
+        'fileModal': '#fileContentEditor',
+        'dispatchModal': '#dispatchRef',
+        'publishTemplateModal': '#publishRepoName',
+        'conversationModal': '#commentBody',
+        'templateParamsModal': '#dynamicParamsContainer input'
+    };
+
+    Object.entries(modalFocusMap).forEach(([modalId, focusSelector]) => {
+        const modalEl = document.getElementById(modalId);
+        if (modalEl) {
+            modalEl.addEventListener('shown.bs.modal', () => {
+                const target = modalEl.querySelector(focusSelector);
+                if (target) target.focus();
+            });
+        }
+    });
+
+    // Expose for testing
+    window.initDashboard = initDashboard;
+    window.refreshExplorer = refreshExplorer;
 });
