@@ -85,7 +85,10 @@
 - [ ] **Epic: Organization & Team Discovery**
     - [ ] Implement `GET /api/user/orgs` for organization discovery.
     - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Add Organization selector to Dashboard UI.
+    - [ ] Implement "Top 100 Aggregation Cap" for organization metadata fetching.
+    - [ ] Create Context Switcher in the application header.
+    - [ ] Implement context-aware filtering for the Repository list.
+    - [ ] Integrate organizational context into the Task Inbox.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
@@ -96,4 +99,6 @@
 - [ ] 100% test coverage.
 - [ ] Implement Logout & Session Clearing.
 - [ ] Implement Pagination for Task Inbox and Repo List.
-- [ ] Surface CI status badges in Dashboard Repository list.
+- [ ] **Epic: Verification Gap Closure**
+    - [ ] Surface CI status badges in Dashboard Repository list.
+    - [ ] Implement environment indicators on repository cards.
