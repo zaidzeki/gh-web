@@ -30,6 +30,8 @@ def list_tasks():
         action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
         in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
         my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
+        # Discovery proxy for deployments waiting for approval
+        waiting_deployment = g.search_issues(f"is:pr is:merged status:pending author:{login}")[:20]
 
         tasks = []
         task_ids = set()
@@ -92,6 +94,12 @@ def list_tasks():
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
                 tasks.append(normalize(item, "authored"))
+                task_ids.add(task_id)
+
+        for item in waiting_deployment:
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "waiting_deployment"))
                 task_ids.add(task_id)
 
         # Sort by updated_at desc

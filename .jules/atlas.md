@@ -37,3 +37,7 @@
 ## 2025-06-01 - [The Organizational Blind Spot]
 **Learning:** Most professional developers don't work in a vacuum; they work in GitHub Organizations. A tool that only discovers "User Repos" misses the bulk of enterprise work.
 **Action:** Update the Repository Discovery engine to include Organization and Team-based repository listing to unlock enterprise value.
+
+## 2025-06-02 - [Bridging the Delivery Gap]
+**Learning:** Merging a PR is not "Done"; code is only delivered when it reaches an environment. Surfacing GitHub Deployments and Environments transforms the tool from a "Coder's Workbench" into a "Delivery Platform."
+**Action:** Use merged PRs with pending statuses as a discovery proxy for deployment approvals to keep users in the application's flow until the code is live.
