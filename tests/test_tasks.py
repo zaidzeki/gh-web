@@ -59,7 +59,8 @@ def test_list_tasks_success(mock_auth, mock_github, client):
     mock_g.search_issues.side_effect = [
         [mock_pr], # review-requested
         [mock_issue], # assigned
-        [] # author
+        [], # author
+        [] # waiting_deployment
     ]
 
     response = client.get('/api/tasks')
@@ -105,7 +106,8 @@ def test_list_tasks_prioritization_and_deduplication(mock_auth, mock_github, cli
     mock_g.search_issues.side_effect = [
         [mock_pr], # review-requested
         [mock_pr], # assigned
-        [mock_pr]  # author
+        [mock_pr], # author
+        [] # waiting_deployment
     ]
 
     response = client.get('/api/tasks')
@@ -149,7 +151,8 @@ def test_list_tasks_review_status_enrichment(mock_auth, mock_github, client):
     mock_g.search_issues.side_effect = [
         [], # review-requested
         [mock_pr], # assigned (PR in In Progress category)
-        [] # author
+        [], # author
+        [] # waiting_deployment
     ]
 
     response = client.get('/api/tasks')
@@ -171,3 +174,41 @@ def test_list_tasks_error(mock_github, client):
     response = client.get('/api/tasks')
     assert response.status_code == 500
     assert "GitHub API Error" in response.get_json()['error']
+
+@patch('app.tasks.routes.github.Github')
+@patch('app.tasks.routes.github.Auth')
+def test_list_tasks_waiting_deployment(mock_auth, mock_github, client):
+    mock_g = MagicMock()
+    mock_github.return_value = mock_g
+
+    mock_user = MagicMock()
+    mock_user.login = "testuser"
+    mock_g.get_user.return_value = mock_user
+
+    mock_pr = MagicMock()
+    mock_pr.number = 30
+    mock_pr.title = "Merged PR"
+    mock_pr.repository.full_name = "owner/repo"
+    mock_pr.pull_request = MagicMock()
+    mock_pr.updated_at = datetime.datetime(2025, 5, 30, 14, 0, 0)
+    mock_pr.html_url = "http://github.com/owner/repo/pull/30"
+
+    mock_pr_obj = MagicMock()
+    mock_pr_obj.head.sha = "sha30"
+    mock_pr_obj.get_reviews.return_value = []
+    mock_pr.as_pull_request.return_value = mock_pr_obj
+
+    mock_g.search_issues.side_effect = [
+        [], # review-requested
+        [], # assigned
+        [], # author
+        [mock_pr] # waiting_deployment
+    ]
+
+    response = client.get('/api/tasks')
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert len(data) == 1
+    assert data[0]['number'] == 30
+    assert data[0]['category'] == 'waiting_deployment'

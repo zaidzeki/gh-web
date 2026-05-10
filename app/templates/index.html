@@ -53,6 +53,9 @@
             <li class="nav-item">
                 <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab" aria-controls="actions" aria-selected="false">Actions</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" id="environments-tab" data-bs-toggle="tab" data-bs-target="#environments" type="button" role="tab" aria-controls="environments" aria-selected="false">Environments</button>
+            </li>
         </ul>
 
         <div class="tab-content border-start border-end border-bottom p-3">
@@ -491,6 +494,42 @@
                     </div>
                 </div>
             </div>
+
+            <div class="tab-pane fade" id="environments" role="tabpanel" aria-labelledby="environments-tab">
+                <h3>Environments & Deployments</h3>
+                <form id="listDeploymentsForm" class="mb-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-9">
+                            <label for="deploymentsRepoFullName" class="form-label required-label">Repository Full Name</label>
+                            <input type="text" id="deploymentsRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" id="listDeploymentsBtn" class="btn btn-secondary w-100">Refresh</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="row">
+                    <div class="col-md-4 border-end">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4>Environments</h4>
+                        </div>
+                        <div id="environmentsList" class="list-group mb-4">
+                            <p class="text-muted p-3 text-center border rounded">Refresh to see environments.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4>Deployment History</h4>
+                            <button class="btn btn-sm btn-primary" id="newDeploymentBtn">New Deployment</button>
+                        </div>
+                        <div id="deploymentsContainer" style="max-height: 600px; overflow-y: auto;" class="border rounded">
+                            <div id="deploymentsList" class="list-group list-group-flush">
+                                <p class="text-muted p-3 text-center">Refresh to see deployment history.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -606,6 +645,43 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submitCommentBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Deployment Modal -->
+    <div class="modal fade" id="deploymentModal" tabindex="-1" aria-labelledby="deploymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-primary bg-primary text-white">
+                    <h5 class="modal-title" id="deploymentModalLabel">Create Deployment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createDeploymentForm">
+                        <div class="mb-3">
+                            <label for="deployRef" class="form-label required-label">Ref (branch, tag, or SHA)</label>
+                            <input type="text" class="form-control" id="deployRef" name="ref" placeholder="main" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployEnv" class="form-label required-label">Environment</label>
+                            <input type="text" class="form-control" id="deployEnv" name="environment" placeholder="production" required list="environmentsDatalist">
+                            <datalist id="environmentsDatalist"></datalist>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deployDescription" class="form-label">Description</label>
+                            <input type="text" class="form-control" id="deployDescription" name="description" placeholder="Deploying v1.0.0">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="auto_merge" id="deployAutoMerge" checked>
+                            <label class="form-check-label" for="deployAutoMerge">Auto-merge default branch</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmDeploymentBtn">Create Deployment</button>
                 </div>
             </div>
         </div>
