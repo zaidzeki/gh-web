@@ -49,3 +49,55 @@ def test_create_repo_no_name(client):
     response = client.post('/api/repos', json={})
     assert response.status_code == 400
     assert response.get_json() == {"error": "Repository name is required"}
+
+@patch('app.repos.routes.get_github_client')
+def test_list_orgs(mock_get_client, client):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake_token'
+
+    mock_org = MagicMock()
+    mock_org.login = "testorg"
+    mock_org.avatar_url = "http://avatar.url"
+
+    mock_github = MagicMock()
+    mock_github.get_user.return_value.get_orgs.return_value = [mock_org]
+    mock_get_client.return_value = mock_github
+
+    response = client.get('/api/user/orgs')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) == 1
+    assert data[0]['login'] == "testorg"
+    assert data[0]['avatar_url'] == "http://avatar.url"
+
+@patch('app.repos.routes.get_github_client')
+def test_list_repos_org(mock_get_client, client):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake_token'
+
+    mock_repo = MagicMock()
+    mock_repo.full_name = "testorg/testrepo"
+    mock_repo.name = "testrepo"
+    mock_repo.description = "desc"
+    mock_repo.html_url = "http://github.com/testorg/testrepo"
+    mock_repo.stargazers_count = 5
+    mock_repo.pushed_at = None
+    mock_repo.private = False
+
+    mock_github = MagicMock()
+    mock_github.get_user.return_value.login = "testuser"
+    mock_github.get_organization.return_value.get_repos.return_value = [mock_repo]
+
+    # Mock search_issues for PR and Issue counts
+    mock_pr = MagicMock()
+    mock_pr.repository.full_name = "testorg/testrepo"
+    mock_github.search_issues.return_value = [mock_pr]
+
+    mock_get_client.return_value = mock_github
+
+    response = client.get('/api/repos?org_name=testorg')
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) == 1
+    assert data[0]['full_name'] == "testorg/testrepo"
+    mock_github.get_organization.assert_called_once_with("testorg")

@@ -29,6 +29,9 @@ def test_triage_ui_elements(server, page: Page):
     page.route("**/api/user", lambda route: route.fulfill(
         json={"login": "testuser", "avatar_url": "https://github.com/testuser.png"}
     ))
+    page.route("**/api/user/orgs", lambda route: route.fulfill(
+        json=[]
+    ))
     page.route("**/api/repos", lambda route: route.fulfill(
         json=[{
             "full_name": "owner/repo",

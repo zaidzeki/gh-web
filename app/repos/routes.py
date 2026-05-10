@@ -15,6 +15,31 @@ def get_github_client():
         return None
     return Github(token)
 
+@bp.route('/api/user/orgs', methods=['GET'])
+def list_orgs():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # Cache organizations in session to optimize performance and prevent rate limiting
+        if 'user_orgs' in session:
+            return jsonify(session['user_orgs']), 200
+
+        user = g.get_user()
+        orgs = user.get_orgs()
+        results = []
+        for org in orgs:
+            results.append({
+                "login": org.login,
+                "avatar_url": org.avatar_url
+            })
+
+        session['user_orgs'] = results
+        return jsonify(results), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/repos', methods=['GET'])
 def list_repos():
     g = get_github_client()
@@ -22,30 +47,45 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org_name')
 
     try:
         user = g.get_user()
+
+        # Determine context: specific organization or current user
+        context_login = org_name if org_name else user.login
+        is_org = bool(org_name)
+
         if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+            # Filtered search within chosen context
+            query = f"org:{org_name} {search_query}" if is_org else f"user:{user.login} {search_query}"
+            repos = g.search_repositories(query)
+        elif is_org:
+            # List repos for organization
+            repos = g.get_organization(org_name).get_repos(sort='pushed', direction='desc')
         else:
-            # Default to recently pushed
+            # Default to user's repos, recently pushed
             repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
         # Pre-fetch Issue and PR counts using Search API to avoid N+1 problem
+        # Scalability: Capped at top 100 most recently updated to prevent timeouts in large orgs
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
-            for pr in open_prs:
-                repo_name = pr.repository.full_name
-                pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
+            search_context = f"org:{org_name}" if is_org else f"user:{user.login}"
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
-            for issue in open_issues:
-                repo_name = issue.repository.full_name
-                issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1
+            open_prs = g.search_issues(f"is:pr is:open {search_context}")
+            for i, pr in enumerate(open_prs):
+                if i >= 100: break
+                repo_full_name = pr.repository.full_name
+                pr_counts[repo_full_name] = pr_counts.get(repo_full_name, 0) + 1
+
+            open_issues = g.search_issues(f"is:issue is:open {search_context}")
+            for i, issue in enumerate(open_issues):
+                if i >= 100: break
+                repo_full_name = issue.repository.full_name
+                issue_counts[repo_full_name] = issue_counts.get(repo_full_name, 0) + 1
         except Exception:
             # Fallback to 0 if search fails
             pass
