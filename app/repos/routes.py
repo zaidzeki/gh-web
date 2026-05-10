@@ -3,6 +3,7 @@ import shutil
 import git
 import tempfile
 from flask import Blueprint, request, session, jsonify
+import github
 from github import Github
 from werkzeug.utils import secure_filename
 from ..workspace.utils import render_template_dir, mask_token, get_templates_root
@@ -13,7 +14,7 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    return Github(auth=github.Auth.Token(token))
 
 @bp.route('/api/user/orgs', methods=['GET'])
 def list_orgs():

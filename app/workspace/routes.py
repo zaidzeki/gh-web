@@ -5,6 +5,7 @@ import tarfile
 import subprocess
 import re
 from flask import Blueprint, request, session, jsonify, current_app
+import github
 from github import Github
 import git
 from werkzeug.utils import secure_filename
@@ -16,7 +17,7 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    return Github(auth=github.Auth.Token(token))
 
 def get_workspace_dir(repo_name):
     session_id = secure_filename(session.get('session_id', 'default'))
@@ -222,7 +223,8 @@ def apply_patch():
             repo = git.Repo(workspace_dir)
             repo.git.apply(filename)
         else:
-            subprocess.run(['patch', '-p1', '-i', filename], cwd=workspace_dir, check=True)
+            # Security: Add timeout to prevent DoS from hung patch processes
+            subprocess.run(['patch', '-p1', '-i', filename], cwd=workspace_dir, check=True, timeout=30)
 
         os.remove(patch_path)
         return jsonify({"message": "Patch applied successfully"}), 200
@@ -1221,7 +1223,8 @@ def workspace_search():
         # Use -e to specify the pattern safely and --field-context-separator to be explicit.
         # We use absolute path for workspace_dir, so rg will return absolute paths.
         cmd = ['rg', '-n', '-i', '--max-count', '100', '--no-heading', '--with-filename', '-e', query, workspace_dir]
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        # Security: Add timeout to prevent DoS from long-running search processes
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
 
         if result.returncode == 2:
             return jsonify({"error": mask_token(result.stderr)}), 500

@@ -20,8 +20,13 @@ def mask_token(s):
     # Mask other common GitHub token patterns as defense-in-depth
     # Patterns: ghp_, gho_, ghu_, ghs_, ghr_ followed by 36 chars
     # And fine-grained PATs: github_pat_...
-    s = re.sub(r'gh[pousr]_[a-zA-Z0-9]{36}', '********', s)
-    s = re.sub(r'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}', '********', s)
+    s = re.sub(r'gh[pousr]_[a-zA-Z0-9]{36}', '********', s, flags=re.IGNORECASE)
+    s = re.sub(r'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}', '********', s, flags=re.IGNORECASE)
+
+    # Mask tokens in git URLs (defense-in-depth for log/error leakage)
+    s = re.sub(r'https://(?P<token>[a-zA-Z0-9._~-]+)@github\.com', r'https://********@github.com', s, flags=re.IGNORECASE)
+    s = re.sub(r'https://(?P<user>[a-zA-Z0-9._~-]+):(?P<token>[a-zA-Z0-9._~-]+)@github\.com', r'https://\g<user>:********@github.com', s, flags=re.IGNORECASE)
+
     return s
 
 def is_safe_path(basedir, path, follow_symlinks=True):
