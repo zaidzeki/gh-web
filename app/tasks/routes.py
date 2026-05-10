@@ -25,27 +25,30 @@ def list_tasks():
         # 1. Action Required: Review requested
         # 2. In Progress: Assigned to me (Issues or PRs)
         # 3. My PRs: Authored by me
+        # 4. Waiting Deployment: My merged PRs pending deployment/environment status
+        #    Proxy: searching for merged PRs authored by me with status:pending
 
         # Limit to top 20 each to avoid performance/rate-limit issues
         action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
         in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
         my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
+        waiting_deployment = g.search_issues(f"is:pr is:merged status:pending author:{login}")[:20]
 
         tasks = []
         task_ids = set()
 
         def normalize(issue_or_pr, category):
-            repo_full_name = issue_or_pr.repository.full_name
+            repo_full_name = str(issue_or_pr.repository.full_name)
             is_pr = issue_or_pr.pull_request is not None
 
             task = {
-                "id": f"{repo_full_name}#{issue_or_pr.number}",
+                "id": f"{repo_full_name}#{int(issue_or_pr.number)}",
                 "type": "pr" if is_pr else "issue",
                 "category": category,
-                "title": issue_or_pr.title,
+                "title": str(issue_or_pr.title),
                 "repo": repo_full_name,
-                "number": issue_or_pr.number,
-                "html_url": issue_or_pr.html_url,
+                "number": int(issue_or_pr.number),
+                "html_url": str(issue_or_pr.html_url),
                 "updated_at": issue_or_pr.updated_at.isoformat() if issue_or_pr.updated_at else None,
                 "ci_status": None,
                 "review_status": None
@@ -57,8 +60,8 @@ def list_tasks():
                     pr = issue_or_pr.as_pull_request()
                     # CI Status from HEAD
                     try:
-                        combined = issue_or_pr.repository.get_combined_status(pr.head.sha)
-                        task["ci_status"] = combined.state
+                        combined = issue_or_pr.repository.get_combined_status(str(pr.head.sha))
+                        task["ci_status"] = str(combined.state)
                     except: pass
 
                     # Review Status (fetched for all PRs)
@@ -92,6 +95,12 @@ def list_tasks():
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
                 tasks.append(normalize(item, "authored"))
+                task_ids.add(task_id)
+
+        for item in waiting_deployment:
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "waiting_deployment"))
                 task_ids.add(task_id)
 
         # Sort by updated_at desc
