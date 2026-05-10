@@ -1,14 +1,15 @@
 from flask import Blueprint, request, session, jsonify
+import github
+from github import Github
 from ..workspace.utils import mask_token
 
 bp = Blueprint('auth', __name__)
 
-from github import Github
 def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    return Github(auth=github.Auth.Token(token))
 
 @bp.route('/login', methods=['POST'])
 def login():

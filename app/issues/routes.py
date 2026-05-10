@@ -1,4 +1,5 @@
 from flask import Blueprint, request, session, jsonify
+import github
 from github import Github
 from ..workspace.utils import mask_token
 
@@ -8,7 +9,7 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    return Github(auth=github.Auth.Token(token))
 
 @bp.route('/api/repos/<path:full_name>/issues/<int:issue_number>/comments', methods=['GET'])
 def get_comments(full_name, issue_number):
