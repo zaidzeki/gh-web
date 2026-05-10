@@ -8,7 +8,7 @@ from flask import Blueprint, request, session, jsonify, current_app
 from github import Github
 import git
 from werkzeug.utils import secure_filename
-from .utils import get_template_manifest, render_template_dir, is_safe_path, mask_token
+from .utils import get_template_manifest, render_template_dir, is_safe_path, mask_token, get_templates_root
 
 bp = Blueprint('workspace', __name__)
 
@@ -366,8 +366,7 @@ def save_template():
     workspace_dir = get_workspace_dir(repo_name)
 
     # Use appdata/.zekiprod/templates as persistent storage
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
-    os.makedirs(templates_root, exist_ok=True)
+    templates_root = get_templates_root()
     template_path = os.path.join(templates_root, template_name)
 
     if os.path.exists(template_path):
@@ -386,7 +385,7 @@ def save_template():
 
 @bp.route('/api/workspace/templates', methods=['GET'])
 def list_templates():
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    templates_root = get_templates_root()
     if not os.path.exists(templates_root):
         return jsonify([]), 200
 
@@ -398,7 +397,7 @@ def get_manifest(template_name):
     template_name = secure_filename(template_name)
     if not template_name:
         return jsonify({"error": "Invalid template name"}), 400
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    templates_root = get_templates_root()
     template_path = os.path.join(templates_root, template_name)
 
     if not os.path.exists(template_path):
@@ -415,7 +414,7 @@ def delete_template(template_name):
     template_name = secure_filename(template_name)
     if not template_name:
         return jsonify({"error": "Invalid template name"}), 400
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    templates_root = get_templates_root()
     template_path = os.path.join(templates_root, template_name)
 
     if not os.path.exists(template_path):
@@ -438,7 +437,7 @@ def publish_template(template_name):
     if not template_name:
         return jsonify({"error": "Invalid template name"}), 400
 
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    templates_root = get_templates_root()
     template_path = os.path.join(templates_root, template_name)
 
     if not os.path.exists(template_path):
@@ -636,7 +635,7 @@ def apply_template():
     if not template_name:
         return jsonify({"error": "Invalid template name"}), 400
     workspace_dir = get_workspace_dir(repo_name)
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    templates_root = get_templates_root()
     template_path = os.path.join(templates_root, template_name)
 
     if not os.path.exists(template_path):
@@ -672,7 +671,7 @@ def import_template():
     template_name = secure_filename(template_name)
     if not template_name:
         return jsonify({"error": "Invalid template name"}), 400
-    templates_root = os.path.expanduser('~/.zekiprod/templates')
+    templates_root = get_templates_root()
     template_path = os.path.join(templates_root, template_name)
 
     if os.path.exists(template_path):

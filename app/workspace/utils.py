@@ -18,8 +18,9 @@ def mask_token(s):
         pass
 
     # Mask other common GitHub token patterns as defense-in-depth
-    # Patterns: ghp_..., github_pat_..., etc.
-    s = re.sub(r'ghp_[a-zA-Z0-9]{36}', '********', s)
+    # Patterns: ghp_, gho_, ghu_, ghs_, ghr_ followed by 36 chars
+    # And fine-grained PATs: github_pat_...
+    s = re.sub(r'gh[pousr]_[a-zA-Z0-9]{36}', '********', s)
     s = re.sub(r'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}', '********', s)
     return s
 
@@ -40,6 +41,30 @@ def is_safe_path(basedir, path, follow_symlinks=True):
         return False
 
     return True
+
+def get_templates_root():
+    """
+    Returns the centralized templates root directory (~/.zekiprod/templates)
+    and ensures it exists with restricted permissions (0700).
+    """
+    app_root = os.path.expanduser('~/.zekiprod')
+    templates_root = os.path.join(app_root, 'templates')
+
+    # Create root with restricted permissions
+    os.makedirs(app_root, mode=0o700, exist_ok=True)
+    try:
+        os.chmod(app_root, 0o700)
+    except OSError:
+        pass
+
+    # Create templates subdir with restricted permissions
+    os.makedirs(templates_root, mode=0o700, exist_ok=True)
+    try:
+        os.chmod(templates_root, 0o700)
+    except OSError:
+        pass
+
+    return templates_root
 
 def get_template_manifest(template_path):
     manifest_path = os.path.join(template_path, 'manifest.json')
