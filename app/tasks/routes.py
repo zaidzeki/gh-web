@@ -17,19 +17,26 @@ def list_tasks():
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
+    org_name = request.args.get('org_name')
+
     try:
         user = g.get_user()
         login = user.login
+
+        # Apply context filter if provided
+        context_filter = f"org:{org_name}" if org_name else f"user:{login}"
 
         # Aggregation: Fetch from three categories with prioritization:
         # 1. Action Required: Review requested
         # 2. In Progress: Assigned to me (Issues or PRs)
         # 3. My PRs: Authored by me
+        # 4. Waiting for Deployment: Merged PRs authored by me that are pending deployment
 
         # Limit to top 20 each to avoid performance/rate-limit issues
-        action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
-        in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
-        my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
+        action_required = g.search_issues(f"is:pr is:open review-requested:{login} {context_filter}")[:20]
+        in_progress = g.search_issues(f"is:open assignee:{login} {context_filter}")[:20]
+        my_prs = g.search_issues(f"is:pr is:open author:{login} {context_filter}")[:20]
+        waiting_deployment = g.search_issues(f"is:pr is:merged status:pending author:{login} {context_filter}")[:20]
 
         tasks = []
         task_ids = set()
@@ -92,6 +99,12 @@ def list_tasks():
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
                 tasks.append(normalize(item, "authored"))
+                task_ids.add(task_id)
+
+        for item in waiting_deployment:
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "waiting_deployment"))
                 task_ids.add(task_id)
 
         # Sort by updated_at desc

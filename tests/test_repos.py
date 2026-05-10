@@ -14,7 +14,7 @@ def app():
 def client(app):
     return app.test_client()
 
-@patch('app.repos.routes.Github')
+@patch('app.repos.routes.github.Github')
 def test_create_repo_success(mock_github, client):
     with client.session_transaction() as sess:
         sess['github_token'] = 'fake_token'

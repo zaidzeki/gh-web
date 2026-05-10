@@ -1,14 +1,15 @@
 from flask import Blueprint, request, session, jsonify
+import github
 from ..workspace.utils import mask_token
 
 bp = Blueprint('auth', __name__)
 
-from github import Github
 def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    auth = github.Auth.Token(token)
+    return github.Github(auth=auth)
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -33,5 +34,22 @@ def get_user_profile():
             "name": user.name,
             "html_url": user.html_url
         }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/user/orgs', methods=['GET'])
+def list_user_orgs():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        user = g.get_user()
+        orgs = user.get_orgs()
+        return jsonify([{
+            "login": org.login,
+            "avatar_url": org.avatar_url,
+            "description": org.description
+        } for org in orgs]), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

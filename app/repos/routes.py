@@ -3,7 +3,7 @@ import shutil
 import git
 import tempfile
 from flask import Blueprint, request, session, jsonify
-from github import Github
+import github
 from werkzeug.utils import secure_filename
 from ..workspace.utils import render_template_dir, mask_token
 
@@ -13,7 +13,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(token)
+    auth = github.Auth.Token(token)
+    return github.Github(auth=auth)
 
 @bp.route('/api/repos', methods=['GET'])
 def list_repos():
@@ -22,28 +23,42 @@ def list_repos():
         return jsonify({"error": "Unauthorized"}), 401
 
     search_query = request.args.get('search')
+    org_name = request.args.get('org_name')
 
     try:
-        user = g.get_user()
-        if search_query:
-            # Filtered search within user's context
-            repos = g.search_repositories(f"user:{user.login} {search_query}")
+        if org_name:
+            context_owner = org_name
+            org = g.get_organization(org_name)
+            if search_query:
+                repos = g.search_repositories(f"org:{org_name} {search_query}")
+            else:
+                repos = org.get_repos(sort='pushed', direction='desc')
         else:
-            # Default to recently pushed
-            repos = user.get_repos(sort='pushed', direction='desc')
+            user = g.get_user()
+            context_owner = user.login
+            if search_query:
+                # Filtered search within user's context
+                repos = g.search_repositories(f"user:{user.login} {search_query}")
+            else:
+                # Default to recently pushed
+                repos = user.get_repos(sort='pushed', direction='desc')
 
         results = []
         # Pre-fetch Issue and PR counts using Search API to avoid N+1 problem
+        # Optimization: Cap at top 100 most recent to ensure enterprise performance
         pr_counts = {}
         issue_counts = {}
         try:
-            open_prs = g.search_issues(f"is:pr is:open user:{user.login}")
-            for pr in open_prs:
+            owner_filter = f"org:{org_name}" if org_name else f"user:{context_owner}"
+            open_prs = g.search_issues(f"is:pr is:open {owner_filter}", sort="updated", direction="desc")
+            for i, pr in enumerate(open_prs):
+                if i >= 100: break
                 repo_name = pr.repository.full_name
                 pr_counts[repo_name] = pr_counts.get(repo_name, 0) + 1
 
-            open_issues = g.search_issues(f"is:issue is:open user:{user.login}")
-            for issue in open_issues:
+            open_issues = g.search_issues(f"is:issue is:open {owner_filter}", sort="updated", direction="desc")
+            for i, issue in enumerate(open_issues):
+                if i >= 100: break
                 repo_name = issue.repository.full_name
                 issue_counts[repo_name] = issue_counts.get(repo_name, 0) + 1
         except Exception:

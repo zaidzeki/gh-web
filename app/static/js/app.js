@@ -122,8 +122,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.handleForm = handleForm;
     window.showAlert = showAlert;
 
+    let currentContext = 'personal';
+
     const initDashboard = async () => {
         const profileDiv = document.getElementById('userProfile');
+        const contextSwitcher = document.getElementById('contextSwitcher');
         const loginForm = document.getElementById('loginForm');
 
         try {
@@ -134,14 +137,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('userLogin').textContent = user.login;
                 profileDiv.classList.remove('d-none');
                 profileDiv.classList.add('d-flex');
+                if (contextSwitcher) contextSwitcher.classList.remove('d-none');
                 if (loginForm) loginForm.classList.add('d-none');
 
+                await refreshContexts();
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
+                if (contextSwitcher) contextSwitcher.classList.add('d-none');
                 if (loginForm) loginForm.classList.remove('d-none');
             }
         } catch (error) {
@@ -149,13 +155,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const refreshContexts = async () => {
+        const switcher = document.getElementById('currentContext');
+        if (!switcher) return;
+
+        try {
+            const response = await fetch('/api/user/orgs');
+            if (response.ok) {
+                const orgs = await response.json();
+                // Keep the "Personal" option
+                switcher.innerHTML = '<option value="personal">Personal Portfolio</option>';
+                orgs.forEach(org => {
+                    const opt = document.createElement('option');
+                    opt.value = org.login;
+                    opt.textContent = org.login;
+                    switcher.appendChild(opt);
+                });
+                switcher.value = currentContext;
+            }
+        } catch (e) {
+            console.error('Failed to refresh contexts:', e);
+        }
+    };
+
+    const contextSwitcherSelect = document.getElementById('currentContext');
+    if (contextSwitcherSelect) {
+        contextSwitcherSelect.addEventListener('change', (e) => {
+            currentContext = e.target.value;
+            refreshDashboardRepos();
+            refreshTaskInbox();
+        });
+    }
+
     let allRepos = [];
     const refreshDashboardRepos = async (search = '') => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
         try {
-            const url = search ? `/api/repos?search=${encodeURIComponent(search)}` : '/api/repos';
+            let url = `/api/repos`;
+            const params = new URLSearchParams();
+            if (search) params.append('search', search);
+            if (currentContext !== 'personal') params.append('org_name', currentContext);
+
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+
             const response = await fetch(url);
             const repos = await response.json();
 
@@ -487,7 +533,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inbox) return;
 
         try {
-            const response = await fetch('/api/tasks');
+            let url = '/api/tasks';
+            if (currentContext !== 'personal') {
+                url += `?org_name=${encodeURIComponent(currentContext)}`;
+            }
+            const response = await fetch(url);
             const tasks = await response.json();
 
             if (!response.ok) {
@@ -506,9 +556,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.className = 'list-group-item d-flex justify-content-between align-items-center py-3';
 
                 const typeIcon = task.type === 'pr' ? '🌿' : '🎫';
-                const categoryBadge = task.category === 'review_requested' ?
-                    '<span class="badge bg-danger">Action Required</span>' :
-                    (task.category === 'assigned' ? '<span class="badge bg-primary">In Progress</span>' : '<span class="badge bg-secondary">My PR</span>');
+            let categoryBadge = '';
+            switch(task.category) {
+                case 'review_requested':
+                    categoryBadge = '<span class="badge bg-danger">Action Required</span>';
+                    break;
+                case 'assigned':
+                    categoryBadge = '<span class="badge bg-primary">In Progress</span>';
+                    break;
+                case 'waiting_deployment':
+                    categoryBadge = '<span class="badge bg-warning text-dark">Waiting Deployment</span>';
+                    break;
+                default:
+                    categoryBadge = '<span class="badge bg-secondary">My PR</span>';
+            }
 
                 let statusBadges = '';
                 if (task.ci_status) {

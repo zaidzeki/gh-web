@@ -12,6 +12,11 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="#">GH-Web</a>
             <div class="d-flex align-items-center">
+                <div id="contextSwitcher" class="me-3 d-none">
+                    <select id="currentContext" class="form-select form-select-sm bg-dark text-light border-secondary" aria-label="Switch discovery context">
+                        <option value="personal">Personal Portfolio</option>
+                    </select>
+                </div>
                 <div id="userProfile" class="me-3 d-none align-items-center text-light">
                     <img id="userAvatar" src="" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
                     <span id="userLogin" class="fw-bold"></span>
