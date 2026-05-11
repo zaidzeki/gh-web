@@ -37,3 +37,7 @@
 ## 2025-06-01 - [Scalable Contextual Discovery]
 **Learning:** Scalability in an enterprise context requires managing the 'Organizational Blind Spot' without sacrificing performance. Aggregating metadata (PR/Issue counts) across large organizations can lead to API timeouts and rate-limiting.
 **Action:** Implement Contextual Switching (Personal vs. Organization) and enforce a "Top 100 Aggregation Cap" on search-based metadata fetching to maintain dashboard responsiveness in enterprise environments.
+
+## 2025-06-02 - [The Operational Blind Spot]
+**Learning:** Merging code is only half the battle; ensuring it runs successfully in production is the other half. There is a "Verification Gap" where users lose visibility into the health of their repositories after a merge. High-value management tools must bridge this gap by surfacing real-time CI/CD health and providing interactive governance (e.g., deployment approvals) directly within the development workspace.
+**Action:** Prioritize "Operational Health" features that surface branch CI status and environment rollout progress on the main dashboard to provide a full-spectrum delivery overview.

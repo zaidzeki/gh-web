@@ -97,6 +97,8 @@ These operations apply to the repository currently active in the server's worksp
 | `GET` | `/api/repos/<full_name>/prs` | Returns JSON list of Pull Requests. |
 | `POST` | `/api/repos/<full_name>/prs` | Creates a Pull Request. |
 | `POST` | `/api/repos/<full_name>/prs/<id>/merge` | Merges a specific PR. |
+| `GET` | `/api/repos/health` | Returns batch CI and Environment health for multiple repos. |
+| `POST` | `/api/repos/<full_name>/deployments/<id>/review` | Approves or rejects a deployment. |
 | `POST` | `/api/workspace/clone` | Clones a repository to the server workspace. |
 | `POST` | `/api/workspace/download` | Downloads repository archive to the server. |
 | `POST` | `/api/workspace/modify/patch` | Uploads and applies a patch file. |

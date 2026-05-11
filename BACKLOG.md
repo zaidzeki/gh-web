@@ -89,6 +89,13 @@
     - [ ] Create Context Switcher in the application header.
     - [ ] Implement context-aware filtering for the Repository list.
     - [ ] Integrate organizational context into the Task Inbox.
+- [ ] **Epic: Operational Health & Guardrails**
+    - [ ] Implement `GET /api/repos/health` batch endpoint for CI/Env status.
+    - [ ] Implement `POST /api/repos/.../deployments/<id>/review` for approvals.
+    - [ ] Surface color-coded CI status badges on Dashboard repository cards.
+    - [ ] Implement environment indicators (e.g., 'Production: v1.0.0') on repository cards.
+    - [ ] Integrate deployment approvals into Task Inbox with "Approve" action.
+    - [ ] Implement frontend lazy-loading for health data to maintain performance.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
@@ -99,6 +106,3 @@
 - [ ] 100% test coverage.
 - [ ] Implement Logout & Session Clearing.
 - [ ] Implement Pagination for Task Inbox and Repo List.
-- [ ] **Epic: Verification Gap Closure**
-    - [ ] Surface CI status badges in Dashboard Repository list.
-    - [ ] Implement environment indicators on repository cards.
