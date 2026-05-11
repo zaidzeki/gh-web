@@ -51,7 +51,8 @@ def list_tasks():
                 "html_url": str(issue_or_pr.html_url),
                 "updated_at": issue_or_pr.updated_at.isoformat() if issue_or_pr.updated_at else None,
                 "ci_status": None,
-                "review_status": None
+                "review_status": None,
+                "pending_run_id": None
             }
 
             # Optional: Fetch CI/Review status for PRs
@@ -100,7 +101,24 @@ def list_tasks():
         for item in waiting_deployment:
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
-                tasks.append(normalize(item, "waiting_deployment"))
+                task = normalize(item, "waiting_deployment")
+
+                # Enrich waiting_deployment tasks with pending run_id if available
+                try:
+                    repo = item.repository
+                    # Search for workflow runs for the merge commit of this PR
+                    # Merged PRs have a merge_commit_sha
+                    pr = item.as_pull_request()
+                    if pr.merge_commit_sha:
+                        runs = repo.get_workflow_runs(event='push', status='waiting')
+                        for run in runs:
+                            if str(run.head_sha) == str(pr.merge_commit_sha):
+                                task["pending_run_id"] = int(run.id)
+                                break
+                except:
+                    pass
+
+                tasks.append(task)
                 task_ids.add(task_id)
 
         # Sort by updated_at desc

@@ -72,6 +72,39 @@ def test_portfolio_enriched_data(client, mock_git_repo):
         if os.path.exists(workspace_root):
             shutil.rmtree(workspace_root)
 
+@patch('app.repos.routes.Github')
+def test_repos_health_batch(mock_github_class, client):
+    mock_gh = mock_github_class.return_value
+    mock_repo = MagicMock()
+    mock_gh.get_repo.return_value = mock_repo
+
+    mock_repo.default_branch = 'main'
+    mock_status = MagicMock()
+    mock_status.state = 'success'
+    mock_repo.get_combined_status.return_value = mock_status
+
+    mock_env = MagicMock()
+    mock_env.name = 'production'
+    mock_repo.get_environments.return_value = [mock_env]
+
+    mock_dep = MagicMock()
+    mock_dep.ref = 'v1.0.0'
+    mock_dep_status = MagicMock()
+    mock_dep_status.state = 'success'
+    mock_dep.get_statuses.return_value = [mock_dep_status]
+    mock_repo.get_deployments.return_value = [mock_dep]
+
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'test-token'
+
+    response = client.get('/api/repos/health?repos=owner/repo1,owner/repo2')
+    assert response.status_code == 200
+    data = response.get_json()
+
+    assert 'owner/repo1' in data
+    assert data['owner/repo1']['ci_status'] == 'success'
+    assert data['owner/repo1']['production_status']['ref'] == 'v1.0.0'
+
 def test_sync_all_workspaces(client, mock_git_repo):
     with client.session_transaction() as sess:
         sess['github_token'] = 'test-token'

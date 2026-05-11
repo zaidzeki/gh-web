@@ -5,6 +5,7 @@ import tempfile
 from flask import Blueprint, request, session, jsonify
 import github
 from github import Github
+from concurrent.futures import ThreadPoolExecutor
 from werkzeug.utils import secure_filename
 from ..workspace.utils import render_template_dir, mask_token, get_templates_root
 
@@ -180,3 +181,74 @@ def create_repo():
         }), 201
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/health', methods=['GET'])
+def get_repos_health():
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    repo_names = request.args.get('repos', '').split(',')
+    repo_names = [r.strip() for r in repo_names if r.strip()]
+
+    if not repo_names:
+        return jsonify({}), 200
+
+    def fetch_repo_health(full_name):
+        try:
+            repo = g.get_repo(full_name)
+            health = {
+                "full_name": full_name,
+                "ci_status": None,
+                "production_status": None
+            }
+
+            # 1. CI Status for default branch
+            try:
+                # get_combined_status takes a ref
+                combined = repo.get_combined_status(repo.default_branch)
+                health["ci_status"] = combined.state
+            except:
+                pass
+
+            # 2. Production Status
+            try:
+                # Try to find 'production' environment
+                envs = repo.get_environments()
+                prod_env = None
+                for env in envs:
+                    if env.name.lower() == 'production':
+                        prod_env = env
+                        break
+
+                if prod_env:
+                    deployments = repo.get_deployments(environment=prod_env.name)
+                    for d in deployments:
+                        # Get latest status
+                        statuses = d.get_statuses()
+                        latest = None
+                        for s in statuses:
+                            latest = s
+                            break
+
+                        health["production_status"] = {
+                            "env": prod_env.name,
+                            "state": latest.state if latest else "unknown",
+                            "ref": d.ref
+                        }
+                        break # Only need the latest deployment
+            except:
+                pass
+
+            return health
+        except Exception:
+            return {"full_name": full_name, "error": "Not Found"}
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(fetch_repo_health, name) for name in repo_names]
+        for future in futures:
+            res = future.result()
+            results[res["full_name"]] = res
+
+    return jsonify(results), 200
