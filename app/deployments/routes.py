@@ -1,3 +1,4 @@
+import requests
 from flask import Blueprint, request, session, jsonify
 from github import Github, Auth
 from ..workspace.utils import mask_token
@@ -109,5 +110,61 @@ def create_deployment(full_name):
             "id": deployment.id,
             "sha": deployment.sha
         }), 201
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/actions/runs/<int:run_id>/review', methods=['POST'])
+def review_deployment(full_name, run_id):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    event = data.get('event') # 'approve' or 'reject'
+    comment = data.get('comment', '')
+
+    if event not in ['approve', 'reject']:
+        return jsonify({"error": "event must be 'approve' or 'reject'"}), 400
+
+    try:
+        # We need to find the pending deployment environment names for this run
+        # Using raw request because PyGithub might not support this yet in the version we have
+        # GET /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments
+
+        token = session.get('github_token')
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+
+        pending_url = f"https://api.github.com/repos/{full_name}/actions/runs/{run_id}/pending_deployments"
+        resp = requests.get(pending_url, headers=headers)
+        if resp.status_code != 200:
+            return jsonify({"error": f"Failed to fetch pending deployments: {resp.text}"}), resp.status_code
+
+        pending_data = resp.json()
+        # pending_data is expected to be a list according to documentation or an object with 'pending_deployments' key
+        # Based on Orchestra guide: {"total_count": 1, "pending_deployments": [...]}
+        pending_list = pending_data if isinstance(pending_data, list) else pending_data.get('pending_deployments', [])
+
+        env_ids = [d['environment']['id'] for d in pending_list if 'environment' in d and 'id' in d['environment']]
+
+        if not env_ids:
+            return jsonify({"error": "No pending deployments found for this run"}), 404
+
+        # POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments
+        review_url = f"https://api.github.com/repos/{full_name}/actions/runs/{run_id}/pending_deployments"
+        review_payload = {
+            "environment_ids": env_ids,
+            "state": event,
+            "comment": comment
+        }
+
+        resp = requests.post(review_url, headers=headers, json=review_payload)
+        if resp.status_code in [200, 201, 204]:
+            return jsonify({"message": f"Deployment {event}d successfully"}), 200
+        else:
+            return jsonify({"error": f"Failed to review deployment: {resp.text}"}), resp.status_code
+
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

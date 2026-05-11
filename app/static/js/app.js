@@ -227,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             allRepos = repos;
             renderRepoList(repos);
+            refreshRepoHealth(repos.map(r => r.full_name));
 
             // Update datalist for autosuggest
             const datalist = document.getElementById('userReposList');
@@ -255,7 +256,8 @@ document.addEventListener('DOMContentLoaded', () => {
         repoList.innerHTML = '';
         repos.forEach(repo => {
             const item = document.createElement('div');
-            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center repo-item';
+            item.dataset.repo = repo.full_name;
             const prBadge = repo.open_prs_count > 0 ?
                 `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
             const issueBadge = repo.open_issues_count > 0 ?
@@ -265,14 +267,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const repoAriaLabel = `Open repository ${escapeHTML(repo.full_name)}. ${repo.open_issues_count} issues, ${repo.open_prs_count} pull requests. Last pushed ${pushedStr}.`;
 
             item.innerHTML = `
-                <div>
-                    <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="${repoAriaLabel}">
-                        ${escapeHTML(repo.full_name)}
+                <div class="flex-grow-1 text-truncate">
+                    <div class="d-flex align-items-center mb-1">
+                        <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="${repoAriaLabel}">
+                            ${escapeHTML(repo.full_name)}
+                        </h6>
                         ${issueBadge}
                         ${prBadge}
-                    </h6>
-                    <small class="text-muted text-truncate d-block" style="max-width: 400px;" title="${escapeHTML(repo.description || 'No description')}">
+                        <span class="health-badges ms-2"></span>
+                    </div>
+                    <small class="text-muted text-truncate d-block" style="max-width: 500px;" title="${escapeHTML(repo.description || 'No description')}">
                         <span class="badge bg-light text-dark border me-1" title="${repo.pushed_at ? new Date(repo.pushed_at).toLocaleString() : 'Never'}">${pushedStr}</span>
+                        <span class="ci-text-status small me-1"></span>
                         ${escapeHTML(repo.description || 'No description')}
                     </small>
                 </div>
@@ -354,6 +360,44 @@ document.addEventListener('DOMContentLoaded', () => {
                 bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
             });
         });
+    };
+
+    const refreshRepoHealth = async (repoNames) => {
+        if (!repoNames || repoNames.length === 0) return;
+
+        try {
+            const response = await fetch(`/api/repos/health?repos=${encodeURIComponent(repoNames.join(','))}`);
+            const healthData = await response.json();
+
+            if (response.ok) {
+                document.querySelectorAll('.repo-item').forEach(item => {
+                    const repoName = item.dataset.repo;
+                    const health = healthData[repoName];
+                    if (health) {
+                        const badgesContainer = item.querySelector('.health-badges');
+                        if (badgesContainer) {
+                            let badgesHtml = '';
+                            if (health.ci_status) {
+                                const ciClass = health.ci_status === 'success' ? 'bg-success' : (health.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+                                badgesHtml += `<span class="badge ${ciClass} ms-1" title="CI Status: ${health.ci_status}">CI: ${health.ci_status.toUpperCase()}</span>`;
+
+                                const ciTextEl = item.querySelector('.ci-text-status');
+                                if (ciTextEl) {
+                                    ciTextEl.textContent = health.ci_status === 'success' ? 'Passed CI' : (health.ci_status === 'failure' ? 'Failed CI' : 'CI Pending');
+                                    ciTextEl.className = `ci-text-status small me-1 ${health.ci_status === 'failure' ? 'text-danger' : 'text-muted'}`;
+                                }
+                            }
+                            if (health.production_status) {
+                                badgesHtml += `<span class="badge bg-info text-dark ms-1" title="Production Ref: ${health.production_status.ref}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
+                            }
+                            badgesContainer.innerHTML = badgesHtml;
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Failed to fetch repo health:', error);
+        }
     };
 
     const dashboardRepoSearch = document.getElementById('dashboardRepoSearch');
@@ -587,7 +631,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
 
                 if (task.category === 'waiting_deployment') {
-                    actionBtn = `<button class="btn btn-sm btn-outline-primary deploy-task-btn" data-repo="${escapeHTML(task.repo)}" data-ref="${escapeHTML(task.id.split('#')[1])}">Deploy</button>`;
+                    if (task.pending_run_id) {
+                        actionBtn = `
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-success approve-deploy-btn" data-repo="${escapeHTML(task.repo)}" data-run-id="${task.pending_run_id}">Approve</button>
+                                <button class="btn btn-sm btn-danger reject-deploy-btn" data-repo="${escapeHTML(task.repo)}" data-run-id="${task.pending_run_id}">Reject</button>
+                            </div>
+                        `;
+                    } else {
+                        actionBtn = `<button class="btn btn-sm btn-outline-primary deploy-task-btn" data-repo="${escapeHTML(task.repo)}" data-ref="${escapeHTML(task.id.split('#')[1])}">Deploy</button>`;
+                    }
                 }
 
                 item.innerHTML = `
@@ -652,6 +705,56 @@ document.addEventListener('DOMContentLoaded', () => {
                     const envTab = document.getElementById('environments-tab');
                     bootstrap.Tab.getOrCreateInstance(envTab).show();
                     refreshEnvironments(repo);
+                });
+            });
+
+            inbox.querySelectorAll('.approve-deploy-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Approve this deployment?')) return;
+                    toggleLoading(btn, true);
+                    try {
+                        const response = await fetch(`/api/repos/${btn.dataset.repo}/actions/runs/${btn.dataset.run_id}/review`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ event: 'approve' })
+                        });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showAlert(result.message);
+                            refreshTaskInbox();
+                        } else {
+                            showAlert(result.error, 'danger');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    } finally {
+                        toggleLoading(btn, false);
+                    }
+                });
+            });
+
+            inbox.querySelectorAll('.reject-deploy-btn').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    if (!confirm('Reject this deployment?')) return;
+                    toggleLoading(btn, true);
+                    try {
+                        const response = await fetch(`/api/repos/${btn.dataset.repo}/actions/runs/${btn.dataset.run_id}/review`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ event: 'reject' })
+                        });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showAlert(result.message);
+                            refreshTaskInbox();
+                        } else {
+                            showAlert(result.error, 'danger');
+                        }
+                    } catch (error) {
+                        showAlert(error.message, 'danger');
+                    } finally {
+                        toggleLoading(btn, false);
+                    }
                 });
             });
 

@@ -90,3 +90,33 @@ def test_create_deployment(client, mocker):
     data = response.get_json()
     assert data['id'] == 2
     assert 'Deployment created successfully' in data['message']
+
+def test_review_deployment(client, mocker):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake-token'
+
+    mock_g = mocker.patch('app.deployments.routes.Github')
+    mock_requests = mocker.patch('requests.get')
+    mock_post = mocker.patch('requests.post')
+
+    # Mock fetching pending deployments
+    mock_requests.return_value.status_code = 200
+    mock_requests.return_value.json.return_value = [
+        {'environment': {'id': 456, 'name': 'production'}}
+    ]
+
+    # Mock review submission
+    mock_post.return_value.status_code = 200
+
+    response = client.post('/api/repos/owner/repo/actions/runs/123/review', json={
+        'event': 'approve',
+        'comment': 'Good to go'
+    })
+
+    assert response.status_code == 200
+    assert 'approved successfully' in response.get_json()['message']
+
+    # Verify post payload
+    args, kwargs = mock_post.call_args
+    assert kwargs['json']['environment_ids'] == [456]
+    assert kwargs['json']['state'] == 'approve'
