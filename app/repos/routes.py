@@ -42,6 +42,28 @@ def list_orgs():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/user/orgs/<org_name>/teams', methods=['GET'])
+def list_teams(org_name):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        user = g.get_user()
+        teams = user.get_teams()
+        results = []
+        for team in teams:
+            if team.organization.login.lower() == org_name.lower():
+                results.append({
+                    "id": team.id,
+                    "name": team.name,
+                    "slug": team.slug
+                })
+
+        return jsonify(results), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/repos', methods=['GET'])
 def list_repos():
     g = get_github_client()
@@ -50,6 +72,7 @@ def list_repos():
 
     search_query = request.args.get('search')
     org_name = request.args.get('org_name')
+    team_id = request.args.get('team_id')
 
     try:
         user = g.get_user()
@@ -58,7 +81,11 @@ def list_repos():
         context_login = org_name if org_name else user.login
         is_org = bool(org_name)
 
-        if search_query:
+        if team_id:
+            # List repos for a specific team
+            org = g.get_organization(org_name) if org_name else user.get_orgs()[0] # Fallback if org_name missing
+            repos = org.get_team(int(team_id)).get_repos(sort='pushed', direction='desc')
+        elif search_query:
             # Filtered search within chosen context
             query = f"org:{org_name} {search_query}" if is_org else f"user:{user.login} {search_query}"
             repos = g.search_repositories(query)
@@ -75,7 +102,15 @@ def list_repos():
         pr_counts = {}
         issue_counts = {}
         try:
-            search_context = f"org:{org_name}" if is_org else f"user:{user.login}"
+            if team_id:
+                # If team_id is active, we ideally want to scope search to team repos.
+                # However, GitHub search 'team:' filter is for team reviewers/mentions,
+                # not for repos associated with a team.
+                # We'll use the repository list we just fetched to filter the search if needed,
+                # or just use the org context as a fallback.
+                search_context = f"org:{org_name}" if is_org else f"user:{user.login}"
+            else:
+                search_context = f"org:{org_name}" if is_org else f"user:{user.login}"
 
             open_prs = g.search_issues(f"is:pr is:open {search_context}")
             for i, pr in enumerate(open_prs):
@@ -95,15 +130,15 @@ def list_repos():
         for i, repo in enumerate(repos):
             if i >= 30: break
             results.append({
-                "full_name": repo.full_name,
-                "name": repo.name,
-                "description": repo.description,
-                "html_url": repo.html_url,
-                "stargazers_count": repo.stargazers_count,
-                "open_issues_count": issue_counts.get(repo.full_name, 0),
-                "open_prs_count": pr_counts.get(repo.full_name, 0),
+                "full_name": str(repo.full_name),
+                "name": str(repo.name),
+                "description": str(repo.description) if repo.description else "",
+                "html_url": str(repo.html_url),
+                "stargazers_count": int(repo.stargazers_count) if repo.stargazers_count is not None else 0,
+                "open_issues_count": int(issue_counts.get(repo.full_name, 0)),
+                "open_prs_count": int(pr_counts.get(repo.full_name, 0)),
                 "pushed_at": repo.pushed_at.isoformat() if repo.pushed_at else None,
-                "private": repo.private
+                "private": bool(repo.private)
             })
         return jsonify(results), 200
     except Exception as e:

@@ -123,6 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
     window.showAlert = showAlert;
 
     let currentOrg = '';
+    let currentTeamId = '';
+    let currentTeamSlug = '';
+
     const initDashboard = async () => {
         const profileDiv = document.getElementById('userProfile');
         const loginForm = document.getElementById('loginForm');
@@ -162,27 +165,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok && orgs.length > 0) {
                 container.style.display = 'block';
-                // Remove existing org items (keep Personal and Divider)
+                // Remove existing items (keep Personal and Divider)
                 while (list.children.length > 2) {
                     list.removeChild(list.lastChild);
                 }
 
-                orgs.forEach(org => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
+                for (const org of orgs) {
+                    const orgLi = document.createElement('li');
+                    orgLi.innerHTML = `
                         <a class="dropdown-item d-flex align-items-center gap-2" href="#" data-org="${escapeHTML(org.login)}">
                             <img src="${escapeHTML(org.avatar_url)}" width="20" height="20" class="rounded-circle">
                             ${escapeHTML(org.login)}
                         </a>
                     `;
-                    list.appendChild(li);
-                });
+                    list.appendChild(orgLi);
+
+                    // Fetch teams for this org
+                    try {
+                        const teamsResp = await fetch(`/api/user/orgs/${encodeURIComponent(org.login)}/teams`);
+                        const teams = await teamsResp.json();
+                        if (teamsResp.ok && teams.length > 0) {
+                            teams.forEach(team => {
+                                const teamLi = document.createElement('li');
+                                teamLi.innerHTML = `
+                                    <a class="dropdown-item d-flex align-items-center gap-2 ps-4" href="#" data-org="${escapeHTML(org.login)}" data-team-id="${team.id}" data-team-slug="${escapeHTML(team.slug)}">
+                                        <span class="text-muted small">↳</span> ${escapeHTML(team.name)}
+                                    </a>
+                                `;
+                                list.appendChild(teamLi);
+                            });
+                        }
+                    } catch (e) {
+                        console.error(`Failed to fetch teams for ${org.login}:`, e);
+                    }
+                }
 
                 list.querySelectorAll('.dropdown-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         e.preventDefault();
                         const org = item.getAttribute('data-org');
-                        if (org === currentOrg) return;
+                        const teamId = item.getAttribute('data-team-id') || '';
+                        const teamSlug = item.getAttribute('data-team-slug') || '';
+
+                        if (org === currentOrg && teamId === currentTeamId) return;
 
                         // Update active state
                         list.querySelectorAll('.dropdown-item').forEach(i => i.classList.remove('active'));
@@ -190,10 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         // Update button text
                         const btn = document.getElementById('orgContextSwitcher');
-                        btn.querySelector('span').textContent = org || 'Personal';
+                        if (teamId) {
+                            btn.querySelector('span').textContent = `${org} / ${item.textContent.replace('↳', '').trim()}`;
+                        } else {
+                            btn.querySelector('span').textContent = org || 'Personal';
+                        }
 
                         currentOrg = org;
+                        currentTeamId = teamId;
+                        currentTeamSlug = teamSlug;
+
                         refreshDashboardRepos();
+                        refreshTaskInbox();
                     });
                 });
             } else {
@@ -213,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams();
             if (search) params.set('search', search);
             if (currentOrg) params.set('org_name', currentOrg);
+            if (currentTeamId) params.set('team_id', currentTeamId);
 
             const queryString = params.toString();
             const url = queryString ? `/api/repos?${queryString}` : '/api/repos';
@@ -592,7 +626,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!inbox) return;
 
         try {
-            const response = await fetch('/api/tasks');
+            const params = new URLSearchParams();
+            if (currentOrg) params.set('org_name', currentOrg);
+            if (currentTeamSlug) params.set('team_slug', currentTeamSlug);
+
+            const url = params.toString() ? `/api/tasks?${params.toString()}` : '/api/tasks';
+            const response = await fetch(url);
             const tasks = await response.json();
 
             if (!response.ok) {
