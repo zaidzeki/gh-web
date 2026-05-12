@@ -17,6 +17,9 @@ def list_tasks():
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
+    org_name = request.args.get('org_name')
+    team_slug = request.args.get('team_slug')
+
     try:
         user = g.get_user()
         login = user.login
@@ -28,11 +31,28 @@ def list_tasks():
         # 4. Waiting Deployment: My merged PRs pending deployment/environment status
         #    Proxy: searching for merged PRs authored by me with status:pending
 
+        # Base filters
+        ar_filter = f"is:pr is:open review-requested:{login}"
+        ip_filter = f"is:open assignee:{login}"
+        my_filter = f"is:pr is:open author:{login}"
+        wd_filter = f"is:pr is:merged status:pending author:{login}"
+
+        # Team/Org extensions
+        if org_name:
+            if team_slug:
+                # Add team-specific review requests
+                ar_filter = f"is:pr is:open (review-requested:{login} OR team-review-requested:{org_name}/{team_slug})"
+                # Optionally search for all open items in team-context (not just assigned to me)
+                # But let's keep it focused on actionable items for now as per "Task Inbox" philosophy.
+            else:
+                # No team specified, but org is. We could scope to org, but global search is often what users want for "My Tasks"
+                pass
+
         # Limit to top 20 each to avoid performance/rate-limit issues
-        action_required = g.search_issues(f"is:pr is:open review-requested:{login}")[:20]
-        in_progress = g.search_issues(f"is:open assignee:{login}")[:20]
-        my_prs = g.search_issues(f"is:pr is:open author:{login}")[:20]
-        waiting_deployment = g.search_issues(f"is:pr is:merged status:pending author:{login}")[:20]
+        action_required = g.search_issues(ar_filter)[:20]
+        in_progress = g.search_issues(ip_filter)[:20]
+        my_prs = g.search_issues(my_filter)[:20]
+        waiting_deployment = g.search_issues(wd_filter)[:20]
 
         tasks = []
         task_ids = set()
