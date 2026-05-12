@@ -41,3 +41,7 @@
 ## 2025-06-02 - [The Operational Blind Spot]
 **Learning:** Merging code is only half the battle; ensuring it runs successfully in production is the other half. There is a "Verification Gap" where users lose visibility into the health of their repositories after a merge. High-value management tools must bridge this gap by surfacing real-time CI/CD health and providing interactive governance (e.g., deployment approvals) directly within the development workspace.
 **Action:** Prioritize "Operational Health" features that surface branch CI status and environment rollout progress on the main dashboard to provide a full-spectrum delivery overview.
+
+## 2025-06-03 - [Enterprise Noise & Team-Centricity]
+**Learning:** In large enterprise organizations, "Organization Filtering" is not enough to bridge the discovery gap. A user's mental model is often tied to their specific Squad or Team, and seeing a flat list of thousands of repositories—even if they belong to the same parent org—causes cognitive overload.
+**Action:** Shift from "Org-First" to "Team-First" contextual collaboration by nesting Team discovery within the Organization switcher, enabling a "Team Cockpit" view that filters both repos and tasks.

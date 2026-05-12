@@ -82,13 +82,19 @@
     - [ ] Implement `POST /api/repos/.../deployments` for triggering promotions.
     - [ ] Create Environments Tab UI with Environment Cards.
     - [ ] Integrate deployment approvals into Task Inbox.
-- [ ] **Epic: Organization & Team Discovery**
-    - [ ] Implement `GET /api/user/orgs` for organization discovery.
-    - [ ] Update `GET /api/repos` to support `org_name` filtering.
-    - [ ] Implement "Top 100 Aggregation Cap" for organization metadata fetching.
-    - [ ] Create Context Switcher in the application header.
-    - [ ] Implement context-aware filtering for the Repository list.
-    - [ ] Integrate organizational context into the Task Inbox.
+- [x] **Epic: Organization & Team Discovery**
+    - [x] Implement `GET /api/user/orgs` for organization discovery.
+    - [x] Update `GET /api/repos` to support `org_name` filtering.
+    - [x] Implement "Top 100 Aggregation Cap" for organization metadata fetching.
+    - [x] Create Context Switcher in the application header.
+    - [x] Implement context-aware filtering for the Repository list.
+    - [x] Integrate organizational context into the Task Inbox.
+- [ ] **Epic: Team-Aware Collaboration**
+    - [ ] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
+    - [ ] Update `GET /api/repos` to support `team_id` filtering.
+    - [ ] Implement `GET /api/tasks?team_id=<id>` for team-centric task aggregation.
+    - [ ] Update Context Switcher to support nested Team selection.
+    - [ ] Add "Team Context" indicators to the Repository cards.
 - [ ] **Epic: Operational Health & Guardrails**
     - [ ] Implement `GET /api/repos/health` batch endpoint for CI/Env status.
     - [ ] Implement `POST /api/repos/.../deployments/<id>/review` for approvals.
