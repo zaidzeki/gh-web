@@ -52,3 +52,8 @@
 **Vulnerability:** File copy operations (shutil.copytree/copy2) and template rendering followed symbolic links by default. This allowed an attacker to leak sensitive files from outside the workspace/template root (e.g., /etc/passwd) if a malicious link existed in the source.
 **Learning:** Standard library functions like `shutil.copytree` and `shutil.copy2` follow symlinks by default. In multi-tenant or workspace-based applications, this can bypass directory boundaries. In manual template rendering loops, `os.path.islink` must be used to specifically disable rendering for links.
 **Prevention:** Always set `symlinks=True` in `shutil.copytree` and `follow_symlinks=False` in `shutil.copy2` when handling untrusted directory structures. Explicitly check for symlinks in rendering loops to avoid accidental content leakage via `open()`.
+
+## 2025-06-04 - Session State Leakage and Missing Request Timeouts
+**Vulnerability:** The login endpoint did not clear the existing session, allowing state like `active_repo` or `user_orgs` to persist between different users on the same browser. Additionally, missing timeouts on outgoing GitHub API and HTTP requests posed a DoS risk.
+**Learning:** Flask sessions persist across requests unless explicitly cleared. Authenticating a new user should always involve a full session purge to ensure isolation. Furthermore, all external network I/O must have strict timeouts to prevent worker starvation.
+**Prevention:** Call `session.clear()` at the start of login handlers. Always initialize API clients (like `Github`) and HTTP libraries with explicit `timeout` parameters. Apply `mask_token` to all error paths that might bubble up external response text.

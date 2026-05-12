@@ -9,7 +9,8 @@ def get_github_client():
     if not token:
         return None
     auth = github.Auth.Token(token)
-    return github.Github(auth=auth)
+    # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
+    return github.Github(auth=auth, timeout=30)
 
 @bp.route('/api/tasks', methods=['GET'])
 def list_tasks():

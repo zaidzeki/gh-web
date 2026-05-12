@@ -9,7 +9,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(auth=github.Auth.Token(token))
+    # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
+    return Github(auth=github.Auth.Token(token), timeout=30)
 
 @bp.route('/login', methods=['POST'])
 def login():
@@ -17,6 +18,8 @@ def login():
     if not token:
         return jsonify({"error": "Token is required"}), 400
 
+    # Security Enhancement: Clear session before login to prevent session leakage from previous users
+    session.clear()
     session['github_token'] = token
     return jsonify({"message": "Logged in successfully"}), 200
 

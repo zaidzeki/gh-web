@@ -17,7 +17,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(auth=github.Auth.Token(token))
+    # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
+    return Github(auth=github.Auth.Token(token), timeout=30)
 
 def get_workspace_dir(repo_name):
     session_id = secure_filename(session.get('session_id', 'default'))
@@ -177,7 +178,8 @@ def download_repo():
         repo = g.get_repo(repo_name_full)
         archive_link = repo.get_archive_link('zipball', ref)
         import httpx
-        with httpx.stream("GET", archive_link, follow_redirects=True) as r:
+        # Security Enhancement: Add timeout to prevent resource exhaustion from hanging downloads
+        with httpx.stream("GET", archive_link, follow_redirects=True, timeout=60.0) as r:
             archive_path = os.path.join(workspace_dir, 'repo.zip')
             with open(archive_path, 'wb') as f:
                 for chunk in r.iter_bytes():
