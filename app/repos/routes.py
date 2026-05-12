@@ -15,7 +15,8 @@ def get_github_client():
     token = session.get('github_token')
     if not token:
         return None
-    return Github(auth=github.Auth.Token(token))
+    # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
+    return Github(auth=github.Auth.Token(token), timeout=30)
 
 @bp.route('/api/user/orgs', methods=['GET'])
 def list_orgs():

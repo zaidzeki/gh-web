@@ -10,7 +10,8 @@ def get_github_client():
     if not token:
         return None
     auth = Auth.Token(token)
-    return Github(auth=auth)
+    # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
+    return Github(auth=auth, timeout=30)
 
 @bp.route('/api/repos/<path:full_name>/environments', methods=['GET'])
 def list_environments(full_name):
@@ -138,9 +139,10 @@ def review_deployment(full_name, run_id):
         }
 
         pending_url = f"https://api.github.com/repos/{full_name}/actions/runs/{run_id}/pending_deployments"
-        resp = requests.get(pending_url, headers=headers)
+        # Security Enhancement: Add timeout to prevent resource exhaustion
+        resp = requests.get(pending_url, headers=headers, timeout=30)
         if resp.status_code != 200:
-            return jsonify({"error": f"Failed to fetch pending deployments: {resp.text}"}), resp.status_code
+            return jsonify({"error": mask_token(f"Failed to fetch pending deployments: {resp.text}")}), resp.status_code
 
         pending_data = resp.json()
         # pending_data is expected to be a list according to documentation or an object with 'pending_deployments' key
@@ -160,11 +162,12 @@ def review_deployment(full_name, run_id):
             "comment": comment
         }
 
-        resp = requests.post(review_url, headers=headers, json=review_payload)
+        # Security Enhancement: Add timeout to prevent resource exhaustion
+        resp = requests.post(review_url, headers=headers, json=review_payload, timeout=30)
         if resp.status_code in [200, 201, 204]:
             return jsonify({"message": f"Deployment {event}d successfully"}), 200
         else:
-            return jsonify({"error": f"Failed to review deployment: {resp.text}"}), resp.status_code
+            return jsonify({"error": mask_token(f"Failed to review deployment: {resp.text}")}), resp.status_code
 
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

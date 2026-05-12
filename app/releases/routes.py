@@ -9,7 +9,8 @@ def get_github_client():
     if not token:
         return None
     auth = Auth.Token(token)
-    return Github(auth=auth)
+    # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
+    return Github(auth=auth, timeout=30)
 
 @bp.route('/api/repos/<path:full_name>/releases', methods=['GET'])
 def list_releases(full_name):
