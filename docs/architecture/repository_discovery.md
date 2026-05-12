@@ -17,10 +17,12 @@ Responsible for fetching repository metadata from the GitHub API using the user'
     - Initial results are limited (top 30) for responsiveness.
     - **Performance Cap:** In large organizations, PR and Issue count aggregation via the Search API is capped at the top 100 most recently updated items to prevent timeouts.
 
-### 2.2. Organization Discovery
+### 2.2. Organization & Team Discovery
 Allows the application to discover the collaborative context for the user.
-- **Service:** `app/auth/routes.py`
-- **Method:** `Github.get_user().get_orgs()`
+- **Service:** `app/repos/routes.py`
+- **Methods:**
+    - Orgs: `Github.get_user().get_orgs()`
+    - Teams: `Github.get_organization(org_name).get_teams()` (filtered by user membership)
 
 ### 2.3. Workspace Portfolio Scanner & Control
 Scans the server-side filesystem to identify repositories that have been "sandboxed" or cloned by the user, and provides quick maintenance actions.
@@ -47,10 +49,10 @@ Fetches the authenticated user's profile to personalize the application.
 5.  UI merges the data: Repositories that are already in the workspace are highlighted with an "Active" badge.
 
 ### 3.2. Context Switching
-1.  User selects an organization from the Context Switcher in the header.
-2.  Frontend updates the `currentContext` state.
-3.  Frontend requests `GET /api/repos?org_name=<org_name>`.
-4.  Dashboard UI refreshes to show organization-specific repositories and metadata.
+1.  User selects an organization or a team from the Context Switcher in the header.
+2.  Frontend updates the `currentContext` state (Org or Team).
+3.  Frontend requests `GET /api/repos` with the appropriate filter (`org_name` or `team_id`).
+4.  Dashboard UI refreshes to show context-specific repositories and metadata.
 
 ### 3.3. Repository Filtering
 1.  User types into a search bar.
