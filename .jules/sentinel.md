@@ -57,3 +57,8 @@
 **Vulnerability:** The login endpoint did not clear the existing session, allowing state like `active_repo` or `user_orgs` to persist between different users on the same browser. Additionally, missing timeouts on outgoing GitHub API and HTTP requests posed a DoS risk.
 **Learning:** Flask sessions persist across requests unless explicitly cleared. Authenticating a new user should always involve a full session purge to ensure isolation. Furthermore, all external network I/O must have strict timeouts to prevent worker starvation.
 **Prevention:** Call `session.clear()` at the start of login handlers. Always initialize API clients (like `Github`) and HTTP libraries with explicit `timeout` parameters. Apply `mask_token` to all error paths that might bubble up external response text.
+
+## 2025-06-05 - Argument Injection in Git Operations via Malicious Branch Names
+**Vulnerability:** Git commands like `checkout` and `apply` interpreted user-provided branch names or filenames starting with a dash as command-line flags (e.g., `--help`).
+**Learning:** Standard sanitization like `secure_filename` may allow leading dashes. CLI tools often treat any argument starting with a dash as an option unless explicitly separated.
+**Prevention:** Always use the `--` separator to terminate option parsing before passing user-controlled positional arguments to shell commands or Git operations. Additionally, explicitly validate and reject identifiers like branch names if they start with a dash.
