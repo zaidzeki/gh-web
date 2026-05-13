@@ -23,6 +23,11 @@ def login():
     session['github_token'] = token
     return jsonify({"message": "Logged in successfully"}), 200
 
+@bp.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({"message": "Logged out successfully"}), 200
+
 @bp.route('/api/user', methods=['GET'])
 def get_user_profile():
     g = get_github_client()
