@@ -154,6 +154,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/logout', { method: 'POST' });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                console.error('Logout failed:', error);
+            }
+        });
+    }
+
     const refreshDashboardOrgs = async () => {
         const container = document.getElementById('orgContextSwitcherContainer');
         const list = document.getElementById('orgContextList');
@@ -2332,11 +2346,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const refreshEnvironments = async (repoFull) => {
-        const envList = document.getElementById('environmentsList');
+        const cardContainer = document.getElementById('environmentsCards');
         const depList = document.getElementById('deploymentsList');
-        if (!envList || !depList) return;
+        if (!cardContainer || !depList) return;
 
-        envList.innerHTML = '<div class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+        cardContainer.innerHTML = '<div class="col-12 text-center p-4"><span class="spinner-border" role="status"></span></div>';
         depList.innerHTML = '<div class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
 
         try {
@@ -2344,24 +2358,54 @@ document.addEventListener('DOMContentLoaded', () => {
             const envs = await envResponse.json();
 
             if (envResponse.ok) {
-                envList.innerHTML = '';
+                cardContainer.innerHTML = '';
                 const datalist = document.getElementById('environmentsDatalist');
                 if (datalist) datalist.innerHTML = '';
 
                 if (envs.length === 0) {
-                    envList.innerHTML = '<p class="text-muted p-3 text-center border rounded">No environments found.</p>';
+                    cardContainer.innerHTML = '<div class="col-12 w-100"><p class="text-muted p-4 text-center border rounded bg-light">No environments defined for this repository.</p></div>';
                 } else {
                     envs.forEach(env => {
-                        const item = document.createElement('button');
-                        item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-                        item.innerHTML = `
-                            <div class="text-truncate">
-                                <h6 class="mb-0 small fw-bold">${escapeHTML(env.name)}</h6>
-                                <small class="text-muted" style="font-size: 0.7rem;">Updated ${timeAgo(env.updated_at)}</small>
+                        const col = document.createElement('div');
+                        col.className = 'col';
+
+                        const ld = env.latest_deployment;
+                        const status = ld ? ld.latest_status : null;
+                        const state = status ? status.state : 'unknown';
+                        const statusClass = state === 'success' ? 'bg-success' : (state === 'failure' ? 'bg-danger' : 'bg-secondary');
+
+                        col.innerHTML = `
+                            <div class="card h-100 border-0 shadow-sm env-card" data-env="${escapeHTML(env.name)}">
+                                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                                    <h6 class="mb-0 fw-bold">${escapeHTML(env.name)}</h6>
+                                    <span class="badge ${statusClass}">${escapeHTML(state.toUpperCase())}</span>
+                                </div>
+                                <div class="card-body py-3">
+                                    ${ld ? `
+                                        <div class="mb-2">
+                                            <div class="small text-muted mb-1">Current Version</div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-light text-dark border">${escapeHTML(ld.ref)}</span>
+                                                <code class="small">${escapeHTML(ld.sha.substring(0, 7))}</code>
+                                            </div>
+                                        </div>
+                                        <div class="small text-muted text-truncate" title="${escapeHTML(status ? status.description : '')}">
+                                            ${escapeHTML(status ? status.description : 'No description')}
+                                        </div>
+                                    ` : `
+                                        <p class="text-muted small mb-0">No deployments found</p>
+                                    `}
+                                </div>
+                                <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between align-items-center py-2">
+                                    <small class="text-muted" style="font-size: 0.7rem;">${ld ? timeAgo(ld.created_at) : 'Never'}</small>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary deploy-to-env-btn" data-env="${escapeHTML(env.name)}">Deploy</button>
+                                        <button class="btn btn-outline-secondary view-env-history-btn" data-env="${escapeHTML(env.name)}">History</button>
+                                    </div>
+                                </div>
                             </div>
                         `;
-                        item.addEventListener('click', () => refreshDeployments(repoFull, env.name));
-                        envList.appendChild(item);
+                        cardContainer.appendChild(col);
 
                         if (datalist) {
                             const opt = document.createElement('option');
@@ -2369,9 +2413,24 @@ document.addEventListener('DOMContentLoaded', () => {
                             datalist.appendChild(opt);
                         }
                     });
+
+                    cardContainer.querySelectorAll('.view-env-history-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const envName = btn.dataset.env;
+                            document.getElementById('historyEnvFilter').textContent = `Showing environment: ${envName}`;
+                            refreshDeployments(repoFull, envName);
+                        });
+                    });
+
+                    cardContainer.querySelectorAll('.deploy-to-env-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            document.getElementById('deployEnv').value = btn.dataset.env;
+                            document.getElementById('newDeploymentBtn').click();
+                        });
+                    });
                 }
             } else {
-                envList.innerHTML = `<p class="text-danger p-3 small">${escapeHTML(envs.error)}</p>`;
+                cardContainer.innerHTML = `<div class="col-12"><p class="text-danger p-3 small">${escapeHTML(envs.error)}</p></div>`;
             }
 
             await refreshDeployments(repoFull);

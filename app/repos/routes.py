@@ -249,11 +249,19 @@ def get_repos_health():
 
             # 2. Production Status
             try:
-                # Try to find 'production' environment
+                # Try to find 'production' environment robustly
                 envs = repo.get_environments()
                 prod_env = None
+                # Check for common production synonyms
+                synonyms = ['production', 'prod', 'live']
                 for env in envs:
-                    if env.name.lower() == 'production':
+                    if env.name.lower() in synonyms:
+                        prod_env = env
+                        break
+
+                # Fallback to the first environment if no explicit 'production' is found
+                if not prod_env:
+                    for env in envs:
                         prod_env = env
                         break
 

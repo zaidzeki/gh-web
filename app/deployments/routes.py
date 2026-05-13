@@ -23,13 +23,43 @@ def list_environments(full_name):
         repo = g.get_repo(full_name)
         # PyGithub get_environments() returns a PaginatedList of Environment objects
         envs = repo.get_environments()
+
+        # Pre-fetch recent deployments to enrich environment data without N+1 per-env calls
+        # Scalability: Scan only the most recent 100 deployments to avoid performance issues
+        deployments = repo.get_deployments()
+        latest_deps = {}
+        for i, d in enumerate(deployments):
+            if i >= 100: break # Safety limit on scan depth
+            if d.environment not in latest_deps:
+                # Fetch latest status for this deployment
+                statuses = d.get_statuses()
+                latest_status = None
+                for s in statuses:
+                    latest_status = {
+                        "state": str(s.state),
+                        "description": str(s.description) if s.description else "",
+                        "updated_at": s.updated_at.isoformat() if s.updated_at else None
+                    }
+                    break
+
+                latest_deps[d.environment] = {
+                    "id": d.id,
+                    "sha": str(d.sha),
+                    "ref": str(d.ref),
+                    "created_at": d.created_at.isoformat() if d.created_at else None,
+                    "creator": str(d.creator.login) if d.creator else None,
+                    "latest_status": latest_status
+                }
+            if len(latest_deps) > 20: break # Cap enrichment for performance
+
         results = []
         for env in envs:
             results.append({
-                "name": env.name,
-                "html_url": env.html_url,
+                "name": str(env.name),
+                "html_url": str(env.html_url),
                 "created_at": env.created_at.isoformat() if env.created_at else None,
-                "updated_at": env.updated_at.isoformat() if env.updated_at else None
+                "updated_at": env.updated_at.isoformat() if env.updated_at else None,
+                "latest_deployment": latest_deps.get(env.name)
             })
         return jsonify(results), 200
     except Exception as e:

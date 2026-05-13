@@ -14,7 +14,8 @@
             <div class="d-flex align-items-center">
                 <div id="userProfile" class="me-3 d-none align-items-center text-light">
                     <img id="userAvatar" src="" alt="Avatar" class="rounded-circle me-2" width="32" height="32">
-                    <span id="userLogin" class="fw-bold"></span>
+                    <span id="userLogin" class="fw-bold me-3"></span>
+                    <button id="logoutBtn" class="btn btn-sm btn-outline-danger">Logout</button>
                 </div>
                 <form class="d-flex" id="loginForm">
                     <input class="form-control me-2" type="password" name="token" placeholder="GitHub PAT" aria-label="GitHub Personal Access Token" required>
@@ -509,39 +510,43 @@
             </div>
 
             <div class="tab-pane fade" id="environments" role="tabpanel" aria-labelledby="environments-tab">
-                <h3>Environments & Deployments</h3>
-                <form id="listDeploymentsForm" class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Environments & Deployments</h3>
+                    <button class="btn btn-primary" id="newDeploymentBtn">New Deployment</button>
+                </div>
+                <form id="listDeploymentsForm" class="mb-4">
                     <div class="row align-items-end">
                         <div class="col-md-9">
                             <label for="deploymentsRepoFullName" class="form-label required-label">Repository Full Name</label>
                             <input type="text" id="deploymentsRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" id="listDeploymentsBtn" class="btn btn-secondary w-100">Refresh</button>
+                            <button type="submit" id="listDeploymentsBtn" class="btn btn-secondary w-100">Refresh Dashboard</button>
                         </div>
                     </div>
                 </form>
-                <div class="row">
-                    <div class="col-md-4 border-end">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h4>Environments</h4>
-                        </div>
-                        <div id="environmentsList" class="list-group mb-4">
-                            <p class="text-muted p-3 text-center border rounded">Refresh to see environments.</p>
-                        </div>
+
+                <h4>Active Environments</h4>
+                <div id="environmentsCards" class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                    <div class="col-12 w-100">
+                        <p class="text-muted p-4 text-center border rounded bg-light">Refresh to see environment status cards.</p>
                     </div>
-                    <div class="col-md-8">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h4>Deployment History</h4>
-                            <button class="btn btn-sm btn-primary" id="newDeploymentBtn">New Deployment</button>
-                        </div>
-                        <div id="deploymentsContainer" style="max-height: 600px; overflow-y: auto;" class="border rounded">
-                            <div id="deploymentsList" class="list-group list-group-flush">
-                                <p class="text-muted p-3 text-center">Refresh to see deployment history.</p>
-                            </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Deployment History</h5>
+                        <div id="historyEnvFilter" class="small text-muted">Showing all environments</div>
+                    </div>
+                    <div id="deploymentsContainer" style="max-height: 500px; overflow-y: auto;">
+                        <div id="deploymentsList" class="list-group list-group-flush">
+                            <p class="text-muted p-3 text-center">Select a repository and refresh to see history.</p>
                         </div>
                     </div>
                 </div>
+
+                <!-- Legacy hidden list for background updates if needed -->
+                <div id="environmentsList" class="d-none"></div>
             </div>
         </div>
     </div>
