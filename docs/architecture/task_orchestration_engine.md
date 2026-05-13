@@ -4,11 +4,14 @@
 The **Task Orchestration Engine** is a backend component responsible for aggregating actionable items from across the user's GitHub portfolio. It abstracts the complexity of multiple GitHub API calls into a single, normalized "Task" stream.
 
 ## 2. Data Flow
-1. **Request:** Frontend calls `GET /api/tasks`.
-2. **Aggregation:** The engine executes three concurrent (or sequential, depending on rate limits) searches via `PyGithub`:
+1. **Request:** Frontend calls `GET /api/tasks`, optionally with `org_name` and `team_id`.
+2. **Aggregation:** The engine executes multiple searches via `PyGithub`:
     - `is:pr is:open review-requested:{user}` (Action Required)
     - `is:issue is:open assignee:{user}` (In Progress)
     - `is:pr is:open author:{user}` (My Pull Requests)
+    - **Team Cockpit (Optional):** If `team_id` is provided:
+        - Fetch repositories associated with the team.
+        - `is:open no:assignee repo:R1 repo:R2 ...` (Unassigned Team Work)
 3. **Normalization:** Results are mapped to a common `Task` schema.
 4. **Enrichment:** For owned PRs, the engine fetches the combined CI status (Success/Failure/Pending).
 5. **Response:** A JSON array of tasks categorized by priority.
@@ -18,7 +21,7 @@ The **Task Orchestration Engine** is a backend component responsible for aggrega
 {
   "id": "repo_full_name#number",
   "type": "issue | pr",
-  "category": "review_requested | assigned | authored",
+  "category": "review_requested | assigned | authored | team_unassigned",
   "title": "Fix the flux capacitor",
   "repo": "owner/repo",
   "number": 42,

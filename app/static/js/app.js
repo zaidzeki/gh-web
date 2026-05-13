@@ -629,6 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams();
             if (currentOrg) params.set('org_name', currentOrg);
             if (currentTeamSlug) params.set('team_slug', currentTeamSlug);
+            if (currentTeamId) params.set('team_id', currentTeamId);
 
             const url = params.toString() ? `/api/tasks?${params.toString()}` : '/api/tasks';
             const response = await fetch(url);
@@ -653,7 +654,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const categoryBadge = task.category === 'review_requested' ?
                     '<span class="badge bg-danger">Action Required</span>' :
                     (task.category === 'assigned' ? '<span class="badge bg-primary">In Progress</span>' :
-                    (task.category === 'waiting_deployment' ? '<span class="badge bg-warning text-dark">Waiting Deployment</span>' : '<span class="badge bg-secondary">My PR</span>'));
+                    (task.category === 'waiting_deployment' ? '<span class="badge bg-warning text-dark">Waiting Deployment</span>' :
+                    (task.category === 'team_unassigned' ? '<span class="badge bg-info text-dark">Team Unassigned</span>' : '<span class="badge bg-secondary">My PR</span>')));
 
                 let statusBadges = '';
                 if (task.ci_status) {

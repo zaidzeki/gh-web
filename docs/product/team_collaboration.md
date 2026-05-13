@@ -23,16 +23,20 @@ The "Organization & Team Discovery" pivot successfully introduced the ability to
 - `GET /api/user/orgs/<org>/teams`: List teams the user belongs to within an organization.
 - `GET /api/repos?team_id=<id>`: Filter repositories to those associated with the specific team.
 
-### 4.3. Team Task Inbox (V2)
-- Update the Task Inbox logic to optionally include "Team-Wide" tasks when a team context is selected.
-- Highlight tasks that are assigned to *any* team member or requested for *team* review.
+### 4.3. Team Task Inbox (V2: Team Cockpit)
+- **Collective Visibility:** When a Team context is selected, the Task Inbox expands beyond the user's personal assignments to include team-wide activity.
+- **Unassigned Work Discovery:** Automatically surfaces issues and PRs in team repositories that have no assignees, enabling proactive triage.
+- **Peer Awareness:** Identifies tasks being handled by other team members to prevent duplicated efforts.
+- **Visual Distinction:** Uses specific badges (e.g., "Team Unassigned") to distinguish collective tasks from personal ones.
 
 ## 5. Acceptance Criteria
-- [ ] Users can see a list of their Teams under each Organization in the switcher.
-- [ ] Selecting a Team context filters the Dashboard Repository list to team-owned/associated repos.
-- [ ] The Repository metadata (CI status, PR counts) reflects the team-filtered set.
-- [ ] Backend supports `GET /api/user/orgs/<org>/teams`.
-- [ ] Backend supports filtering `GET /api/repos` by `team_id`.
+- [x] Users can see a list of their Teams under each Organization in the switcher.
+- [x] Selecting a Team context filters the Dashboard Repository list to team-owned/associated repos.
+- [x] The Repository metadata (CI status, PR counts) reflects the team-filtered set.
+- [x] Backend supports `GET /api/user/orgs/<org>/teams`.
+- [x] Backend supports filtering `GET /api/repos` by `team_id`.
+- [x] Backend `GET /api/tasks` supports `team_id` for aggregating unassigned team work.
+- [x] Frontend Task Inbox displays "Unassigned" tasks when in Team context.
 
 ## 6. Technical Considerations
 - **API Performance:** Team discovery might require additional API calls. Use session caching for team lists.

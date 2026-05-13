@@ -90,11 +90,12 @@
     - [x] Implement context-aware filtering for the Repository list.
     - [x] Integrate organizational context into the Task Inbox.
 - [ ] **Epic: Team-Aware Collaboration**
-    - [ ] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
-    - [ ] Update `GET /api/repos` to support `team_id` filtering.
-    - [ ] Implement `GET /api/tasks?team_id=<id>` for team-centric task aggregation.
-    - [ ] Update Context Switcher to support nested Team selection.
-    - [ ] Add "Team Context" indicators to the Repository cards.
+    - [x] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
+    - [x] Update `GET /api/repos` to support `team_id` filtering.
+    - [x] Update Context Switcher to support nested Team selection.
+    - [x] Implement `GET /api/tasks?team_id=<id>` for "Team Cockpit" task aggregation.
+    - [x] Add "Unassigned" discovery for team-scoped Task Inbox.
+    - [x] Add "Team" status indicators to task inbox items in team context.
 - [ ] **Epic: Operational Health & Guardrails**
     - [ ] Implement `GET /api/repos/health` batch endpoint for CI/Env status.
     - [ ] Implement `POST /api/repos/.../deployments/<id>/review` for approvals.
