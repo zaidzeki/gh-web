@@ -12,6 +12,50 @@ def get_github_client():
     # Security Enhancement: Add timeout to prevent resource exhaustion from hanging API calls
     return github.Github(auth=auth, timeout=30)
 
+def normalize(issue_or_pr, category):
+    repo_full_name = str(issue_or_pr.repository.full_name)
+    is_pr = issue_or_pr.pull_request is not None
+
+    task = {
+        "id": f"{repo_full_name}#{int(issue_or_pr.number)}",
+        "type": "pr" if is_pr else "issue",
+        "category": category,
+        "title": str(issue_or_pr.title),
+        "repo": repo_full_name,
+        "number": int(issue_or_pr.number),
+        "html_url": str(issue_or_pr.html_url),
+        "updated_at": issue_or_pr.updated_at.isoformat() if issue_or_pr.updated_at else None,
+        "ci_status": None,
+        "review_status": None,
+        "pending_run_id": None
+    }
+
+    # Optional: Fetch CI/Review status for PRs
+    if is_pr:
+        try:
+            pr = issue_or_pr.as_pull_request()
+            # CI Status from HEAD
+            try:
+                combined = issue_or_pr.repository.get_combined_status(str(pr.head.sha))
+                task["ci_status"] = str(combined.state)
+            except: pass
+
+            # Review Status (fetched for all PRs)
+            try:
+                reviews = pr.get_reviews()
+                states = [r.state for r in reviews if r.state != "COMMENTED"]
+                # Prioritize CHANGES_REQUESTED over APPROVED
+                if "CHANGES_REQUESTED" in states:
+                    task["review_status"] = "changes_requested"
+                elif "APPROVED" in states:
+                    task["review_status"] = "approved"
+                elif states:
+                    task["review_status"] = "pending"
+            except: pass
+        except: pass
+
+    return task
+
 @bp.route('/api/tasks', methods=['GET'])
 def list_tasks():
     g = get_github_client()
@@ -20,6 +64,7 @@ def list_tasks():
 
     org_name = request.args.get('org_name')
     team_slug = request.args.get('team_slug')
+    team_id = request.args.get('team_id')
 
     try:
         user = g.get_user()
@@ -55,52 +100,27 @@ def list_tasks():
         my_prs = g.search_issues(my_filter)[:20]
         waiting_deployment = g.search_issues(wd_filter)[:20]
 
+        team_unassigned = []
+        if team_id and org_name:
+            try:
+                org = g.get_organization(org_name)
+                team = org.get_team(int(team_id))
+                team_repos = team.get_repos(sort='pushed', direction='desc')
+
+                # Fetch unassigned tasks from the first 5 repositories of the team
+                repo_filters = []
+                for i, repo in enumerate(team_repos):
+                    if i >= 5: break
+                    repo_filters.append(f"repo:{repo.full_name}")
+
+                if repo_filters:
+                    unassigned_query = f"is:open no:assignee {' '.join(repo_filters)}"
+                    team_unassigned = g.search_issues(unassigned_query)[:20]
+            except Exception:
+                pass
+
         tasks = []
         task_ids = set()
-
-        def normalize(issue_or_pr, category):
-            repo_full_name = str(issue_or_pr.repository.full_name)
-            is_pr = issue_or_pr.pull_request is not None
-
-            task = {
-                "id": f"{repo_full_name}#{int(issue_or_pr.number)}",
-                "type": "pr" if is_pr else "issue",
-                "category": category,
-                "title": str(issue_or_pr.title),
-                "repo": repo_full_name,
-                "number": int(issue_or_pr.number),
-                "html_url": str(issue_or_pr.html_url),
-                "updated_at": issue_or_pr.updated_at.isoformat() if issue_or_pr.updated_at else None,
-                "ci_status": None,
-                "review_status": None,
-                "pending_run_id": None
-            }
-
-            # Optional: Fetch CI/Review status for PRs
-            if is_pr:
-                try:
-                    pr = issue_or_pr.as_pull_request()
-                    # CI Status from HEAD
-                    try:
-                        combined = issue_or_pr.repository.get_combined_status(str(pr.head.sha))
-                        task["ci_status"] = str(combined.state)
-                    except: pass
-
-                    # Review Status (fetched for all PRs)
-                    try:
-                        reviews = pr.get_reviews()
-                        states = [r.state for r in reviews if r.state != "COMMENTED"]
-                        # Prioritize CHANGES_REQUESTED over APPROVED
-                        if "CHANGES_REQUESTED" in states:
-                            task["review_status"] = "changes_requested"
-                        elif "APPROVED" in states:
-                            task["review_status"] = "approved"
-                        elif states:
-                            task["review_status"] = "pending"
-                    except: pass
-                except: pass
-
-            return task
 
         for item in action_required:
             task = normalize(item, "review_requested")
@@ -140,6 +160,12 @@ def list_tasks():
                     pass
 
                 tasks.append(task)
+                task_ids.add(task_id)
+
+        for item in team_unassigned:
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "team_unassigned"))
                 task_ids.add(task_id)
 
         # Sort by updated_at desc

@@ -45,3 +45,7 @@
 ## 2025-06-03 - [Enterprise Noise & Team-Centricity]
 **Learning:** In large enterprise organizations, "Organization Filtering" is not enough to bridge the discovery gap. A user's mental model is often tied to their specific Squad or Team, and seeing a flat list of thousands of repositories—even if they belong to the same parent org—causes cognitive overload.
 **Action:** Shift from "Org-First" to "Team-First" contextual collaboration by nesting Team discovery within the Organization switcher, enabling a "Team Cockpit" view that filters both repos and tasks.
+
+## 2025-06-04 - [Team-Scoped Discovery Performance]
+**Learning:** Aggregating "unassigned" work across an entire team's repository set is performance-prohibitive if the team owns hundreds of repositories. Proactive workload visibility requires a balanced approach between breadth and depth.
+**Action:** Implement a "Top 5 Repository Cap" for team-scoped unassigned task discovery to ensure sub-second response times for the Unified Task Inbox while still providing immediate value for a team's core projects.
