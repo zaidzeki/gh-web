@@ -223,7 +223,8 @@ def apply_patch():
     try:
         if os.path.exists(os.path.join(workspace_dir, '.git')):
             repo = git.Repo(workspace_dir)
-            repo.git.apply(filename)
+            # Security: Use -- to explicitly treat filename as a positional argument
+            repo.git.apply('--', filename)
         else:
             # Security: Add timeout to prevent DoS from hung patch processes
             subprocess.run(['patch', '-p1', '-i', filename], cwd=workspace_dir, check=True, timeout=30)
@@ -941,13 +942,19 @@ def workspace_branch():
     if not branch_name:
         return jsonify({"error": "branch_name is required"}), 400
 
+    # Security: Prevent argument injection by disallowing branch names starting with a dash
+    if branch_name.startswith('-'):
+        return jsonify({"error": "Invalid branch name: cannot start with a dash"}), 400
+
     try:
         repo = git.Repo(workspace_dir)
         if create_new:
-            repo.git.checkout('-b', branch_name)
+            # Security: Use -- to explicitly treat branch_name as a positional argument
+            repo.git.checkout('-b', branch_name, '--')
             msg = f"Branch '{branch_name}' created and checked out"
         else:
-            repo.git.checkout(branch_name)
+            # Security: Use -- to explicitly treat branch_name as a positional argument
+            repo.git.checkout(branch_name, '--')
             msg = f"Switched to branch '{branch_name}'"
 
         return jsonify({"message": msg, "branch": branch_name}), 200
@@ -1216,6 +1223,10 @@ def workspace_search():
     query = request.args.get('q')
     if not query:
         return jsonify({"error": "Search query 'q' is required"}), 400
+
+    # Security: Limit search query length to prevent potential resource exhaustion
+    if len(query) > 200:
+        return jsonify({"error": "Search query too long (max 200 characters)"}), 400
 
     workspace_dir = get_workspace_dir(repo_name)
 
