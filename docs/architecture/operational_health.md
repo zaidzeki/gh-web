@@ -13,7 +13,13 @@ To maintain high performance in the main repository list, health data (CI status
 - **CI Status:** Fetched via `repo.get_combined_status(repo.default_branch)`.
 - **Production Status:** Fetched via `repo.get_deployments(environment='production')` (takes the `latest_status` of the first entry).
 
-### 2.2. Deployment Reviews (`app/deployments/routes.py`)
+### 2.2. Workspace Portfolio Enrichment (`app/workspace/routes.py`)
+To provide a complete "Flight Deck" view, the workspace portfolio must include CI status.
+- **Attribute:** `ci_status` added to each portfolio item.
+- **Implementation:** Fetches combined status for `repo.head.commit.hexsha` using the GitHub API.
+- **Optimization:** Limited to active workspaces (usually < 10), minimizing API impact.
+
+### 2.3. Deployment Reviews (`app/deployments/routes.py`)
 New endpoint to handle deployment approvals, specifically for environments with protection rules.
 
 - **Endpoint:** `POST /api/repos/<path:full_name>/deployments/<int:deployment_id>/review`
@@ -27,7 +33,7 @@ New endpoint to handle deployment approvals, specifically for environments with 
 
 ## 3. Frontend Integration
 
-### 3.1. Dashboard UI (Lazy Loading)
+### 3.1. Dashboard UI (Lazy Loading & Filtering)
 - **Lifecycle:**
     1. Dashboard loads repo list via `GET /api/repos`.
     2. Once rendered, the frontend extracts the `full_name` of visible repos.
@@ -36,6 +42,10 @@ New endpoint to handle deployment approvals, specifically for environments with 
 - **Badge Components:**
     - `ci-success`, `ci-failure`, `ci-pending` classes.
     - `env-production` badge showing the latest deployed ref.
+- **Filtering Logic:**
+    - A `currentHealthFilter` state variable manages the active filter.
+    - `renderRepoList` is updated to apply the filter based on the `healthData` cache.
+    - UI triggers `refreshRepoHealth` for visible repositories if filter is changed.
 
 ### 3.2. Task Inbox Actions
 - **Approve Modal:** Triggered by "Approve" button in the Task Inbox. Submits to the new deployment review endpoint and refreshes the inbox on success.

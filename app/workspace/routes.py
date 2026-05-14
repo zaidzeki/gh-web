@@ -9,7 +9,7 @@ import github
 from github import Github
 import git
 from werkzeug.utils import secure_filename
-from .utils import get_template_manifest, render_template_dir, is_safe_path, mask_token, get_templates_root
+from .utils import get_template_manifest, render_template_dir, is_safe_path, mask_token, get_templates_root, get_repo_full_name_from_url
 
 bp = Blueprint('workspace', __name__)
 
@@ -131,11 +131,11 @@ def setup_issue_fix():
 
         try:
             # Check if branch exists locally
-            repo.git.checkout(fix_branch)
+            repo.git.checkout(fix_branch, '--')
             msg = f"Switched to existing fix branch '{fix_branch}'"
         except git.GitCommandError:
             # Create from default branch
-            repo.git.checkout('-B', fix_branch, f"origin/{default_branch}")
+            repo.git.checkout('-B', fix_branch, f"origin/{default_branch}", '--')
             msg = f"Created and checked out fix branch '{fix_branch}' from {default_branch}"
 
         session['active_repo'] = repo_name
@@ -720,81 +720,94 @@ def workspace_portfolio():
     if not os.path.exists(workspace_root):
         return jsonify([]), 200
 
-    portfolio = []
     active_issues = session.get('active_issues', {})
+    token = session.get('github_token')
+
+    def process_repo(repo_dir, token):
+        repo_path = os.path.join(workspace_root, repo_dir)
+        if not os.path.isdir(repo_path):
+            return None
+
+        git_path = os.path.join(repo_path, '.git')
+        if not os.path.exists(git_path):
+            return None
+
+        try:
+            repo = git.Repo(repo_path)
+            active_branch = repo.active_branch
+
+            # Try to resolve full name from remote URL
+            full_name = get_repo_full_name_from_url(repo.remotes.origin.url) if 'origin' in repo.remotes else None
+
+            # Calculate ahead/behind if tracking branch exists
+            ahead = 0
+            behind = 0
+            tracking = None
+            try:
+                tracking = active_branch.tracking_branch()
+            except Exception:
+                pass
+
+            if tracking:
+                try:
+                    ahead_behind = repo.git.rev_list('--left-right', '--count', f'{active_branch.name}...{tracking.name}')
+                    ahead, behind = map(int, ahead_behind.split())
+                except Exception:
+                    pass
+
+            last_commit_subject = ""
+            try:
+                last_commit_subject = str(repo.head.commit.summary)
+            except Exception:
+                pass
+
+            # Active issue metadata
+            issue_data = active_issues.get(repo_dir)
+            active_issue = None
+            if isinstance(issue_data, dict):
+                active_issue = {
+                    "number": int(issue_data.get('number')),
+                    "title": str(issue_data.get('title')),
+                    "is_pr": bool(issue_data.get('is_pr', False))
+                }
+
+            # Fetch CI Status for the current HEAD of the workspace
+            ci_status = None
+            if full_name and token:
+                try:
+                    g = Github(auth=github.Auth.Token(token), timeout=30)
+                    gh_repo = g.get_repo(full_name)
+                    sha = repo.head.commit.hexsha
+                    combined = gh_repo.get_combined_status(sha)
+                    ci_status = str(combined.state)
+                except Exception:
+                    pass
+
+            return {
+                "repo_name": str(repo_dir),
+                "full_name": full_name,
+                "branch": str(active_branch.name),
+                "is_dirty": bool(repo.is_dirty()),
+                "untracked": len(repo.untracked_files) > 0,
+                "ahead": int(ahead),
+                "behind": int(behind),
+                "last_commit_subject": last_commit_subject,
+                "active_issue": active_issue,
+                "ci_status": ci_status
+            }
+        except Exception:
+            return None
 
     try:
-        for repo_dir in sorted(os.listdir(workspace_root)):
-            repo_path = os.path.join(workspace_root, repo_dir)
-            if not os.path.isdir(repo_path):
-                continue
-
-            git_path = os.path.join(repo_path, '.git')
-            if not os.path.exists(git_path):
-                continue
-
-            try:
-                repo = git.Repo(repo_path)
-                active_branch = repo.active_branch
-
-                # Try to resolve full name from remote URL
-                full_name = None
-                try:
-                    url = repo.remotes.origin.url
-                    match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
-                    if match:
-                        full_name = match.group(1)
-                except Exception:
-                    pass
-
-                # Calculate ahead/behind if tracking branch exists
-                ahead = 0
-                behind = 0
-                tracking = None
-                try:
-                    tracking = active_branch.tracking_branch()
-                except Exception:
-                    pass
-
-                if tracking:
-                    try:
-                        # repo.git.rev_list('HEAD...origin/main', count=True, left_right=True)
-                        # but we need it more simply:
-                        ahead_behind = repo.git.rev_list('--left-right', '--count', f'{active_branch.name}...{tracking.name}')
-                        ahead, behind = map(int, ahead_behind.split())
-                    except Exception:
-                        pass
-
-                last_commit_subject = ""
-                try:
-                    last_commit_subject = repo.head.commit.summary
-                except Exception:
-                    pass
-
-                # Active issue metadata
-                issue_data = active_issues.get(repo_dir)
-                active_issue = None
-                if isinstance(issue_data, dict):
-                    active_issue = {
-                        "number": issue_data.get('number'),
-                        "title": issue_data.get('title'),
-                        "is_pr": issue_data.get('is_pr', False)
-                    }
-
-                portfolio.append({
-                    "repo_name": repo_dir,
-                    "full_name": full_name,
-                    "branch": active_branch.name,
-                    "is_dirty": repo.is_dirty(),
-                    "untracked": len(repo.untracked_files) > 0,
-                    "ahead": ahead,
-                    "behind": behind,
-                    "last_commit_subject": last_commit_subject,
-                    "active_issue": active_issue
-                })
-            except Exception:
-                # Skip invalid repos
-                continue
+        from concurrent.futures import ThreadPoolExecutor
+        repo_dirs = sorted(os.listdir(workspace_root))
+        portfolio = []
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(process_repo, rd, token) for rd in repo_dirs]
+            for future in futures:
+                res = future.result()
+                if res:
+                    portfolio.append(res)
 
         return jsonify(portfolio), 200
     except Exception as e:
@@ -855,6 +868,13 @@ def workspace_status():
     try:
         repo = git.Repo(workspace_dir)
         can_push = False
+        repo_full_name = None
+
+        # Try to resolve full name from remotes
+        for remote in repo.remotes:
+            repo_full_name = get_repo_full_name_from_url(remote.url)
+            if repo_full_name:
+                break
 
         # Check if we can push to the tracking remote
         tracking = None
@@ -867,17 +887,13 @@ def workspace_status():
             remote = repo.remote(tracking.remote_name)
             url = remote.url
             if 'github.com' in url:
-                # Extract repo full name from URL
-                match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
-                if match:
-                    repo_full_name = match.group(1)
-                    g = get_github_client()
-                    if g:
-                        try:
-                            gh_repo = g.get_repo(repo_full_name)
-                            can_push = gh_repo.permissions.push
-                        except Exception:
-                            pass
+                g = get_github_client()
+                if g and repo_full_name:
+                    try:
+                        gh_repo = g.get_repo(repo_full_name)
+                        can_push = gh_repo.permissions.push
+                    except Exception:
+                        pass
 
         # Check for active issue linkage
         active_issue_data = session.get('active_issues', {}).get(repo_name)
@@ -1119,13 +1135,13 @@ def stream_pr():
 
             fork_remote.fetch()
             # Create/Reset local branch to track fork branch
-            repo.git.checkout('-B', local_branch, f"{remote_name}/{head_ref}")
+            repo.git.checkout('-B', local_branch, f"{remote_name}/{head_ref}", '--')
             repo.git.branch("--set-upstream-to", f"{remote_name}/{head_ref}", local_branch)
             msg = f"PR #{pr_number} from fork {head_repo_full_name} is now active in workspace (Collaborative Mode)"
         else:
             # PR is from the same repo
             origin.fetch()
-            repo.git.checkout('-B', local_branch, f"origin/{head_ref}")
+            repo.git.checkout('-B', local_branch, f"origin/{head_ref}", '--')
             repo.git.branch("--set-upstream-to", f"origin/{head_ref}", local_branch)
             msg = f"PR #{pr_number} from {repo_full_name} is now active in workspace"
 
@@ -1153,7 +1169,7 @@ def stream_pr():
             pr_ref = f"pull/{pr_number}/head"
             local_branch = f"review-pr-{pr_number}"
             repo.remotes.origin.fetch(f"{pr_ref}:{local_branch}", force=True)
-            repo.git.checkout(local_branch, force=True)
+            repo.git.checkout(local_branch, '--', force=True)
             session['active_repo'] = repo_name
             return jsonify({
                 "message": f"PR #{pr_number} is active (Read-Only fallback)",

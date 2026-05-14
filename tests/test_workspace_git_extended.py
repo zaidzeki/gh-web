@@ -51,7 +51,7 @@ def test_workspace_branch_switch(mock_repo_class, client):
     response = client.post('/api/workspace/branch', json={'branch_name': 'feat/ui'})
     assert response.status_code == 200
     assert "Switched to branch 'feat/ui'" in response.get_json()['message']
-    mock_repo.git.checkout.assert_called_with('feat/ui')
+    mock_repo.git.checkout.assert_called_with('feat/ui', '--')
 
 @patch('git.Repo')
 def test_workspace_branch_create(mock_repo_class, client):
@@ -67,7 +67,7 @@ def test_workspace_branch_create(mock_repo_class, client):
     response = client.post('/api/workspace/branch', json={'branch_name': 'new-branch', 'create_new': True})
     assert response.status_code == 200
     assert "Branch 'new-branch' created" in response.get_json()['message']
-    mock_repo.git.checkout.assert_called_with('-b', 'new-branch')
+    mock_repo.git.checkout.assert_called_with('-b', 'new-branch', '--')
 
 @patch('git.Repo')
 def test_workspace_push(mock_repo_class, client):

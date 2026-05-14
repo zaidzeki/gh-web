@@ -125,6 +125,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentOrg = '';
     let currentTeamId = '';
     let currentTeamSlug = '';
+    let currentHealthFilter = 'all';
+    let healthDataCache = {};
 
     const initDashboard = async () => {
         const profileDiv = document.getElementById('userProfile');
@@ -296,13 +298,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const repoList = document.getElementById('dashboardRepoList');
         if (!repoList) return;
 
-        if (repos.length === 0) {
-            repoList.innerHTML = '<p class="text-muted p-3">No repositories found.</p>';
+        let filteredRepos = repos;
+        if (currentHealthFilter !== 'all') {
+            filteredRepos = repos.filter(repo => {
+                const health = healthDataCache[repo.full_name];
+                if (currentHealthFilter === 'failure') return health && health.ci_status === 'failure';
+                if (currentHealthFilter === 'pending') return health && (health.ci_status === 'pending' || health.ci_status === 'in_progress' || health.ci_status === 'queued');
+                if (currentHealthFilter === 'modified') {
+                    // Check if this repo is in the workspace portfolio and is dirty
+                    const portfolioItem = lastPortfolioData ? lastPortfolioData.find(p => p.full_name === repo.full_name || p.repo_name === repo.name) : null;
+                    return portfolioItem && (portfolioItem.is_dirty || portfolioItem.untracked);
+                }
+                return true;
+            });
+        }
+
+        if (filteredRepos.length === 0) {
+            repoList.innerHTML = `<p class="text-muted p-3">No repositories found matching current filters.</p>`;
             return;
         }
 
         repoList.innerHTML = '';
-        repos.forEach(repo => {
+        filteredRepos.forEach(repo => {
             const item = document.createElement('div');
             item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center repo-item';
             item.dataset.repo = repo.full_name;
@@ -418,9 +435,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const healthData = await response.json();
 
             if (response.ok) {
+                Object.assign(healthDataCache, healthData);
                 document.querySelectorAll('.repo-item').forEach(item => {
                     const repoName = item.dataset.repo;
-                    const health = healthData[repoName];
+                    const health = healthDataCache[repoName];
                     if (health) {
                         const badgesContainer = item.querySelector('.health-badges');
                         if (badgesContainer) {
@@ -455,19 +473,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const query = e.target.value.toLowerCase();
             if (timeout) clearTimeout(timeout);
 
-            // Client-side filtering first
-            const filtered = allRepos.filter(r => r.full_name.toLowerCase().includes(query) || (r.description && r.description.toLowerCase().includes(query)));
-            renderRepoList(filtered);
+            // Client-side filtering (Search + Health)
+            renderRepoList(allRepos.filter(r => r.full_name.toLowerCase().includes(query) || (r.description && r.description.toLowerCase().includes(query))));
 
             // Debounced server-side search if needed
             timeout = setTimeout(() => {
-                if (query && filtered.length < 5) {
+                const queryFiltered = allRepos.filter(r => r.full_name.toLowerCase().includes(query) || (r.description && r.description.toLowerCase().includes(query)));
+                if (query && queryFiltered.length < 5) {
                     refreshDashboardRepos(query);
                 }
             }, 500);
         });
     }
 
+    document.querySelectorAll('.health-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.health-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentHealthFilter = btn.dataset.filter;
+            renderRepoList(allRepos);
+        });
+    });
+
+    let lastPortfolioData = null;
     const refreshWorkspacePortfolio = async () => {
         const portfolioList = document.getElementById('activeWorkspacesList');
         if (!portfolioList) return;
@@ -475,6 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/workspace/portfolio');
             const data = await response.json();
+            lastPortfolioData = data;
 
             if (!response.ok) {
                 portfolioList.innerHTML = `<p class="text-danger p-3">${escapeHTML(data.error || 'Failed to fetch portfolio')}</p>`;
@@ -497,6 +526,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const aheadBadge = item.ahead > 0 ? `<span class="badge bg-info text-dark ms-1" title="${item.ahead} commits ahead">↑${item.ahead}</span>` : '';
                 const behindBadge = item.behind > 0 ? `<span class="badge bg-danger ms-1" title="${item.behind} commits behind">↓${item.behind}</span>` : '';
 
+                let ciBadge = '';
+                if (item.ci_status) {
+                    const ciClass = item.ci_status === 'success' ? 'bg-success' : (item.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
+                    ciBadge = `<span class="badge ${ciClass} ms-1" title="CI Status: ${item.ci_status}">CI</span>`;
+                }
+
                 let activeTaskHtml = '';
                 if (item.active_issue) {
                     const taskType = item.active_issue.is_pr ? 'PR' : 'Issue';
@@ -508,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="text-truncate" style="max-width: 60%;">
                             <h6 class="mb-0 text-primary open-workspace" style="cursor:pointer;" data-repo-name="${escapeHTML(item.repo_name)}" tabindex="0" role="button" aria-label="Open workspace ${escapeHTML(item.repo_name)} (${statusText})">
                                 ${escapeHTML(item.repo_name)}
-                                ${aheadBadge}${behindBadge}
+                                ${aheadBadge}${behindBadge}${ciBadge}
                             </h6>
                             <small class="text-muted font-monospace">${escapeHTML(item.branch)}</small>
                         </div>
