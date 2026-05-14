@@ -30,3 +30,8 @@ h6[role="button"] {
     color: #dc3545; /* Bootstrap danger color */
     font-weight: bold;
 }
+
+/* CD: Deployment History Item Layout */
+.deployment-info {
+    max-width: 65%;
+}

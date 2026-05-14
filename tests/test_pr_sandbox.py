@@ -62,7 +62,7 @@ def test_stream_pr_to_workspace(mock_repo_class, mock_clone, mock_get_github, cl
 
     mock_clone.assert_called_once()
     mock_origin.fetch.assert_called_once()
-    mock_repo.git.checkout.assert_called_with('-B', 'review-pr-123', 'origin/feature-branch')
+    mock_repo.git.checkout.assert_called_with('-B', 'review-pr-123', 'origin/feature-branch', '--')
 
 @patch('app.workspace.routes.get_github_client')
 @patch('git.Repo.clone_from')
@@ -120,7 +120,7 @@ def test_stream_pr_collaborative_mode(mock_repo_class, mock_clone, mock_get_gith
 
     mock_repo.create_remote.assert_called_with('head-fork', 'https://fake_token@github.com/fork-owner/repo.git')
     mock_fork_remote.fetch.assert_called_once()
-    mock_repo.git.checkout.assert_called_with('-B', 'review-pr-456', 'head-fork/fix-branch')
+    mock_repo.git.checkout.assert_called_with('-B', 'review-pr-456', 'head-fork/fix-branch', '--')
 
 def test_stream_pr_missing_params(client):
     with client.session_transaction() as sess:
