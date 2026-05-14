@@ -29,6 +29,13 @@ def mask_token(s):
 
     return s
 
+def get_repo_full_name_from_url(url):
+    """Extracts 'owner/repo' from a GitHub URL."""
+    if not url:
+        return None
+    match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
+    return match.group(1) if match else None
+
 def is_safe_path(basedir, path, follow_symlinks=True):
     basedir = os.path.realpath(basedir)
     if follow_symlinks:

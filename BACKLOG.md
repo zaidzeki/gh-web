@@ -96,13 +96,18 @@
     - [x] Implement `GET /api/tasks?team_id=<id>` for "Team Cockpit" task aggregation.
     - [x] Add "Unassigned" discovery for team-scoped Task Inbox.
     - [x] Add "Team" status indicators to task inbox items in team context.
-- [ ] **Epic: Operational Health & Guardrails**
-    - [ ] Implement `GET /api/repos/health` batch endpoint for CI/Env status.
-    - [ ] Implement `POST /api/repos/.../deployments/<id>/review` for approvals.
-    - [ ] Surface color-coded CI status badges on Dashboard repository cards.
-    - [ ] Implement environment indicators (e.g., 'Production: v1.0.0') on repository cards.
-    - [ ] Integrate deployment approvals into Task Inbox with "Approve" action.
-    - [ ] Implement frontend lazy-loading for health data to maintain performance.
+- [x] **Epic: Operational Health & Guardrails**
+    - [x] Implement `GET /api/repos/health` batch endpoint for CI/Env status.
+    - [x] Implement `POST /api/repos/.../deployments/<id>/review` for approvals.
+    - [x] Surface color-coded CI status badges on Dashboard repository cards.
+    - [x] Implement environment indicators (e.g., 'Production: v1.0.0') on repository cards.
+    - [x] Integrate deployment approvals into Task Inbox with "Approve" action.
+    - [x] Implement frontend lazy-loading for health data to maintain performance.
+- [x] **Epic: Operational Health Phase 2: Proactive Governance**
+    - [x] Enrich `GET /api/workspace/portfolio` with `ci_status`.
+    - [x] Add CI status badges to Portfolio cards on Dashboard.
+    - [x] Implement client-side Health Filtering on Dashboard (Failing, Pending, Modified).
+    - [x] Surface CI status indicator in Workspace tab header for active task.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
