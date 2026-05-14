@@ -63,7 +63,7 @@ def test_setup_issue_fix(mock_repo_class, mock_clone, mock_github, client):
     # Verify git calls
     mock_clone.assert_called_once()
     mock_origin.fetch.assert_called_once()
-    mock_repo.git.checkout.assert_called_with('-B', 'fix/issue-42', 'origin/main')
+    mock_repo.git.checkout.assert_called_with('-B', 'fix/issue-42', 'origin/main', '--')
 
 @patch('app.workspace.routes.get_github_client')
 @patch('git.Repo')
@@ -104,4 +104,4 @@ def test_setup_issue_fix_existing_branch(mock_exists, mock_repo_class, mock_gith
     assert response.status_code == 200
     data = response.get_json()
     assert "Switched to existing fix branch 'fix/issue-42'" in data['message']
-    mock_repo.git.checkout.assert_called_with('fix/issue-42')
+    mock_repo.git.checkout.assert_called_with('fix/issue-42', '--')

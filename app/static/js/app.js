@@ -2498,7 +2498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         item.innerHTML = `
                             <div class="d-flex justify-content-between align-items-start">
-                                <div class="text-truncate">
+                                <div class="text-truncate deployment-info">
                                     <h6 class="mb-1 small">
                                         <strong>${escapeHTML(d.environment)}</strong>
                                         ${statusBadge}
@@ -2510,12 +2510,65 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <p class="mb-0 small text-truncate" title="${escapeHTML(d.description || '')}">${escapeHTML(d.description || 'No description')}</p>
                                 </div>
                                 <div class="text-end">
+                                    <div class="btn-group btn-group-sm mb-1">
+                                        <button class="btn btn-outline-primary promote-dep-btn"
+                                                data-sha="${escapeHTML(d.sha)}"
+                                                data-ref="${escapeHTML(d.ref)}"
+                                                data-env="${escapeHTML(d.environment)}"
+                                                title="Promote to another environment">Promote</button>
+                                        <button class="btn btn-outline-secondary redeploy-dep-btn"
+                                                data-sha="${escapeHTML(d.sha)}"
+                                                data-ref="${escapeHTML(d.ref)}"
+                                                data-env="${escapeHTML(d.environment)}"
+                                                title="Redeploy to this environment">Redeploy</button>
+                                    </div>
                                     <small class="text-muted d-block" style="font-size: 0.7rem;">${timeAgo(d.created_at)}</small>
                                     <small class="text-muted" style="font-size: 0.7rem;">by ${escapeHTML(d.creator)}</small>
                                 </div>
                             </div>
                         `;
                         depList.appendChild(item);
+                    });
+
+                    depList.querySelectorAll('.promote-dep-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const sha = btn.dataset.sha;
+                            const ref = btn.dataset.ref;
+                            const env = btn.dataset.env;
+
+                            document.getElementById('deployRef').value = sha;
+                            document.getElementById('deployDescription').value = `Promoted from ${env} (${ref})`;
+
+                            const indicator = document.getElementById('promotionIndicator');
+                            if (indicator) {
+                                indicator.innerHTML = `<div class="alert alert-info py-1 small mb-3">🚀 Promoting deployment <strong>${escapeHTML(ref)}</strong> from <strong>${escapeHTML(env)}</strong></div>`;
+                                indicator.style.display = 'block';
+                            }
+
+                            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deploymentModal'));
+                            modal.show();
+                        });
+                    });
+
+                    depList.querySelectorAll('.redeploy-dep-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const sha = btn.dataset.sha;
+                            const ref = btn.dataset.ref;
+                            const env = btn.dataset.env;
+
+                            document.getElementById('deployRef').value = sha;
+                            document.getElementById('deployEnv').value = env;
+                            document.getElementById('deployDescription').value = `Redeploying ${ref}`;
+
+                            const indicator = document.getElementById('promotionIndicator');
+                            if (indicator) {
+                                indicator.innerHTML = `<div class="alert alert-secondary py-1 small mb-3">♻️ Redeploying <strong>${escapeHTML(ref)}</strong> to <strong>${escapeHTML(env)}</strong></div>`;
+                                indicator.style.display = 'block';
+                            }
+
+                            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deploymentModal'));
+                            modal.show();
+                        });
                     });
                 }
             } else {
@@ -2538,6 +2591,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const newDeploymentBtn = document.getElementById('newDeploymentBtn');
     if (newDeploymentBtn) {
         newDeploymentBtn.addEventListener('click', () => {
+            // Clear promotion indicator when creating a fresh deployment
+            const indicator = document.getElementById('promotionIndicator');
+            if (indicator) {
+                indicator.innerHTML = '';
+                indicator.style.display = 'none';
+            }
             const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deploymentModal'));
             modal.show();
         });

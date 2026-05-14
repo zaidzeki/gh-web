@@ -77,11 +77,11 @@
     - [x] Add "Publish" action to Template Library in UI.
     - [x] Create Publish Template modal with repository configuration.
 - [ ] **Epic: Continuous Delivery & Environment Governance**
-    - [ ] Implement `GET /api/repos/.../environments` for environment discovery.
-    - [ ] Implement `GET /api/repos/.../deployments` for tracking history and status.
-    - [ ] Implement `POST /api/repos/.../deployments` for triggering promotions.
-    - [ ] Create Environments Tab UI with Environment Cards.
-    - [ ] Integrate deployment approvals into Task Inbox.
+    - [x] Implement `GET /api/repos/.../environments` for environment discovery.
+    - [x] Implement `GET /api/repos/.../deployments` for tracking history and status.
+    - [x] Implement `POST /api/repos/.../deployments` for triggering promotions.
+    - [x] Create Environments Tab UI with Environment Cards.
+    - [x] Integrate deployment approvals into Task Inbox.
 - [x] **Epic: Organization & Team Discovery**
     - [x] Implement `GET /api/user/orgs` for organization discovery.
     - [x] Update `GET /api/repos` to support `org_name` filtering.

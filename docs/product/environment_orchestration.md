@@ -18,6 +18,7 @@ GH-Web has mastered the path from Issue to Release. However, the final destinati
     - **Environments Tab:** A dedicated view for monitoring environment health and deployment status.
     - **Environment Cards:** Visual cards showing "What's Live" in each environment (Version, SHA, Last Updated).
     - **Deployment Orchestrator:** A form to trigger deployments or approvals.
+    - **Promotion & Redeploy:** One-click actions in the deployment history to promote a specific SHA to a new environment or redeploy to the same environment.
     - **Dashboard Integration:** Surfacing "Production Version" in the Repository list.
 
 ## 🎯 The Impact
