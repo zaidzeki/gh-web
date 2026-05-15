@@ -679,6 +679,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentOrg) params.set('org_name', currentOrg);
             if (currentTeamSlug) params.set('team_slug', currentTeamSlug);
             if (currentTeamId) params.set('team_id', currentTeamId);
+            const milestoneFilter = document.getElementById('taskMilestoneFilter');
+            if (milestoneFilter && milestoneFilter.value) {
+                params.set('milestone', milestoneFilter.value);
+            }
 
             const url = params.toString() ? `/api/tasks?${params.toString()}` : '/api/tasks';
             const response = await fetch(url);
@@ -886,6 +890,13 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshTasksBtn.addEventListener('click', () => {
             toggleLoading(refreshTasksBtn, true);
             refreshTaskInbox().finally(() => toggleLoading(refreshTasksBtn, false));
+        });
+    }
+
+    const taskMilestoneFilter = document.getElementById('taskMilestoneFilter');
+    if (taskMilestoneFilter) {
+        taskMilestoneFilter.addEventListener('change', () => {
+            refreshTaskInbox();
         });
     }
 
@@ -2632,6 +2643,139 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(confirmDeploymentBtn, false);
+            }
+        });
+    }
+
+    const refreshMilestones = async (repoFull) => {
+        const container = document.getElementById('milestonesContainer');
+        const filter = document.getElementById('taskMilestoneFilter');
+        if (!container) return;
+
+        container.innerHTML = '<div class="col-12 text-center p-4"><span class="spinner-border" role="status"></span></div>';
+
+        try {
+            const response = await fetch(`/api/repos/${repoFull}/milestones`);
+            const milestones = await response.json();
+
+            if (response.ok) {
+                container.innerHTML = '';
+                if (filter) {
+                    // Update task inbox milestone filter
+                    const currentVal = filter.value;
+                    filter.innerHTML = '<option value="">All Milestones</option>';
+                    milestones.forEach(ms => {
+                        const opt = document.createElement('option');
+                        opt.value = ms.title;
+                        opt.textContent = ms.title;
+                        filter.appendChild(opt);
+                    });
+                    filter.value = currentVal;
+                }
+
+                if (milestones.length === 0) {
+                    container.innerHTML = '<div class="col-12 w-100"><p class="text-muted p-4 text-center border rounded bg-light">No milestones found for this repository.</p></div>';
+                } else {
+                    milestones.forEach(ms => {
+                        const total = ms.open_issues + ms.closed_issues;
+                        const percent = total > 0 ? Math.round((ms.closed_issues / total) * 100) : 0;
+                        const dueDate = ms.due_on ? new Date(ms.due_on).toLocaleDateString() : 'No due date';
+
+                        const col = document.createElement('div');
+                        col.className = 'col';
+                        col.innerHTML = `
+                            <div class="card h-100 shadow-sm border-0">
+                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-start pt-3 pb-0">
+                                    <div>
+                                        <h5 class="card-title mb-1"><a href="${escapeHTML(ms.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(ms.title)}</a></h5>
+                                        <small class="text-muted"><i class="bi bi-calendar"></i> ${escapeHTML(dueDate)}</small>
+                                    </div>
+                                    <span class="badge ${ms.state === 'open' ? 'bg-success' : 'bg-secondary'}">${escapeHTML(ms.state.toUpperCase())}</span>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text small text-muted mb-3" style="min-height: 3em;">${escapeHTML(ms.description || 'No description provided.')}</p>
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>${percent}% complete</span>
+                                        <span>${ms.open_issues} open, ${ms.closed_issues} closed</span>
+                                    </div>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 pb-3">
+                                    <div class="d-grid">
+                                        <button class="btn btn-sm btn-outline-primary assign-to-milestone-btn" data-number="${ms.number}" data-title="${escapeHTML(ms.title)}">Focus Milestone</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(col);
+                    });
+
+                    container.querySelectorAll('.assign-to-milestone-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            if (filter) {
+                                filter.value = btn.dataset.title;
+                                filter.dispatchEvent(new Event('change'));
+                                bootstrap.Tab.getOrCreateInstance(document.getElementById('dashboard-tab')).show();
+                            }
+                        });
+                    });
+                }
+            } else {
+                container.innerHTML = `<div class="col-12"><p class="text-danger p-3 small">${escapeHTML(milestones.error)}</p></div>`;
+            }
+        } catch (error) {
+            container.innerHTML = `<div class="col-12"><p class="text-danger p-3 small">${escapeHTML(error.message)}</p></div>`;
+        }
+    };
+
+    const listMilestonesForm = document.getElementById('listMilestonesForm');
+    if (listMilestonesForm) {
+        listMilestonesForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const repoFull = document.getElementById('milestonesRepoFullName').value;
+            if (repoFull) refreshMilestones(repoFull);
+        });
+    }
+
+    const newMilestoneBtn = document.getElementById('newMilestoneBtn');
+    if (newMilestoneBtn) {
+        newMilestoneBtn.addEventListener('click', () => {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('milestoneModal'));
+            modal.show();
+        });
+    }
+
+    const confirmMilestoneBtn = document.getElementById('confirmMilestoneBtn');
+    if (confirmMilestoneBtn) {
+        confirmMilestoneBtn.addEventListener('click', async () => {
+            const repoFull = document.getElementById('milestonesRepoFullName').value;
+            const title = document.getElementById('milestoneTitle').value;
+            const description = document.getElementById('milestoneDescription').value;
+            const due_on = document.getElementById('milestoneDueOn').value;
+
+            if (!repoFull || !title) return showAlert('Repo and Title are required', 'warning');
+
+            toggleLoading(confirmMilestoneBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/milestones`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, due_on: due_on ? new Date(due_on).toISOString() : null })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('milestoneModal')).hide();
+                    refreshMilestones(repoFull);
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(confirmMilestoneBtn, false);
             }
         });
     }
