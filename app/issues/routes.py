@@ -95,6 +95,10 @@ def post_comment(full_name, issue_number):
     if not body:
         return jsonify({"error": "Comment body is required"}), 400
 
+    # Security Enhancement: Limit body length
+    if len(body) > 65536:
+        return jsonify({"error": "Body is too long (max 65536 characters)"}), 400
+
     try:
         repo = g.get_repo(full_name)
         issue = repo.get_issue(issue_number)
@@ -119,6 +123,12 @@ def create_issue(full_name):
 
     if not title:
         return jsonify({"error": "title is required"}), 400
+
+    # Security Enhancement: Input length validation
+    if len(title) > 256:
+        return jsonify({"error": "Title is too long (max 256 characters)"}), 400
+    if body and len(body) > 65536:
+        return jsonify({"error": "Body is too long (max 65536 characters)"}), 400
 
     try:
         repo = g.get_repo(full_name)

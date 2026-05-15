@@ -340,6 +340,10 @@ def commit_changes():
     if not commit_message:
         return jsonify({"error": "commit_message is required"}), 400
 
+    # Security Enhancement: Limit commit message length to match frontend maxlength
+    if len(commit_message) > 100:
+        return jsonify({"error": "Commit message is too long (max 100 characters)"}), 400
+
     try:
         repo = git.Repo(workspace_dir)
 
