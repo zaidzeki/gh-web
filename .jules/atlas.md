@@ -49,3 +49,7 @@
 ## 2025-06-04 - [Team-Scoped Discovery Performance]
 **Learning:** Aggregating "unassigned" work across an entire team's repository set is performance-prohibitive if the team owns hundreds of repositories. Proactive workload visibility requires a balanced approach between breadth and depth.
 **Action:** Implement a "Top 5 Repository Cap" for team-scoped unassigned task discovery to ensure sub-second response times for the Unified Task Inbox while still providing immediate value for a team's core projects.
+
+## 2025-06-05 - [From Task to Goal Governance]
+**Learning:** Solving individual tasks (Issues) and code changes (PRs) is the "Inner Loop" of development, but high-velocity teams often lose sight of the "Outer Loop"—the strategic goals. Bridging the 'Strategy Gap' requires moving from task-level management to goal-level governance.
+**Action:** Expand the product vision to include Milestone Orchestration, enabling users to group fragmented tasks into cohesive outcomes and track progress against deadlines directly from the dashboard.
