@@ -53,6 +53,12 @@ def create_milestone(full_name):
     if not title:
         return jsonify({"error": "Milestone title is required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(title) > 256:
+        return jsonify({"error": "Title is too long (max 256 characters)"}), 400
+    if description and len(description) > 1024:
+        return jsonify({"error": "Description is too long (max 1024 characters)"}), 400
+
     try:
         repo = g.get_repo(full_name)
         params = {"title": title, "description": description}

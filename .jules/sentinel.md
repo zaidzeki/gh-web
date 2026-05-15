@@ -62,3 +62,8 @@
 **Vulnerability:** Git commands like `checkout` and `apply` interpreted user-provided branch names or filenames starting with a dash as command-line flags (e.g., `--help`).
 **Learning:** Standard sanitization like `secure_filename` may allow leading dashes. CLI tools often treat any argument starting with a dash as an option unless explicitly separated.
 **Prevention:** Always use the `--` separator to terminate option parsing before passing user-controlled positional arguments to shell commands or Git operations. Additionally, explicitly validate and reject identifiers like branch names if they start with a dash.
+
+## 2026-05-15 - Standardized Input Validation & DoS Prevention
+**Vulnerability:** Unbounded input lengths on PR/Issue titles, bodies, and commit messages could lead to resource exhaustion or database bloat. Lack of whitelisting for enum-like fields (merge methods, review events) could lead to unexpected behavior if malicious values are passed to the GitHub API.
+**Learning:** Even when delegating to an external API like GitHub, whitelisting inputs at the edge of our application provides a necessary layer of defense-in-depth and improves API reliability.
+**Prevention:** Always enforce backend length limits for user-provided strings and use explicit whitelists for parameters with a fixed set of valid values.

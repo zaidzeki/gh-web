@@ -52,6 +52,12 @@ def create_pr(full_name):
     if not title or not head or not base:
         return jsonify({"error": "title, head, and base are required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(title) > 256:
+        return jsonify({"error": "Title is too long (max 256 characters)"}), 400
+    if body and len(body) > 65536:
+        return jsonify({"error": "Body is too long (max 65536 characters)"}), 400
+
     try:
         repo = g.get_repo(full_name)
         pr = repo.create_pull(title=title, body=body, head=head, base=base)
@@ -76,6 +82,12 @@ def submit_review(full_name, pr_number):
     if not event:
         return jsonify({"error": "Review event is required"}), 400
 
+    # Security Enhancement: Validate review event and limit body length
+    if event not in ['APPROVE', 'REQUEST_CHANGES', 'COMMENT']:
+        return jsonify({"error": "Invalid review event"}), 400
+    if body and len(body) > 65536:
+        return jsonify({"error": "Body is too long (max 65536 characters)"}), 400
+
     try:
         repo = g.get_repo(full_name)
         pr = repo.get_pull(pr_number)
@@ -93,6 +105,10 @@ def merge_pr(full_name, pr_number):
     data = request.get_json() or request.form
     commit_message = data.get('commit_message', '')
     merge_method = data.get('merge_method', 'merge')
+
+    # Security Enhancement: Validate merge method
+    if merge_method not in ['merge', 'squash', 'rebase']:
+        return jsonify({"error": "Invalid merge method"}), 400
 
     try:
         repo = g.get_repo(full_name)
