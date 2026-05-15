@@ -65,13 +65,13 @@
     - [x] Enrich task data with CI and Review status.
     - [x] Create Task Inbox UI on the Dashboard.
     - [x] Integrate "Fix" and "Review" quick-actions into the Task Inbox.
-- [ ] **Epic: Workflow & CI/CD Orchestration**
+- [x] **Epic: Workflow & CI/CD Orchestration**
     - [x] Implement `GET /api/repos/.../actions/workflows` for discovery.
     - [x] Implement `GET /api/repos/.../actions/runs` for monitoring.
     - [x] Implement `POST /api/repos/.../actions/workflows/<id>/dispatch` for manual triggers.
     - [x] Create Actions Tab UI with searchable run history.
     - [x] Implement dynamic dispatch forms based on workflow inputs.
-    - [ ] Integrate CI status badges into Dashboard and Workspace header.
+    - [x] Integrate CI status badges into Dashboard and Workspace header.
 - [x] **Epic: Collaborative Scaffolding**
     - [x] Implement `POST /api/workspace/templates/<template_name>/publish` for template distribution.
     - [x] Add "Publish" action to Template Library in UI.
@@ -82,6 +82,12 @@
     - [x] Implement `POST /api/repos/.../deployments` for triggering promotions.
     - [x] Create Environments Tab UI with Environment Cards.
     - [x] Integrate deployment approvals into Task Inbox.
+- [ ] **Epic: Milestone Orchestration & Goal Governance**
+    - [ ] Implement `GET /api/repos/.../milestones` for goal discovery.
+    - [ ] Implement `POST /api/repos/.../milestones` for goal creation.
+    - [ ] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
+    - [ ] Create Milestones Tab UI with progress visualization.
+    - [ ] Integrate milestone filtering into the Unified Task Inbox.
 - [x] **Epic: Organization & Team Discovery**
     - [x] Implement `GET /api/user/orgs` for organization discovery.
     - [x] Update `GET /api/repos` to support `org_name` filtering.
@@ -116,5 +122,5 @@
 ## P3: Polish
 - [ ] Sphinx documentation.
 - [ ] 100% test coverage.
-- [ ] Implement Logout & Session Clearing.
+- [x] Implement Logout & Session Clearing.
 - [ ] Implement Pagination for Task Inbox and Repo List.

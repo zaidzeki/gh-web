@@ -114,6 +114,9 @@ These operations apply to the repository currently active in the server's worksp
 | `GET` | `/api/repos/<full_name>/issues/<n>/comments` | Fetches comments for an issue or PR. |
 | `POST` | `/api/repos/<full_name>/issues/<n>/comments` | Posts a new comment. |
 | `POST` | `/api/repos/<full_name>/prs/<n>/reviews` | Submits a formal Pull Request review. |
+| `GET` | `/api/repos/<full_name>/milestones` | Returns list of milestones with progress. |
+| `POST` | `/api/repos/<full_name>/milestones` | Creates a new milestone. |
+| `POST` | `/api/repos/<full_name>/issues/<n>/milestone` | Updates an issue/PR milestone assignment. |
 
 ## 6. Frontend Structure
 
