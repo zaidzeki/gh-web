@@ -57,6 +57,9 @@
             <li class="nav-item">
                 <button class="nav-link" id="environments-tab" data-bs-toggle="tab" data-bs-target="#environments" type="button" role="tab" aria-controls="environments" aria-selected="false">Environments</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" id="milestones-tab" data-bs-toggle="tab" data-bs-target="#milestones" type="button" role="tab" aria-controls="milestones" aria-selected="false">Milestones</button>
+            </li>
         </ul>
 
         <div class="tab-content border-start border-end border-bottom p-3">
@@ -66,7 +69,12 @@
                         <div class="card shadow-sm border-primary">
                             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Unified Task Inbox</h5>
-                                <button id="refreshTasksBtn" class="btn btn-sm btn-light" aria-label="Refresh Task Inbox">Refresh</button>
+                                <div class="d-flex gap-2">
+                                    <select id="taskMilestoneFilter" class="form-select form-select-sm" style="width: auto;" aria-label="Filter tasks by milestone">
+                                        <option value="">All Milestones</option>
+                                    </select>
+                                    <button id="refreshTasksBtn" class="btn btn-sm btn-light" aria-label="Refresh Task Inbox">Refresh</button>
+                                </div>
                             </div>
                             <div class="card-body p-0">
                                 <div id="taskInboxList" class="list-group list-group-flush">
@@ -517,6 +525,30 @@
                 </div>
             </div>
 
+            <div class="tab-pane fade" id="milestones" role="tabpanel" aria-labelledby="milestones-tab">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Milestones & Goals</h3>
+                    <button class="btn btn-primary" id="newMilestoneBtn">New Milestone</button>
+                </div>
+                <form id="listMilestonesForm" class="mb-4">
+                    <div class="row align-items-end">
+                        <div class="col-md-9">
+                            <label for="milestonesRepoFullName" class="form-label required-label">Repository Full Name</label>
+                            <input type="text" id="milestonesRepoFullName" class="form-control repo-full-name-input" placeholder="owner/repo" list="userReposList" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" id="listMilestonesBtn" class="btn btn-secondary w-100">Refresh Milestones</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="milestonesContainer" class="row row-cols-1 row-cols-md-2 g-4 mb-4">
+                    <div class="col-12 w-100">
+                        <p class="text-muted p-4 text-center border rounded bg-light">Select a repository and refresh to see milestones.</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="tab-pane fade" id="environments" role="tabpanel" aria-labelledby="environments-tab">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3>Environments & Deployments</h3>
@@ -671,6 +703,38 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="button" class="btn btn-primary" id="submitCommentBtn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Milestone Modal -->
+    <div class="modal fade" id="milestoneModal" tabindex="-1" aria-labelledby="milestoneModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-primary bg-primary text-white">
+                    <h5 class="modal-title" id="milestoneModalLabel">Create Milestone</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createMilestoneForm">
+                        <div class="mb-3">
+                            <label for="milestoneTitle" class="form-label required-label">Title</label>
+                            <input type="text" class="form-control" id="milestoneTitle" name="title" placeholder="v1.0 Release" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="milestoneDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="milestoneDescription" name="description" rows="3" placeholder="Major release milestones..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="milestoneDueOn" class="form-label">Due Date (Optional)</label>
+                            <input type="date" class="form-control" id="milestoneDueOn" name="due_on">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmMilestoneBtn">Create Milestone</button>
                 </div>
             </div>
         </div>

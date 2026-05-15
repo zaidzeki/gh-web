@@ -158,3 +158,31 @@ def reopen_issue(full_name, issue_number):
         return jsonify({"message": f"Issue #{issue_number} reopened successfully"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/issues/<int:issue_number>/milestone', methods=['POST'])
+def update_issue_milestone(full_name, issue_number):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    # milestone_number can be None to clear the milestone
+    milestone_number = data.get('milestone_number')
+
+    try:
+        repo = g.get_repo(full_name)
+        issue = repo.get_issue(issue_number)
+
+        if milestone_number is not None:
+            # PyGithub Issue.edit accepts milestone as a Milestone object or number?
+            # Actually it accepts a Milestone object.
+            ms = repo.get_milestone(int(milestone_number))
+            issue.edit(milestone=ms)
+        else:
+            # Passing None or github.GithubObject.NotSet?
+            # None should clear it.
+            issue.edit(milestone=None)
+
+        return jsonify({"message": f"Milestone for issue #{issue_number} updated successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500

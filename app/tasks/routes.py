@@ -65,6 +65,7 @@ def list_tasks():
     org_name = request.args.get('org_name')
     team_slug = request.args.get('team_slug')
     team_id = request.args.get('team_id')
+    milestone = request.args.get('milestone')
 
     try:
         user = g.get_user()
@@ -82,6 +83,12 @@ def list_tasks():
         ip_filter = f"is:open assignee:{login}"
         my_filter = f"is:pr is:open author:{login}"
         wd_filter = f"is:pr is:merged status:pending author:{login}"
+
+        if milestone:
+            ar_filter += f' milestone:"{milestone}"'
+            ip_filter += f' milestone:"{milestone}"'
+            my_filter += f' milestone:"{milestone}"'
+            wd_filter += f' milestone:"{milestone}"'
 
         # Team/Org extensions
         if org_name:
