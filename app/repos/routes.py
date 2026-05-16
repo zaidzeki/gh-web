@@ -152,7 +152,7 @@ def create_repo():
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or request.form
+    data = request.get_json(silent=True) or request.form
     name = data.get('name')
     description = data.get('description', '')
     visibility = data.get('visibility', 'public')
@@ -160,6 +160,12 @@ def create_repo():
 
     if not name:
         return jsonify({"error": "Repository name is required"}), 400
+
+    # Security Enhancement: Input length validation
+    if len(name) > 100:
+        return jsonify({"error": "Repository name is too long (max 100 characters)"}), 400
+    if description and len(description) > 1024:
+        return jsonify({"error": "Description is too long (max 1024 characters)"}), 400
 
     if not secure_filename(name):
         return jsonify({"error": "Invalid repository name"}), 400

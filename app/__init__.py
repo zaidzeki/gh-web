@@ -8,6 +8,7 @@ def create_app(test_config=None):
         SESSION_COOKIE_SECURE=True,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
+        MAX_CONTENT_LENGTH=16 * 1024 * 1024,
     )
 
     if test_config is None:
@@ -46,8 +47,8 @@ def create_app(test_config=None):
     def add_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-        # Tighten CSP: add frame-ancestors 'none' to prevent clickjacking and form-action 'self' to restrict form submissions.
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://avatars.githubusercontent.com; frame-ancestors 'none'; form-action 'self';"
+        # Tighten CSP: add frame-ancestors 'none' to prevent clickjacking, form-action 'self' to restrict form submissions, and object-src 'none' to disable plugins.
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://avatars.githubusercontent.com; frame-ancestors 'none'; form-action 'self'; object-src 'none';"
         return response
 
     @app.route('/')

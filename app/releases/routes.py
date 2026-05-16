@@ -40,7 +40,7 @@ def generate_release_notes(full_name):
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or request.form
+    data = request.get_json(silent=True) or request.form
     tag_name = data.get('tag_name')
     target_commitish = data.get('target_commitish') or None
     previous_tag_name = data.get('previous_tag_name') or None
@@ -68,7 +68,7 @@ def create_release(full_name):
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or request.form
+    data = request.get_json(silent=True) or request.form
     tag_name = data.get('tag_name')
     name = data.get('name')
     body = data.get('body', '')
@@ -78,6 +78,14 @@ def create_release(full_name):
 
     if not tag_name or not name:
         return jsonify({"error": "tag_name and name are required"}), 400
+
+    # Security Enhancement: Input length validation
+    if len(tag_name) > 255:
+        return jsonify({"error": "Tag name is too long (max 255 characters)"}), 400
+    if len(name) > 255:
+        return jsonify({"error": "Release name is too long (max 255 characters)"}), 400
+    if body and len(body) > 65536:
+        return jsonify({"error": "Release body is too long (max 65536 characters)"}), 400
 
     try:
         repo = g.get_repo(full_name)

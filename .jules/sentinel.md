@@ -67,3 +67,8 @@
 **Vulnerability:** Unbounded input lengths on PR/Issue titles, bodies, and commit messages could lead to resource exhaustion or database bloat. Lack of whitelisting for enum-like fields (merge methods, review events) could lead to unexpected behavior if malicious values are passed to the GitHub API.
 **Learning:** Even when delegating to an external API like GitHub, whitelisting inputs at the edge of our application provides a necessary layer of defense-in-depth and improves API reliability.
 **Prevention:** Always enforce backend length limits for user-provided strings and use explicit whitelists for parameters with a fixed set of valid values.
+
+## 2026-05-16 - Defense-in-Depth for Resource Exhaustion and Content Security
+**Vulnerability:** Lack of global request size limits (MAX_CONTENT_LENGTH) and slightly permissive CSP allowed for potential DoS and legacy plugin exploitation. Additionally, inconsistent JSON parsing in routes caused 415 errors instead of graceful validation failure.
+**Learning:** Security must be applied at multiple layers: global configuration (Flask limits), transport/header layer (CSP), and route-level resilience (silent JSON parsing). Relying only on per-field length checks is insufficient if the overall payload is too large.
+**Prevention:** Always set `MAX_CONTENT_LENGTH` in Flask to prevent large-payload DoS. Use `request.get_json(silent=True)` to allow routes to handle both JSON and form data robustly. Continually tighten CSP as legacy features (like plugins) are phased out.

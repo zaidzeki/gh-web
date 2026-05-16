@@ -115,7 +115,7 @@ def create_deployment(full_name):
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or request.form
+    data = request.get_json(silent=True) or request.form
     ref = data.get('ref')
     environment = data.get('environment')
     description = data.get('description', '')
@@ -125,6 +125,14 @@ def create_deployment(full_name):
 
     if not ref or not environment:
         return jsonify({"error": "ref and environment are required"}), 400
+
+    # Security Enhancement: Input length validation
+    if len(ref) > 255:
+        return jsonify({"error": "Ref is too long (max 255 characters)"}), 400
+    if len(environment) > 255:
+        return jsonify({"error": "Environment name is too long (max 255 characters)"}), 400
+    if description and len(description) > 255:
+        return jsonify({"error": "Description is too long (max 255 characters)"}), 400
 
     try:
         repo = g.get_repo(full_name)
