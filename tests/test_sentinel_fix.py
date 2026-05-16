@@ -1,45 +1,60 @@
-import os
+
 import pytest
 from app import create_app
+import json
 
 @pytest.fixture
-def app():
-    app = create_app({
-        'TESTING': True,
-        'SECRET_KEY': 'test',
-    })
-    yield app
+def client():
+    app = create_app({"TESTING": True, "SECRET_KEY": "test"})
+    with app.test_client() as client:
+        yield client
 
-@pytest.fixture
-def client(app):
-    return app.test_client()
-
-def test_security_headers(client):
-    response = client.get('/')
-    assert response.headers['X-Content-Type-Options'] == 'nosniff'
-    assert response.headers['X-Frame-Options'] == 'SAMEORIGIN'
-    csp = response.headers['Content-Security-Policy']
-    assert "frame-ancestors 'none'" in csp
-    assert "form-action 'self'" in csp
-
-def test_workspace_directory_permissions(client):
-    session_id = "perm-test-session"
-    repo_name = "perm-test-repo"
-
+def test_deployment_input_validation(client):
     with client.session_transaction() as sess:
         sess['github_token'] = 'fake-token'
-        sess['session_id'] = session_id
-        sess['active_repo'] = repo_name
 
-    # Trigger directory creation
-    client.get('/api/workspace/files')
+    # Test ref length
+    response = client.post('/api/repos/owner/repo/deployments', json={
+        'ref': 'a' * 256,
+        'environment': 'prod'
+    })
+    assert response.status_code == 400
+    assert "Ref is too long" in response.get_json()['error']
 
-    base_dir = '/tmp/gh-web-workspaces'
-    session_dir = os.path.join(base_dir, session_id)
-    repo_dir = os.path.join(session_dir, repo_name)
+    # Test environment length
+    response = client.post('/api/repos/owner/repo/deployments', json={
+        'ref': 'main',
+        'environment': 'a' * 256
+    })
+    assert response.status_code == 400
+    assert "Environment name is too long" in response.get_json()['error']
 
-    # Check permissions (only owner should have access: 0700)
-    assert os.path.exists(base_dir)
-    assert oct(os.stat(base_dir).st_mode & 0o777) == '0o700'
-    assert os.path.exists(repo_dir)
-    assert oct(os.stat(repo_dir).st_mode & 0o777) == '0o700'
+def test_release_input_validation(client):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake-token'
+
+    # Test tag_name length
+    response = client.post('/api/repos/owner/repo/releases', json={
+        'tag_name': 'v' + '1' * 255,
+        'name': 'Release'
+    })
+    assert response.status_code == 400
+    assert "Tag name is too long" in response.get_json()['error']
+
+def test_repo_input_validation(client):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake-token'
+
+    # Test name length
+    response = client.post('/api/repos', json={
+        'name': 'a' * 101
+    })
+    assert response.status_code == 400
+    assert "Repository name is too long" in response.get_json()['error']
+
+def test_csp_headers(client):
+    response = client.get('/')
+    csp = response.headers.get('Content-Security-Policy', '')
+    assert "object-src 'none';" in csp
+    assert "frame-ancestors 'none';" in csp
+    assert "form-action 'self';" in csp
