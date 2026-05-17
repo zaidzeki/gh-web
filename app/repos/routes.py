@@ -1,6 +1,7 @@
 import os
 import shutil
 import git
+import datetime
 import tempfile
 from flask import Blueprint, request, session, jsonify
 import github
@@ -249,11 +250,25 @@ def get_repos_health():
             try:
                 # get_combined_status takes a ref
                 combined = repo.get_combined_status(repo.default_branch)
-                health["ci_status"] = combined.state
+                health["ci_status"] = str(combined.state)
             except:
                 pass
 
-            # 2. Production Status
+            # 2. Next Milestone
+            try:
+                milestones = repo.get_milestones(state='open', sort='due_on', direction='asc')
+                for ms in milestones:
+                    if ms.due_on:
+                        health["next_milestone"] = {
+                            "title": str(ms.title),
+                            "due_on": ms.due_on.isoformat(),
+                            "overdue": ms.due_on < datetime.datetime.now(ms.due_on.tzinfo) if ms.due_on.tzinfo else ms.due_on < datetime.datetime.now()
+                        }
+                        break
+            except:
+                pass
+
+            # 3. Production Status
             try:
                 # Try to find 'production' environment robustly
                 envs = repo.get_environments()

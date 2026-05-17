@@ -453,6 +453,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     ciTextEl.className = `ci-text-status small me-1 ${health.ci_status === 'failure' ? 'text-danger' : 'text-muted'}`;
                                 }
                             }
+                            if (health.next_milestone) {
+                                const ms = health.next_milestone;
+                                const msClass = ms.overdue ? 'bg-danger' : 'bg-primary';
+                                const dueStr = new Date(ms.due_on).toLocaleDateString();
+                                badgesHtml += `<span class="badge ${msClass} ms-1" title="Next Milestone: ${escapeHTML(ms.title)} (Due: ${dueStr})">🎯 ${escapeHTML(ms.title)}</span>`;
+                            }
                             if (health.production_status) {
                                 badgesHtml += `<span class="badge bg-info text-dark ms-1" title="Production Ref: ${health.production_status.ref}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
                             }
