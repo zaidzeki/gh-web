@@ -52,6 +52,33 @@ def test_repo_input_validation(client):
     assert response.status_code == 400
     assert "Repository name is too long" in response.get_json()['error']
 
+def test_additional_input_validations(client):
+    with client.session_transaction() as sess:
+        sess['github_token'] = 'fake-token'
+        sess['active_repo'] = 'test-repo'
+
+    # Test commit message length in merge_pr
+    response = client.post('/api/repos/owner/repo/prs/1/merge', json={
+        'commit_message': 'a' * 101
+    })
+    assert response.status_code == 400
+    assert "Commit message is too long" in response.get_json()['error']
+
+    # Test branch name length in workspace_branch
+    # Mocking get_workspace_dir since it might fail if /tmp is not accessible or session_id is missing
+    response = client.post('/api/workspace/branch', json={
+        'branch_name': 'a' * 256
+    })
+    assert response.status_code == 400
+    assert "Branch name is too long" in response.get_json()['error']
+
+    # Test ref length in dispatch_workflow
+    response = client.post('/api/repos/owner/repo/actions/workflows/1/dispatch', json={
+        'ref': 'a' * 256
+    })
+    assert response.status_code == 400
+    assert "Ref is too long" in response.get_json()['error']
+
 def test_csp_headers(client):
     response = client.get('/')
     csp = response.headers.get('Content-Security-Policy', '')

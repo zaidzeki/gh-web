@@ -951,20 +951,23 @@ def workspace_branch():
     if not repo_name:
         return jsonify({"error": "No active repository in workspace"}), 400
 
+    data = request.get_json() or request.form
+    branch_name = data.get('branch_name')
+
+    # Security: Enforce length limit and prevent argument injection
+    if branch_name:
+        if len(branch_name) > 255:
+            return jsonify({"error": "Branch name is too long (max 255 characters)"}), 400
+        if branch_name.startswith('-'):
+            return jsonify({"error": "Invalid branch name: cannot start with a dash"}), 400
+
     workspace_dir = get_workspace_dir(repo_name)
     if not os.path.exists(os.path.join(workspace_dir, '.git')):
         return jsonify({"error": "Not a git repository"}), 400
-
-    data = request.get_json() or request.form
-    branch_name = data.get('branch_name')
     create_new = data.get('create_new') in [True, 'true', 'on', '1']
 
     if not branch_name:
         return jsonify({"error": "branch_name is required"}), 400
-
-    # Security: Prevent argument injection by disallowing branch names starting with a dash
-    if branch_name.startswith('-'):
-        return jsonify({"error": "Invalid branch name: cannot start with a dash"}), 400
 
     try:
         repo = git.Repo(workspace_dir)
