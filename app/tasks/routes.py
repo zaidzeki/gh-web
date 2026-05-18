@@ -27,7 +27,12 @@ def normalize(issue_or_pr, category):
         "updated_at": issue_or_pr.updated_at.isoformat() if issue_or_pr.updated_at else None,
         "ci_status": None,
         "review_status": None,
-        "pending_run_id": None
+        "pending_run_id": None,
+        "milestone": {
+            "number": int(issue_or_pr.milestone.number),
+            "title": str(issue_or_pr.milestone.title),
+            "due_on": issue_or_pr.milestone.due_on.isoformat() if issue_or_pr.milestone.due_on else None
+        } if issue_or_pr.milestone else None
     }
 
     # Optional: Fetch CI/Review status for PRs
