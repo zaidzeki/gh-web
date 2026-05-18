@@ -40,6 +40,14 @@ The Milestone Integration expands the GH-Web data model to include the `Mileston
 - The `GET /api/tasks` endpoint will accept an optional `milestone_number` parameter to filter the inbox.
 - UI: A milestone filter dropdown will be added to the Unified Task Inbox header.
 
+### 3.4. Milestone Assignment UX
+- **Modal:** A global `#assignMilestoneModal` in `index.html` used by both Issues and PR tabs.
+- **Workflow:**
+    1. User clicks "Assign" on a task.
+    2. Frontend fetches milestones for the current repository.
+    3. User selects a milestone; frontend posts to `/api/repos/<full_name>/issues/<number>/milestone`.
+    4. Upon success, the task list is refreshed to show the updated milestone badge.
+
 ## 4. Technical Considerations
 
 ### 4.1. Calculations

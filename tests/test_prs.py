@@ -30,6 +30,7 @@ def test_list_prs(mock_github, client):
     mock_pr.head.ref = "feature"
     # mock_pr.head.repo.permissions.push must be set if we access it
     mock_pr.head.repo.permissions.push = True
+    mock_pr.milestone = None
 
     mock_repo.get_pulls.return_value = [mock_pr]
     mock_github.return_value.get_repo.return_value = mock_repo

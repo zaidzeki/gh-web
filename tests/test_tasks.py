@@ -37,6 +37,7 @@ def test_list_tasks_success(mock_auth, mock_github, client):
     mock_issue.pull_request = None
     mock_issue.updated_at = datetime.datetime(2025, 5, 30, 10, 0, 0)
     mock_issue.html_url = "http://github.com/owner/repo/issues/1"
+    mock_issue.milestone = None
 
     mock_pr = MagicMock()
     mock_pr.number = 2
@@ -45,6 +46,7 @@ def test_list_tasks_success(mock_auth, mock_github, client):
     mock_pr.pull_request = MagicMock()
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 11, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/2"
+    mock_pr.milestone = None
 
     mock_pr_obj = MagicMock()
     mock_pr_obj.head.sha = "sha123"
@@ -95,6 +97,7 @@ def test_list_tasks_prioritization_and_deduplication(mock_auth, mock_github, cli
     mock_pr.pull_request = MagicMock()
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 12, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/10"
+    mock_pr.milestone = None
 
     mock_pr_obj = MagicMock()
     mock_pr_obj.head.sha = "sha10"
@@ -135,6 +138,7 @@ def test_list_tasks_review_status_enrichment(mock_auth, mock_github, client):
     mock_pr.pull_request = MagicMock()
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 13, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/20"
+    mock_pr.milestone = None
 
     mock_pr_obj = MagicMock()
     mock_pr_obj.head.sha = "sha20"
@@ -192,6 +196,7 @@ def test_list_tasks_waiting_deployment(mock_auth, mock_github, client):
     mock_pr.pull_request = MagicMock()
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 14, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/30"
+    mock_pr.milestone = None
 
     mock_pr_obj = MagicMock()
     mock_pr_obj.head.sha = "sha30"

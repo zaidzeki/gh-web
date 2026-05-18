@@ -77,7 +77,12 @@ def list_issues(full_name):
                     "html_url": issue.html_url,
                     "user": issue.user.login,
                     "created_at": issue.created_at.isoformat() if issue.created_at else None,
-                    "labels": [{"name": l.name, "color": l.color} for l in issue.labels]
+                    "labels": [{"name": l.name, "color": l.color} for l in issue.labels],
+                    "milestone": {
+                        "number": int(issue.milestone.number),
+                        "title": str(issue.milestone.title),
+                        "due_on": issue.milestone.due_on.isoformat() if issue.milestone.due_on else None
+                    } if issue.milestone else None
                 })
         return jsonify(results), 200
     except Exception as e:

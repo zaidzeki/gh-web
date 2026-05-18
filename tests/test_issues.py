@@ -24,6 +24,7 @@ def test_list_issues(client):
         mock_issue.user.login = 'testuser'
         mock_issue.created_at = datetime(2023, 1, 1)
         mock_issue.pull_request = None # Important: filter out PRs
+        mock_issue.milestone = None
 
         mock_pr = MagicMock()
         mock_pr.pull_request = MagicMock() # Should be filtered out

@@ -16,6 +16,7 @@ GH-Web has excelled at managing individual tasks (Issues) and code changes (PRs/
     - `POST /api/repos/<full_name>/issues/<number>/milestone`: Assigns an issue/PR to a milestone.
 - **Frontend:**
     - **Milestones Tab:** A dedicated view for high-level project planning and tracking.
+    - **Milestone Assignment:** Interactive assignment of Issues and PRs to milestones via the Issues/PR tables.
     - **Progress Visualization:** Progress bars for each milestone showing completion percentage.
     - **Goal-Centric Filtering:** Ability to filter the Task Inbox and Issues list by active milestone.
     - **Dashboard Integration:** Repository list enriched with the "Next Milestone" and its due date.
@@ -32,8 +33,10 @@ GH-Web has excelled at managing individual tasks (Issues) and code changes (PRs/
 - **Empty States:** Encouraging "Create First Milestone" when none exist.
 
 ## ✅ Acceptance Criteria
-- [ ] Users can view a list of milestones for the active repository with progress bars.
-- [ ] Users can create a new milestone with a title and optional due date.
-- [ ] The Task Inbox can be filtered by a specific milestone to show goal-specific work.
-- [ ] The Repository list displays the "Active Milestone" for each repo.
-- [ ] Backend supports CRUD operations for milestones via PyGithub.
+- [x] Users can view a list of milestones for the active repository with progress bars.
+- [x] Users can create a new milestone with a title and optional due date.
+- [ ] Users can assign Issues and Pull Requests to milestones directly from the management tables.
+- [ ] The Task Inbox displays milestone badges for assigned work, highlighting overdue goals.
+- [x] The Task Inbox can be filtered by a specific milestone to show goal-specific work.
+- [x] The Repository list displays the "Active Milestone" for each repo.
+- [x] Backend supports CRUD operations for milestones via PyGithub.

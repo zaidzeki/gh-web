@@ -32,7 +32,12 @@ def list_prs(full_name):
             "head_repo_full_name": pr.head.repo.full_name if pr.head.repo else None,
             "head_branch": pr.head.ref,
             "can_push": pr.head.repo.permissions.push if pr.head.repo else False,
-            "labels": [{"name": l.name, "color": l.color} for l in pr.labels]
+            "labels": [{"name": l.name, "color": l.color} for l in pr.labels],
+            "milestone": {
+                "number": int(pr.milestone.number),
+                "title": str(pr.milestone.title),
+                "due_on": pr.milestone.due_on.isoformat() if pr.milestone.due_on else None
+            } if pr.milestone else None
         } for pr in prs]), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

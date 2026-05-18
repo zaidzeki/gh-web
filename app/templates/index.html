@@ -708,6 +708,35 @@
         </div>
     </div>
 
+    <!-- Assign Milestone Modal -->
+    <div class="modal fade" id="assignMilestoneModal" tabindex="-1" aria-labelledby="assignMilestoneModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-info bg-info text-dark">
+                    <h5 class="modal-title" id="assignMilestoneModalLabel">Assign Milestone</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="assignMilestoneForm">
+                        <input type="hidden" id="assignMilestoneRepo" name="repo_full_name">
+                        <input type="hidden" id="assignMilestoneNumber" name="issue_number">
+                        <div class="mb-3">
+                            <label for="milestoneSelect" class="form-label">Select Milestone</label>
+                            <select class="form-select" id="milestoneSelect" name="milestone_number" required>
+                                <option value="">-- None (Clear Milestone) --</option>
+                            </select>
+                            <div class="form-text">Choose a milestone to associate with this task.</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" id="confirmAssignMilestoneBtn">Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Create Milestone Modal -->
     <div class="modal fade" id="milestoneModal" tabindex="-1" aria-labelledby="milestoneModalLabel" aria-hidden="true">
         <div class="modal-dialog">

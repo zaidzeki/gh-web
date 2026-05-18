@@ -710,6 +710,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.className = 'list-group-item d-flex justify-content-between align-items-center py-3';
 
                 const typeIcon = task.type === 'pr' ? '🌿' : '🎫';
+
+                    let milestoneBadge = '';
+                    if (task.milestone) {
+                        const isOverdue = task.milestone.due_on && new Date(task.milestone.due_on) < new Date();
+                        const badgeClass = isOverdue ? 'bg-danger' : 'bg-primary';
+                        milestoneBadge = `<span class="badge ${badgeClass} ms-1" title="Milestone: ${escapeHTML(task.milestone.title)}">🎯 ${escapeHTML(task.milestone.title)}</span>`;
+                    }
                 const categoryBadge = task.category === 'review_requested' ?
                     '<span class="badge bg-danger">Action Required</span>' :
                     (task.category === 'assigned' ? '<span class="badge bg-primary">In Progress</span>' :
@@ -751,6 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${categoryBadge}
                                 <span class="text-muted small">${escapeHTML(task.repo)}#${escapeHTML(String(task.number))}</span>
                                 ${statusBadges}
+                                ${milestoneBadge}
                             </div>
                             <h6 class="mb-0 text-truncate"><a href="${escapeHTML(task.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(task.title)}</a></h6>
                             <small class="text-muted" title="${new Date(task.updated_at).toLocaleString()}">Updated ${timeAgo(task.updated_at)}</small>
@@ -1071,6 +1079,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         `<span class="badge rounded-pill me-1" style="background-color: #${l.color}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
                     ).join('');
 
+                    let milestoneBadge = '';
+                    if (issue.milestone) {
+                        const isOverdue = issue.milestone.due_on && new Date(issue.milestone.due_on) < new Date();
+                        const badgeClass = isOverdue ? 'bg-danger' : 'bg-primary';
+                        milestoneBadge = `<span class="badge ${badgeClass} small ms-1" title="Milestone: ${escapeHTML(issue.milestone.title)}">🎯 ${escapeHTML(issue.milestone.title)}</span>`;
+                    }
+
                     const triageBtn = issue.state === 'open' ?
                         `<button class="btn btn-sm btn-outline-danger close-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Close issue #${escapeHTML(String(issue.number))}">Close</button>` :
                         `<button class="btn btn-sm btn-outline-warning reopen-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Reopen issue #${escapeHTML(String(issue.number))}">Reopen</button>`;
@@ -1078,13 +1093,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.innerHTML = `
                         <td>${escapeHTML(String(issue.number))}</td>
                         <td>
-                            <div><a href="${escapeHTML(issue.html_url)}" target="_blank" rel="noopener noreferrer" class="fw-bold">${escapeHTML(issue.title)}</a></div>
+                            <div><a href="${escapeHTML(issue.html_url)}" target="_blank" rel="noopener noreferrer" class="fw-bold">${escapeHTML(issue.title)}</a> ${milestoneBadge}</div>
                             <div class="mt-1">${labelBadges}</div>
                         </td>
                         <td><small class="text-muted" title="${escapeHTML(new Date(issue.created_at).toLocaleString())}">${timeAgo(issue.created_at)}</small></td>
                         <td>
                             <div class="d-flex gap-1">
                                 <button class="btn btn-sm btn-outline-info comments-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="View comments for issue #${escapeHTML(String(issue.number))}">Comments</button>
+                                <button class="btn btn-sm btn-outline-secondary assign-ms-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Assign milestone to issue #${escapeHTML(String(issue.number))}">Milestone</button>
                                 ${issue.state === 'open' ? `<button class="btn btn-sm btn-outline-primary fix-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Fix issue #${escapeHTML(String(issue.number))}">Fix</button>` : ''}
                                 ${triageBtn}
                             </div>
@@ -1096,6 +1112,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.comments-issue-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         openConversation(repoFull, btn.getAttribute('data-number'), 'issue');
+                    });
+                });
+
+                document.querySelectorAll('.assign-ms-issue-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openAssignMilestoneModal(repoFull, btn.getAttribute('data-number'), 'issue');
                     });
                 });
 
@@ -1916,6 +1938,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         `<span class="badge rounded-pill me-1" style="background-color: #${l.color}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
                     ).join('');
 
+                    let milestoneBadge = '';
+                    if (pr.milestone) {
+                        const isOverdue = pr.milestone.due_on && new Date(pr.milestone.due_on) < new Date();
+                        const badgeClass = isOverdue ? 'bg-danger' : 'bg-primary';
+                        milestoneBadge = `<span class="badge ${badgeClass} small ms-1" title="Milestone: ${escapeHTML(pr.milestone.title)}">🎯 ${escapeHTML(pr.milestone.title)}</span>`;
+                    }
+
                     const triageBtn = pr.state === 'open' ?
                         `<button class="btn btn-sm btn-outline-danger close-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Close PR #${escapeHTML(String(pr.number))}">Close</button>` :
                         `<button class="btn btn-sm btn-outline-warning reopen-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Reopen PR #${escapeHTML(String(pr.number))}">Reopen</button>`;
@@ -1923,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tr.innerHTML = `
                         <td>${escapeHTML(String(pr.number))}</td>
                         <td>
-                            <div><a href="${escapeHTML(pr.html_url)}" target="_blank" rel="noopener noreferrer" class="fw-bold">${escapeHTML(pr.title)}</a></div>
+                            <div><a href="${escapeHTML(pr.html_url)}" target="_blank" rel="noopener noreferrer" class="fw-bold">${escapeHTML(pr.title)}</a> ${milestoneBadge}</div>
                             <div class="mt-1">${labelBadges}</div>
                         </td>
                         <td>
@@ -1933,6 +1962,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>
                             <div class="d-flex gap-1">
                                 <button class="btn btn-sm btn-outline-info comments-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="View comments for PR #${escapeHTML(String(pr.number))}">Comments</button>
+                                <button class="btn btn-sm btn-outline-secondary assign-ms-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Assign milestone to PR #${escapeHTML(String(pr.number))}">Milestone</button>
                                 ${pr.state === 'open' ? `<button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>` : ''}
                                 ${pr.state === 'open' ? `<button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>` : ''}
                                 ${triageBtn}
@@ -1944,6 +1974,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('.comments-pr-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         openConversation(repoFull, btn.getAttribute('data-number'), 'pr');
+                    });
+                });
+                document.querySelectorAll('.assign-ms-pr-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openAssignMilestoneModal(repoFull, btn.getAttribute('data-number'), 'pr');
                     });
                 });
                 document.querySelectorAll('.merge-btn').forEach(btn => {
@@ -2653,6 +2688,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const openAssignMilestoneModal = async (repoFull, number, type) => {
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('assignMilestoneModal'));
+        const select = document.getElementById('milestoneSelect');
+        document.getElementById('assignMilestoneRepo').value = repoFull;
+        document.getElementById('assignMilestoneNumber').value = number;
+
+        select.innerHTML = '<option value="">-- Loading Milestones... --</option>';
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/repos/${repoFull}/milestones`);
+            const milestones = await response.json();
+            if (response.ok) {
+                select.innerHTML = '<option value="">-- None (Clear Milestone) --</option>';
+                milestones.forEach(ms => {
+                    const opt = document.createElement('option');
+                    opt.value = ms.number;
+                    opt.textContent = ms.title;
+                    select.appendChild(opt);
+                });
+            } else {
+                showAlert(milestones.error, 'danger');
+            }
+        } catch (error) {
+            showAlert(error.message, 'danger');
+        }
+    };
+
+    const confirmAssignMilestoneBtn = document.getElementById('confirmAssignMilestoneBtn');
+    if (confirmAssignMilestoneBtn) {
+        confirmAssignMilestoneBtn.addEventListener('click', async () => {
+            const repoFull = document.getElementById('assignMilestoneRepo').value;
+            const number = document.getElementById('assignMilestoneNumber').value;
+            const msNumber = document.getElementById('milestoneSelect').value;
+
+            toggleLoading(confirmAssignMilestoneBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/issues/${number}/milestone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ milestone_number: msNumber ? parseInt(msNumber) : null })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('assignMilestoneModal')).hide();
+                    // Refresh current view
+                    const activeTab = document.querySelector('#mainTabs .nav-link.active').id;
+                    if (activeTab === 'issues-tab') document.getElementById('listIssuesBtn').click();
+                    else if (activeTab === 'prs-tab') document.getElementById('listPrsBtn').click();
+                    refreshTaskInbox();
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(confirmAssignMilestoneBtn, false);
+            }
+        });
+    }
+
     const refreshMilestones = async (repoFull) => {
         const container = document.getElementById('milestonesContainer');
         const filter = document.getElementById('taskMilestoneFilter');
@@ -2671,12 +2768,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     const currentVal = filter.value;
                     filter.innerHTML = '<option value="">All Milestones</option>';
                     milestones.forEach(ms => {
-                        const opt = document.createElement('option');
-                        opt.value = ms.title;
-                        opt.textContent = ms.title;
-                        filter.appendChild(opt);
+                        if (ms.state === 'open') {
+                            const opt = document.createElement('option');
+                            opt.value = ms.title;
+                            opt.textContent = ms.title;
+                            filter.appendChild(opt);
+                        }
                     });
-                    filter.value = currentVal;
+                    // Restore previous filter if it still exists in the new list
+                    const exists = Array.from(filter.options).some(opt => opt.value === currentVal);
+                    if (exists) filter.value = currentVal;
                 }
 
                 if (milestones.length === 0) {
@@ -2685,16 +2786,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     milestones.forEach(ms => {
                         const total = ms.open_issues + ms.closed_issues;
                         const percent = total > 0 ? Math.round((ms.closed_issues / total) * 100) : 0;
+                        const isOverdue = ms.due_on && new Date(ms.due_on) < new Date();
                         const dueDate = ms.due_on ? new Date(ms.due_on).toLocaleDateString() : 'No due date';
 
                         const col = document.createElement('div');
                         col.className = 'col';
                         col.innerHTML = `
-                            <div class="card h-100 shadow-sm border-0">
+                            <div class="card h-100 shadow-sm ${isOverdue ? 'border-danger' : 'border-0'}">
                                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-start pt-3 pb-0">
                                     <div>
                                         <h5 class="card-title mb-1"><a href="${escapeHTML(ms.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(ms.title)}</a></h5>
-                                        <small class="text-muted"><i class="bi bi-calendar"></i> ${escapeHTML(dueDate)}</small>
+                                        <small class="${isOverdue ? 'text-danger fw-bold' : 'text-muted'}"><i class="bi bi-calendar"></i> ${escapeHTML(dueDate)}${isOverdue ? ' (OVERDUE)' : ''}</small>
                                     </div>
                                     <span class="badge ${ms.state === 'open' ? 'bg-success' : 'bg-secondary'}">${escapeHTML(ms.state.toUpperCase())}</span>
                                 </div>
