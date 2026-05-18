@@ -1085,12 +1085,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>
                             <div class="d-flex gap-1">
                                 <button class="btn btn-sm btn-outline-info comments-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="View comments for issue #${escapeHTML(String(issue.number))}">Comments</button>
+                                <button class="btn btn-sm btn-outline-secondary assign-issue-milestone-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Assign milestone to issue #${escapeHTML(String(issue.number))}">Assign</button>
                                 ${issue.state === 'open' ? `<button class="btn btn-sm btn-outline-primary fix-issue-btn" data-number="${escapeHTML(String(issue.number))}" aria-label="Fix issue #${escapeHTML(String(issue.number))}">Fix</button>` : ''}
                                 ${triageBtn}
                             </div>
                         </td>
                     `;
                     tbody.appendChild(tr);
+                });
+
+                document.querySelectorAll('.assign-issue-milestone-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openAssignMilestone(repoFull, btn.getAttribute('data-number'));
+                    });
                 });
 
                 document.querySelectorAll('.comments-issue-btn').forEach(btn => {
@@ -1933,6 +1940,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <td>
                             <div class="d-flex gap-1">
                                 <button class="btn btn-sm btn-outline-info comments-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="View comments for PR #${escapeHTML(String(pr.number))}">Comments</button>
+                                <button class="btn btn-sm btn-outline-secondary assign-pr-milestone-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Assign milestone to PR #${escapeHTML(String(pr.number))}">Assign</button>
                                 ${pr.state === 'open' ? `<button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>` : ''}
                                 ${pr.state === 'open' ? `<button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>` : ''}
                                 ${triageBtn}
@@ -1940,6 +1948,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         </td>
                     `;
                     tbody.appendChild(tr);
+                });
+                document.querySelectorAll('.assign-pr-milestone-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openAssignMilestone(repoFull, btn.getAttribute('data-number'));
+                    });
                 });
                 document.querySelectorAll('.comments-pr-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -2782,6 +2795,69 @@ document.addEventListener('DOMContentLoaded', () => {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(confirmMilestoneBtn, false);
+            }
+        });
+    }
+
+    const openAssignMilestone = async (repoFull, number) => {
+        document.getElementById('assignMilestoneRepo').value = repoFull;
+        document.getElementById('assignMilestoneNumber').value = number;
+        const select = document.getElementById('milestoneSelect');
+        select.innerHTML = '<option value="">No Milestone (Clear)</option><option disabled>Loading...</option>';
+
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('assignMilestoneModal'));
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/repos/${repoFull}/milestones`);
+            const milestones = await response.json();
+            if (response.ok) {
+                select.innerHTML = '<option value="">No Milestone (Clear)</option>';
+                milestones.forEach(ms => {
+                    const opt = document.createElement('option');
+                    opt.value = ms.number;
+                    opt.textContent = ms.title;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="">No Milestone (Clear)</option><option disabled>Error loading milestones</option>';
+            }
+        } catch (error) {
+            select.innerHTML = '<option value="">No Milestone (Clear)</option><option disabled>Error loading milestones</option>';
+        }
+    };
+
+    const confirmAssignMilestoneBtn = document.getElementById('confirmAssignMilestoneBtn');
+    if (confirmAssignMilestoneBtn) {
+        confirmAssignMilestoneBtn.addEventListener('click', async () => {
+            const repoFull = document.getElementById('assignMilestoneRepo').value;
+            const number = document.getElementById('assignMilestoneNumber').value;
+            const milestoneNumber = document.getElementById('milestoneSelect').value;
+
+            toggleLoading(confirmAssignMilestoneBtn, true);
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/issues/${number}/milestone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ milestone_number: milestoneNumber ? parseInt(milestoneNumber) : null })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    bootstrap.Modal.getInstance(document.getElementById('assignMilestoneModal')).hide();
+                    // Refresh active list
+                    if (document.getElementById('issues-tab').classList.contains('active')) {
+                        document.getElementById('listIssuesBtn').click();
+                    } else if (document.getElementById('prs-tab').classList.contains('active')) {
+                        document.getElementById('listPrsBtn').click();
+                    }
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(confirmAssignMilestoneBtn, false);
             }
         });
     }
