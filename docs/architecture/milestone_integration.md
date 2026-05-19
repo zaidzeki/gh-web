@@ -40,14 +40,23 @@ The Milestone Integration expands the GH-Web data model to include the `Mileston
 - The `GET /api/tasks` endpoint will accept an optional `milestone_number` parameter to filter the inbox.
 - UI: A milestone filter dropdown will be added to the Unified Task Inbox header.
 
+### 3.4. Portfolio Roadmap Visualization
+- A new **Portfolio Roadmap** component on the Dashboard.
+- Data Source: `GET /api/workspace/portfolio/milestones`.
+- Visualization: A vertical timeline of milestones from all active workspaces, sorted by `due_on` ASC.
+
 ## 4. Technical Considerations
 
-### 4.1. Calculations
+### 4.1. Portfolio Aggregation
+- The backend will scan the `workspace/portfolio` and perform parallel fetches (similar to `repos/health`) for milestones.
+- To prevent performance degradation, the aggregation will be capped at the first 10 repositories in the portfolio.
+
+### 4.2. Calculations
 - **Progress:** Backend will calculate `(closed / (open + closed)) * 100` to provide a ready-to-render percentage for the progress bars.
 
-### 4.2. Performance
+### 4.3. Performance
 - Milestone counts are typically low (<50 per repo), so N+1 is not a major concern. However, they should be included in the initial repository metadata fetch if possible to avoid secondary roundtrips on the dashboard.
 
-### 4.3. Security
+### 4.4. Security
 - Standard `mask_token` and `secure_filename` (for repo names) will be applied.
 - All operations require an authenticated GitHub PAT in the session.

@@ -53,3 +53,7 @@
 ## 2025-06-05 - [From Task to Goal Governance]
 **Learning:** Solving individual tasks (Issues) and code changes (PRs) is the "Inner Loop" of development, but high-velocity teams often lose sight of the "Outer Loop"—the strategic goals. Bridging the 'Strategy Gap' requires moving from task-level management to goal-level governance.
 **Action:** Expand the product vision to include Milestone Orchestration, enabling users to group fragmented tasks into cohesive outcomes and track progress against deadlines directly from the dashboard.
+
+## 2025-06-06 - [Backlog Drift & Reality Gaps]
+**Learning:** Documentation and implementation can diverge rapidly when velocity is high, creating "Backlog Drift." When the vision (PRDs/Backlog) says a feature is "pending" but the code says it's "live," the product strategy becomes a hallucination. This obscures the *actual* remaining friction points (e.g., UI glue vs. backend capability).
+**Action:** Always audit the codebase against the SPEC and BACKLOG before proposing new horizons. Reconciling the drift is a prerequisite for sound product decision-making.

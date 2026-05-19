@@ -76,18 +76,18 @@
     - [x] Implement `POST /api/workspace/templates/<template_name>/publish` for template distribution.
     - [x] Add "Publish" action to Template Library in UI.
     - [x] Create Publish Template modal with repository configuration.
-- [ ] **Epic: Continuous Delivery & Environment Governance**
+- [x] **Epic: Continuous Delivery & Environment Governance**
     - [x] Implement `GET /api/repos/.../environments` for environment discovery.
     - [x] Implement `GET /api/repos/.../deployments` for tracking history and status.
     - [x] Implement `POST /api/repos/.../deployments` for triggering promotions.
     - [x] Create Environments Tab UI with Environment Cards.
     - [x] Integrate deployment approvals into Task Inbox.
-- [ ] **Epic: Milestone Orchestration & Goal Governance**
-    - [ ] Implement `GET /api/repos/.../milestones` for goal discovery.
-    - [ ] Implement `POST /api/repos/.../milestones` for goal creation.
-    - [ ] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
-    - [ ] Create Milestones Tab UI with progress visualization.
-    - [ ] Integrate milestone filtering into the Unified Task Inbox.
+- [x] **Epic: Milestone Orchestration & Goal Governance**
+    - [x] Implement `GET /api/repos/.../milestones` for goal discovery.
+    - [x] Implement `POST /api/repos/.../milestones` for goal creation.
+    - [x] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
+    - [x] Create Milestones Tab UI with progress visualization.
+    - [x] Integrate milestone filtering into the Unified Task Inbox.
 - [x] **Epic: Organization & Team Discovery**
     - [x] Implement `GET /api/user/orgs` for organization discovery.
     - [x] Update `GET /api/repos` to support `org_name` filtering.
@@ -95,7 +95,7 @@
     - [x] Create Context Switcher in the application header.
     - [x] Implement context-aware filtering for the Repository list.
     - [x] Integrate organizational context into the Task Inbox.
-- [ ] **Epic: Team-Aware Collaboration**
+- [x] **Epic: Team-Aware Collaboration**
     - [x] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
     - [x] Update `GET /api/repos` to support `team_id` filtering.
     - [x] Update Context Switcher to support nested Team selection.
@@ -114,6 +114,12 @@
     - [x] Add CI status badges to Portfolio cards on Dashboard.
     - [x] Implement client-side Health Filtering on Dashboard (Failing, Pending, Modified).
     - [x] Surface CI status indicator in Workspace tab header for active task.
+- [ ] **Epic: Portfolio Goal Governance & Roadmap**
+    - [ ] Implement `GET /api/workspace/portfolio/milestones` for cross-repo aggregation.
+    - [ ] Create Portfolio Roadmap UI on the Dashboard.
+    - [ ] Implement chronological milestone timeline in Roadmap View.
+    - [ ] Add "Assign Milestone" dropdown to Issues and PRs management tables.
+    - [ ] Surface milestone status badges in Issues/PRs tables.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).
