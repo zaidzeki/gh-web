@@ -340,9 +340,9 @@ def commit_changes():
     if not commit_message:
         return jsonify({"error": "commit_message is required"}), 400
 
-    # Security Enhancement: Limit commit message length to match frontend maxlength
-    if len(commit_message) > 100:
-        return jsonify({"error": "Commit message is too long (max 100 characters)"}), 400
+    # Security Enhancement: Limit commit message length
+    if len(commit_message) > 65536:
+        return jsonify({"error": "Commit message is too long (max 65536 characters)"}), 400
 
     try:
         repo = git.Repo(workspace_dir)
@@ -951,10 +951,6 @@ def workspace_branch():
     if not repo_name:
         return jsonify({"error": "No active repository in workspace"}), 400
 
-    workspace_dir = get_workspace_dir(repo_name)
-    if not os.path.exists(os.path.join(workspace_dir, '.git')):
-        return jsonify({"error": "Not a git repository"}), 400
-
     data = request.get_json() or request.form
     branch_name = data.get('branch_name')
     create_new = data.get('create_new') in [True, 'true', 'on', '1']
@@ -962,9 +958,17 @@ def workspace_branch():
     if not branch_name:
         return jsonify({"error": "branch_name is required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(branch_name) > 255:
+        return jsonify({"error": "Branch name is too long (max 255 characters)"}), 400
+
     # Security: Prevent argument injection by disallowing branch names starting with a dash
     if branch_name.startswith('-'):
         return jsonify({"error": "Invalid branch name: cannot start with a dash"}), 400
+
+    workspace_dir = get_workspace_dir(repo_name)
+    if not os.path.exists(os.path.join(workspace_dir, '.git')):
+        return jsonify({"error": "Not a git repository"}), 400
 
     try:
         repo = git.Repo(workspace_dir)

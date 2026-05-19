@@ -76,6 +76,10 @@ def list_repos():
     org_name = request.args.get('org_name')
     team_id = request.args.get('team_id')
 
+    # Security Enhancement: Limit search query length to prevent potential resource exhaustion
+    if search_query and len(search_query) > 200:
+        return jsonify({"error": "Search query too long (max 200 characters)"}), 400
+
     try:
         user = g.get_user()
 

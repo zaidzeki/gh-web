@@ -106,9 +106,11 @@ def merge_pr(full_name, pr_number):
     commit_message = data.get('commit_message', '')
     merge_method = data.get('merge_method', 'merge')
 
-    # Security Enhancement: Validate merge method
+    # Security Enhancement: Validate merge method and commit message length
     if merge_method not in ['merge', 'squash', 'rebase']:
         return jsonify({"error": "Invalid merge method"}), 400
+    if commit_message and len(commit_message) > 65536:
+        return jsonify({"error": "Commit message is too long (max 65536 characters)"}), 400
 
     try:
         repo = g.get_repo(full_name)

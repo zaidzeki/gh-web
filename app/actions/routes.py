@@ -84,6 +84,10 @@ def dispatch_workflow(full_name, workflow_id):
     ref = data.get('ref', 'main')
     inputs = data.get('inputs', {})
 
+    # Security Enhancement: Input length validation
+    if ref and len(ref) > 255:
+        return jsonify({"error": "Ref is too long (max 255 characters)"}), 400
+
     try:
         repo = g.get_repo(full_name)
         workflow = repo.get_workflow(str(workflow_id))
