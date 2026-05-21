@@ -28,6 +28,14 @@ The Milestone Integration expands the GH-Web data model to include the `Mileston
 - `POST /api/repos/<full_name>/issues/<number>/milestone`: Updates the milestone associated with an issue or PR.
   - **Parameters:** `milestone_number` (int or null to clear).
 
+### 2.3. Portfolio Aggregation (`workspace` or `milestones` blueprint)
+- `GET /api/workspace/portfolio/milestones`: Returns an aggregated list of open milestones for all repositories currently in the user's active workspace.
+  - **Logic:**
+    1. Scan the local workspace directory to identify active repositories.
+    2. Parallelize (using `ThreadPoolExecutor`) requests to the GitHub Milestones API for each repo.
+    3. Normalize results to include `repo_name` and calculated `progress`.
+    4. Sort the unified list by `due_on` (ascending).
+
 ## 3. Frontend Integration
 
 ### 3.1. Navigation
@@ -35,6 +43,7 @@ The Milestone Integration expands the GH-Web data model to include the `Mileston
 
 ### 3.2. Dashboard Enrichment
 - The `GET /api/repos` response will be enriched with a `next_milestone` object containing the title and due date of the soonest open milestone.
+- **Portfolio Roadmap Card:** A new UI component on the dashboard that consumes `GET /api/workspace/portfolio/milestones` to render a unified timeline of upcoming goals.
 
 ### 3.3. Task Inbox Filtering
 - The `GET /api/tasks` endpoint will accept an optional `milestone_number` parameter to filter the inbox.
