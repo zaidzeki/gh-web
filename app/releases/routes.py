@@ -48,6 +48,14 @@ def generate_release_notes(full_name):
     if not tag_name:
         return jsonify({"error": "tag_name is required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(tag_name) > 255:
+        return jsonify({"error": "Tag name is too long (max 255 characters)"}), 400
+    if target_commitish and len(target_commitish) > 255:
+        return jsonify({"error": "Target commitish is too long (max 255 characters)"}), 400
+    if previous_tag_name and len(previous_tag_name) > 255:
+        return jsonify({"error": "Previous tag name is too long (max 255 characters)"}), 400
+
     try:
         repo = g.get_repo(full_name)
         notes = repo.generate_release_notes(
