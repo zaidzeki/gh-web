@@ -83,11 +83,16 @@
     - [x] Create Environments Tab UI with Environment Cards.
     - [x] Integrate deployment approvals into Task Inbox.
 - [ ] **Epic: Milestone Orchestration & Goal Governance**
-    - [ ] Implement `GET /api/repos/.../milestones` for goal discovery.
-    - [ ] Implement `POST /api/repos/.../milestones` for goal creation.
-    - [ ] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
-    - [ ] Create Milestones Tab UI with progress visualization.
-    - [ ] Integrate milestone filtering into the Unified Task Inbox.
+    - [x] Implement `GET /api/repos/.../milestones` for goal discovery.
+    - [x] Implement `POST /api/repos/.../milestones` for goal creation.
+    - [x] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
+    - [x] Create Milestones Tab UI with progress visualization.
+    - [x] Integrate milestone filtering into the Unified Task Inbox.
+- [ ] **Epic: Portfolio Roadmap & Goal Governance**
+    - [ ] Implement `GET /api/workspace/portfolio/milestones` for aggregated discovery.
+    - [ ] Create Portfolio Roadmap UI component on the Dashboard.
+    - [ ] Implement "Goal-Driven Context Switching" (click milestone to activate repo).
+    - [ ] Add overdue alerts and deadline sorting to the unified roadmap view.
 - [x] **Epic: Organization & Team Discovery**
     - [x] Implement `GET /api/user/orgs` for organization discovery.
     - [x] Update `GET /api/repos` to support `org_name` filtering.

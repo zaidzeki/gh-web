@@ -53,3 +53,7 @@
 ## 2025-06-05 - [From Task to Goal Governance]
 **Learning:** Solving individual tasks (Issues) and code changes (PRs) is the "Inner Loop" of development, but high-velocity teams often lose sight of the "Outer Loop"—the strategic goals. Bridging the 'Strategy Gap' requires moving from task-level management to goal-level governance.
 **Action:** Expand the product vision to include Milestone Orchestration, enabling users to group fragmented tasks into cohesive outcomes and track progress against deadlines directly from the dashboard.
+
+## 2025-06-06 - [Portfolio Milestone Aggregation]
+**Learning:** Moving from repo-specific to portfolio-level milestone visibility addresses the "Strategy Gap" for users managing multiple projects. However, parallelizing these requests is critical for performance as the portfolio grows to avoid dashboard lag.
+**Action:** Always specify parallel execution (e.g. `ThreadPoolExecutor`) in architectural designs for multi-repo aggregation endpoints to ensure scalability.
