@@ -80,9 +80,20 @@ def dispatch_workflow(full_name, workflow_id):
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or request.form
+    data = request.get_json(silent=True) or request.form
     ref = data.get('ref', 'main')
     inputs = data.get('inputs', {})
+
+    if not isinstance(ref, str):
+        return jsonify({"error": "Ref must be a string"}), 400
+
+    # Security Enhancement: Input length validation
+    if len(ref) > 255:
+        return jsonify({"error": "Ref is too long (max 255 characters)"}), 400
+
+    # Security Enhancement: Prevent argument injection by disallowing refs starting with a dash
+    if ref.startswith('-'):
+        return jsonify({"error": "Invalid ref: cannot start with a dash"}), 400
 
     try:
         repo = g.get_repo(full_name)
