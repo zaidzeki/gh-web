@@ -165,6 +165,10 @@ def review_deployment(full_name, run_id):
     if event not in ['approve', 'reject']:
         return jsonify({"error": "event must be 'approve' or 'reject'"}), 400
 
+    # Security Enhancement: Input length validation
+    if comment and len(comment) > 65536:
+        return jsonify({"error": "Comment is too long (max 65536 characters)"}), 400
+
     try:
         # We need to find the pending deployment environment names for this run
         # Using raw request because PyGithub might not support this yet in the version we have

@@ -369,6 +369,10 @@ def save_template():
     if not template_name:
         return jsonify({"error": "template_name is required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(template_name) > 100:
+        return jsonify({"error": "Template name is too long (max 100 characters)"}), 400
+
     template_name = secure_filename(template_name)
     if not template_name:
         return jsonify({"error": "Invalid template name"}), 400
@@ -961,6 +965,10 @@ def workspace_branch():
 
     if not branch_name:
         return jsonify({"error": "branch_name is required"}), 400
+
+    # Security Enhancement: Input length validation
+    if len(branch_name) > 255:
+        return jsonify({"error": "Branch name is too long (max 255 characters)"}), 400
 
     # Security: Prevent argument injection by disallowing branch names starting with a dash
     if branch_name.startswith('-'):
