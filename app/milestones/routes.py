@@ -1,7 +1,11 @@
+import os
 from flask import Blueprint, request, session, jsonify
 import github
 from github import Github
-from ..workspace.utils import mask_token
+import git
+from werkzeug.utils import secure_filename
+from concurrent.futures import ThreadPoolExecutor
+from ..workspace.utils import mask_token, get_repo_full_name_from_url
 
 bp = Blueprint('milestones', __name__)
 
@@ -75,5 +79,83 @@ def create_milestone(full_name):
             "number": ms.number,
             "title": ms.title
         }), 201
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/workspace/portfolio/milestones', methods=['GET'])
+def workspace_portfolio_milestones():
+    token = session.get('github_token')
+    if not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    session_id = secure_filename(session.get('session_id', 'default'))
+    if not session_id:
+        session_id = 'default'
+    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+
+    if not os.path.exists(workspace_root):
+        return jsonify([]), 200
+
+    def fetch_repo_milestones(repo_dir):
+        repo_path = os.path.join(workspace_root, repo_dir)
+        if not os.path.isdir(repo_path):
+            return []
+
+        git_path = os.path.join(repo_path, '.git')
+        if not os.path.exists(git_path):
+            return []
+
+        try:
+            repo = git.Repo(repo_path)
+            full_name = None
+            if 'origin' in repo.remotes:
+                full_name = get_repo_full_name_from_url(repo.remotes.origin.url)
+
+            if not full_name:
+                return []
+
+            g = Github(auth=github.Auth.Token(token), timeout=30)
+            gh_repo = g.get_repo(full_name)
+            milestones = gh_repo.get_milestones(state='open')
+
+            repo_milestones = []
+            for ms in milestones:
+                total = int(ms.open_issues) + int(ms.closed_issues)
+                progress = (int(ms.closed_issues) / total * 100) if total > 0 else 0
+
+                repo_milestones.append({
+                    "repo_name": str(repo_dir),
+                    "full_name": str(full_name),
+                    "number": int(ms.number),
+                    "title": str(ms.title),
+                    "description": str(ms.description) if ms.description else "",
+                    "open_issues": int(ms.open_issues),
+                    "closed_issues": int(ms.closed_issues),
+                    "due_on": ms.due_on.isoformat() if ms.due_on else None,
+                    "progress": float(progress),
+                    "html_url": str(ms.html_url)
+                })
+            return repo_milestones
+        except Exception:
+            return []
+
+    try:
+        repo_dirs = sorted(os.listdir(workspace_root))
+        aggregated_milestones = []
+
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(fetch_repo_milestones, rd) for rd in repo_dirs]
+            for future in futures:
+                res = future.result()
+                if res:
+                    aggregated_milestones.extend(res)
+
+        # Sort by due_on ascending, nulls last
+        def sort_key(ms):
+            return (ms['due_on'] is None, ms['due_on'])
+
+        aggregated_milestones.sort(key=sort_key)
+
+        return jsonify(aggregated_milestones), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
