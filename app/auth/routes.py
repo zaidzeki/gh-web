@@ -18,6 +18,10 @@ def login():
     if not token:
         return jsonify({"error": "Token is required"}), 400
 
+    # Security Enhancement: Input length validation for token
+    if len(token) > 512:
+        return jsonify({"error": "Token is too long (max 512 characters)"}), 400
+
     # Security Enhancement: Clear session before login to prevent session leakage from previous users
     session.clear()
     session['github_token'] = token

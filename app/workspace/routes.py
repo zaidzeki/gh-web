@@ -809,6 +809,8 @@ def workspace_portfolio():
     try:
         from concurrent.futures import ThreadPoolExecutor
         repo_dirs = sorted(os.listdir(workspace_root))
+        # Scalability: Limit the number of repositories to process in a single portfolio view
+        repo_dirs = repo_dirs[:50]
         portfolio = []
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [executor.submit(process_repo, rd, token) for rd in repo_dirs]
@@ -835,7 +837,9 @@ def workspace_sync_all():
     errors = []
 
     try:
-        for repo_dir in sorted(os.listdir(workspace_root)):
+        repo_dirs = sorted(os.listdir(workspace_root))
+        # Scalability: Limit the number of repositories to sync in a single batch operation
+        for repo_dir in repo_dirs[:50]:
             repo_path = os.path.join(workspace_root, repo_dir)
             git_path = os.path.join(repo_path, '.git')
             if not os.path.exists(git_path):
