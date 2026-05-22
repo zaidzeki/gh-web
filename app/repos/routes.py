@@ -237,6 +237,14 @@ def get_repos_health():
     if not repo_names:
         return jsonify({}), 200
 
+    # Security Enhancement: Limit the number of repositories to process and validate name lengths
+    if len(repo_names) > 50:
+        return jsonify({"error": "Too many repositories requested (max 50)"}), 400
+
+    for name in repo_names:
+        if len(name) > 255:
+            return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
+
     def fetch_repo_health(full_name):
         try:
             repo = g.get_repo(full_name)

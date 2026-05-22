@@ -141,6 +141,8 @@ def workspace_portfolio_milestones():
 
     try:
         repo_dirs = sorted(os.listdir(workspace_root))
+        # Scalability: Limit the number of repositories to process in a single batch portfolio view
+        repo_dirs = repo_dirs[:50]
         aggregated_milestones = []
 
         with ThreadPoolExecutor(max_workers=5) as executor:
