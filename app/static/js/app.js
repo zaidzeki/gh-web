@@ -146,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await refreshDashboardRepos();
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
+                refreshPortfolioRoadmap();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -896,6 +897,94 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshTasksBtn.addEventListener('click', () => {
             toggleLoading(refreshTasksBtn, true);
             refreshTaskInbox().finally(() => toggleLoading(refreshTasksBtn, false));
+        });
+    }
+
+    const refreshPortfolioRoadmap = async () => {
+        const container = document.getElementById('portfolioRoadmapContainer');
+        if (!container) return;
+
+        container.innerHTML = '<div class="col-12 text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+
+        try {
+            const response = await fetch('/api/workspace/portfolio/milestones');
+            const milestones = await response.json();
+
+            if (response.ok) {
+                container.innerHTML = '';
+                if (milestones.length === 0) {
+                    container.innerHTML = '<p class="text-muted p-2 mb-0">No open milestones in active workspaces.</p>';
+                    return;
+                }
+
+                milestones.forEach(ms => {
+                    const col = document.createElement('div');
+                    col.className = 'col';
+                    const dueDate = ms.due_on ? new Date(ms.due_on).toLocaleDateString() : 'No due date';
+                    const percent = Math.round(ms.progress);
+
+                    col.innerHTML = `
+                        <div class="card h-100 shadow-sm border-light portfolio-milestone-card"
+                             style="cursor: pointer;"
+                             data-repo-name="${escapeHTML(ms.repo_name)}"
+                             data-full-name="${escapeHTML(ms.full_name)}">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(ms.title)}">${escapeHTML(ms.title)}</h6>
+                                    <span class="badge bg-info text-dark small">${escapeHTML(ms.repo_name)}</span>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    <i class="bi bi-calendar"></i> Due: ${escapeHTML(dueDate)}
+                                </div>
+                                <div class="progress mb-1" style="height: 6px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted">
+                                    <span>${percent}%</span>
+                                    <span>${ms.open_issues} open</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    col.querySelector('.portfolio-milestone-card').addEventListener('click', async () => {
+                        const repoName = ms.repo_name;
+                        try {
+                            const activateResp = await fetch('/api/workspace/activate', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({repo_name: repoName})
+                            });
+                            if (activateResp.ok) {
+                                showAlert(`Switched to workspace: ${repoName}`);
+                                // Switch to workspace tab
+                                const workspaceTab = document.getElementById('workspace-tab');
+                                bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+                                refreshExplorer();
+                            } else {
+                                const err = await activateResp.json();
+                                showAlert(err.error || 'Failed to activate workspace', 'danger');
+                            }
+                        } catch (e) {
+                            showAlert(e.message, 'danger');
+                        }
+                    });
+
+                    container.appendChild(col);
+                });
+            } else {
+                container.innerHTML = `<p class="text-danger p-2 mb-0">Error: ${escapeHTML(milestones.error)}</p>`;
+            }
+        } catch (error) {
+            container.innerHTML = `<p class="text-danger p-2 mb-0">Error: ${escapeHTML(error.message)}</p>`;
+        }
+    };
+
+    const refreshRoadmapBtn = document.getElementById('refreshRoadmapBtn');
+    if (refreshRoadmapBtn) {
+        refreshRoadmapBtn.addEventListener('click', () => {
+            toggleLoading(refreshRoadmapBtn, true);
+            refreshPortfolioRoadmap().finally(() => toggleLoading(refreshRoadmapBtn, false));
         });
     }
 
