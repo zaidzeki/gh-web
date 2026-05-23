@@ -19,7 +19,7 @@ GH-Web currently manages repositories, issues, and PRs in a "Vertical" manner—
 - **Frontend:**
     - **Task Inbox Component:** A new prioritized section on the Dashboard.
     - **Smart Actions:** "Fix" button for assigned issues and "Review" button for PRs, directly from the inbox.
-    - **Status Indicators:** Surfacing CI failures and "Changes Requested" status to drive urgency.
+- **Status Indicators:** Surfacing CI failures, "Changes Requested" status, and **Milestone Deadlines** to drive urgency.
 
 ## 🎯 The Impact
 - **Eliminates Fragmented Discovery:** Users no longer need to check 10 repos to find their tasks.

@@ -35,6 +35,7 @@ def test_list_tasks_success(mock_auth, mock_github, client):
     mock_issue.title = "Test Issue"
     mock_issue.repository.full_name = "owner/repo"
     mock_issue.pull_request = None
+    mock_issue.milestone = None
     mock_issue.updated_at = datetime.datetime(2025, 5, 30, 10, 0, 0)
     mock_issue.html_url = "http://github.com/owner/repo/issues/1"
 
@@ -43,6 +44,7 @@ def test_list_tasks_success(mock_auth, mock_github, client):
     mock_pr.title = "Test PR"
     mock_pr.repository.full_name = "owner/repo"
     mock_pr.pull_request = MagicMock()
+    mock_pr.milestone = None
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 11, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/2"
 
@@ -93,6 +95,7 @@ def test_list_tasks_prioritization_and_deduplication(mock_auth, mock_github, cli
     mock_pr.title = "Actionable PR"
     mock_pr.repository.full_name = "owner/repo"
     mock_pr.pull_request = MagicMock()
+    mock_pr.milestone = None
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 12, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/10"
 
@@ -133,6 +136,7 @@ def test_list_tasks_review_status_enrichment(mock_auth, mock_github, client):
     mock_pr.title = "Review Status PR"
     mock_pr.repository.full_name = "owner/repo"
     mock_pr.pull_request = MagicMock()
+    mock_pr.milestone = None
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 13, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/20"
 
@@ -190,6 +194,7 @@ def test_list_tasks_waiting_deployment(mock_auth, mock_github, client):
     mock_pr.title = "Merged PR"
     mock_pr.repository.full_name = "owner/repo"
     mock_pr.pull_request = MagicMock()
+    mock_pr.milestone = None
     mock_pr.updated_at = datetime.datetime(2025, 5, 30, 14, 0, 0)
     mock_pr.html_url = "http://github.com/owner/repo/pull/30"
 

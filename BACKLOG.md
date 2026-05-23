@@ -88,11 +88,11 @@
     - [x] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
     - [x] Create Milestones Tab UI with progress visualization.
     - [x] Integrate milestone filtering into the Unified Task Inbox.
-- [ ] **Epic: Portfolio Roadmap & Goal Governance**
-    - [ ] Implement `GET /api/workspace/portfolio/milestones` for aggregated discovery.
-    - [ ] Create Portfolio Roadmap UI component on the Dashboard.
-    - [ ] Implement "Goal-Driven Context Switching" (click milestone to activate repo).
-    - [ ] Add overdue alerts and deadline sorting to the unified roadmap view.
+- [x] **Epic: Portfolio Roadmap & Goal Governance**
+    - [x] Implement `GET /api/workspace/portfolio/milestones` for aggregated discovery.
+    - [x] Create Portfolio Roadmap UI component on the Dashboard.
+    - [x] Implement "Goal-Driven Context Switching" (click milestone to activate repo).
+    - [x] Add overdue alerts and deadline sorting to the unified roadmap view.
 - [x] **Epic: Organization & Team Discovery**
     - [x] Implement `GET /api/user/orgs` for organization discovery.
     - [x] Update `GET /api/repos` to support `org_name` filtering.
@@ -100,7 +100,7 @@
     - [x] Create Context Switcher in the application header.
     - [x] Implement context-aware filtering for the Repository list.
     - [x] Integrate organizational context into the Task Inbox.
-- [ ] **Epic: Team-Aware Collaboration**
+- [x] **Epic: Team-Aware Collaboration**
     - [x] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
     - [x] Update `GET /api/repos` to support `team_id` filtering.
     - [x] Update Context Switcher to support nested Team selection.
@@ -114,7 +114,7 @@
     - [x] Implement environment indicators (e.g., 'Production: v1.0.0') on repository cards.
     - [x] Integrate deployment approvals into Task Inbox with "Approve" action.
     - [x] Implement frontend lazy-loading for health data to maintain performance.
-- [x] **Epic: Operational Health Phase 2: Proactive Governance**
+- [x] **Epic: Operational Health Phase 2: Proactive Governance & Filtering**
     - [x] Enrich `GET /api/workspace/portfolio` with `ci_status`.
     - [x] Add CI status badges to Portfolio cards on Dashboard.
     - [x] Implement client-side Health Filtering on Dashboard (Failing, Pending, Modified).

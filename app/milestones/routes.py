@@ -118,10 +118,20 @@ def workspace_portfolio_milestones():
             gh_repo = g.get_repo(full_name)
             milestones = gh_repo.get_milestones(state='open')
 
+            import datetime
+            now = datetime.datetime.now(datetime.timezone.utc)
+
             repo_milestones = []
             for ms in milestones:
                 total = int(ms.open_issues) + int(ms.closed_issues)
                 progress = (int(ms.closed_issues) / total * 100) if total > 0 else 0
+                is_overdue = False
+                if ms.due_on:
+                    # ms.due_on is often naive but usually UTC from PyGithub
+                    due = ms.due_on
+                    if due.tzinfo is None:
+                        due = due.replace(tzinfo=datetime.timezone.utc)
+                    is_overdue = due < now
 
                 repo_milestones.append({
                     "repo_name": str(repo_dir),
@@ -133,6 +143,7 @@ def workspace_portfolio_milestones():
                     "closed_issues": int(ms.closed_issues),
                     "due_on": ms.due_on.isoformat() if ms.due_on else None,
                     "progress": float(progress),
+                    "is_overdue": bool(is_overdue),
                     "html_url": str(ms.html_url)
                 })
             return repo_milestones
