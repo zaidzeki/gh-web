@@ -727,6 +727,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusBadges += `<span class="badge ${revClass} ms-1">Review: ${task.review_status.replace('_', ' ').toUpperCase()}</span>`;
                 }
 
+                if (task.milestone) {
+                    const isOverdue = task.milestone.is_overdue;
+                    const msClass = isOverdue ? 'bg-danger' : 'bg-primary';
+                    const dueStr = task.milestone.due_on ? ` (Due: ${new Date(task.milestone.due_on).toLocaleDateString()})` : '';
+                    statusBadges += `<span class="badge ${msClass} ms-1" title="Milestone: ${escapeHTML(task.milestone.title)}${dueStr}">🎯 ${escapeHTML(task.milestone.title)}</span>`;
+                }
+
                 let actionBtn = task.type === 'pr' ?
                     `<button class="btn btn-sm btn-outline-primary review-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Review</button>` :
                     `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
@@ -923,18 +930,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     const dueDate = ms.due_on ? new Date(ms.due_on).toLocaleDateString() : 'No due date';
                     const percent = Math.round(ms.progress);
 
+                    const borderClass = ms.is_overdue ? 'border-danger' : 'border-light';
+                    const badgeClass = ms.is_overdue ? 'bg-danger' : 'bg-info text-dark';
+
                     col.innerHTML = `
-                        <div class="card h-100 shadow-sm border-light portfolio-milestone-card"
+                        <div class="card h-100 shadow-sm ${borderClass} portfolio-milestone-card"
                              style="cursor: pointer;"
                              data-repo-name="${escapeHTML(ms.repo_name)}"
                              data-full-name="${escapeHTML(ms.full_name)}">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(ms.title)}">${escapeHTML(ms.title)}</h6>
-                                    <span class="badge bg-info text-dark small">${escapeHTML(ms.repo_name)}</span>
+                                    <span class="badge ${badgeClass} small">${escapeHTML(ms.repo_name)}</span>
                                 </div>
-                                <div class="small text-muted mb-2">
+                                <div class="small ${ms.is_overdue ? 'text-danger fw-bold' : 'text-muted'} mb-2">
                                     <i class="bi bi-calendar"></i> Due: ${escapeHTML(dueDate)}
+                                    ${ms.is_overdue ? ' <span class="badge bg-danger">OVERDUE</span>' : ''}
                                 </div>
                                 <div class="progress mb-1" style="height: 6px;">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>

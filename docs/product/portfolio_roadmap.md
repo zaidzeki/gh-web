@@ -29,8 +29,9 @@ GH-Web has evolved from a single-repo management tool into a multi-workspace coc
 - **As a Product Owner**, I want to track the overall progress of a feature spanning multiple repositories (e.g., frontend and backend repos) in one view.
 
 ## ✅ Acceptance Criteria
-- [ ] Users can view an aggregated list of open milestones from all repositories in their active portfolio.
-- [ ] Milestones are sorted by due date across the entire portfolio.
-- [ ] Each milestone card indicates which repository it belongs to.
-- [ ] The view handles repositories with no milestones gracefully (empty state).
-- [ ] Performance remains snappy (fetching milestones in parallel for up to 10 portfolio repos).
+- [x] Users can view an aggregated list of open milestones from all repositories in their active portfolio.
+- [x] Milestones are sorted by due date across the entire portfolio.
+- [x] Each milestone card indicates which repository it belongs to.
+- [x] The view handles repositories with no milestones gracefully (empty state).
+- [x] Performance remains snappy (fetching milestones in parallel for up to 50 portfolio repos).
+- [x] Overdue milestones are visually highlighted with red alerts and badges.

@@ -57,3 +57,7 @@
 ## 2025-06-06 - [Portfolio Milestone Aggregation]
 **Learning:** Moving from repo-specific to portfolio-level milestone visibility addresses the "Strategy Gap" for users managing multiple projects. However, parallelizing these requests is critical for performance as the portfolio grows to avoid dashboard lag.
 **Action:** Always specify parallel execution (e.g. `ThreadPoolExecutor`) in architectural designs for multi-repo aggregation endpoints to ensure scalability.
+
+## 2026-05-23 - [Consolidating Governance Logic]
+**Learning:** In a multi-repo dashboard, "Overdue" status must be calculated on the backend to ensure consistency across different UI components (Roadmap cards vs. Task Inbox list). Client-side date comparison leads to "UI Drift" due to timezone discrepancies or stale local clocks.
+**Action:** Centralize governance rules (like deadline status) in the backend normalization layer to maintain a single source of truth for project health.
