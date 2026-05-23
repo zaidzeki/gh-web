@@ -218,6 +218,11 @@ def apply_patch():
     if not filename:
         return jsonify({"error": "Invalid patch filename"}), 400
     patch_path = os.path.join(workspace_dir, filename)
+
+    # Security Enhancement: Verify final patch path to prevent symlink traversal
+    if not is_safe_path(workspace_dir, patch_path):
+        return jsonify({"error": "Invalid patch path"}), 400
+
     patch_file.save(patch_path)
 
     try:
@@ -262,6 +267,11 @@ def upload_file():
 
     os.makedirs(full_target_dir, exist_ok=True)
     file_path = os.path.join(full_target_dir, filename)
+
+    # Security Enhancement: Verify final file path to prevent symlink traversal
+    if not is_safe_path(workspace_dir, file_path):
+        return jsonify({"error": "Invalid file path"}), 400
+
     file.save(file_path)
 
     return jsonify({"message": f"File {filename} uploaded successfully to {target_path}"}), 200
@@ -292,6 +302,11 @@ def upload_archive():
 
     os.makedirs(full_target_dir, exist_ok=True)
     archive_path = os.path.join(workspace_dir, filename)
+
+    # Security Enhancement: Verify final archive path to prevent symlink traversal
+    if not is_safe_path(workspace_dir, archive_path):
+        return jsonify({"error": "Invalid archive path"}), 400
+
     archive.save(archive_path)
 
     try:
