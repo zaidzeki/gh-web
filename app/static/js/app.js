@@ -147,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshWorkspacePortfolio();
                 refreshTaskInbox();
                 refreshPortfolioRoadmap();
+                refreshPortfolioPulse();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -279,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allRepos = repos;
             renderRepoList(repos);
             refreshRepoHealth(repos.map(r => r.full_name));
+            refreshRepoPulse(repos.map(r => r.full_name));
 
             // Update datalist for autosuggest
             const datalist = document.getElementById('userReposList');
@@ -428,6 +430,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const refreshRepoPulse = async (repoNames) => {
+        if (!repoNames || repoNames.length === 0) return;
+
+        repoNames.forEach(async (repoName) => {
+            try {
+                const response = await fetch(`/api/repos/${repoName}/pulse`);
+                const data = await response.json();
+                if (response.ok) {
+                    const item = document.querySelector(`.repo-item[data-repo="${repoName}"]`);
+                    if (item) {
+                        const badgesContainer = item.querySelector('.health-badges');
+                        if (badgesContainer) {
+                            const m = data.metrics;
+                            const pulseHtml = `
+                                <span class="badge bg-dark ms-1 pulse-badge" title="DORA: ${m.deployment_frequency} deploys, ${m.lead_time_to_change_hours || '?'}h lead time">
+                                    📈 ${m.deployment_frequency}
+                                </span>
+                            `;
+                            const existing = badgesContainer.querySelector('.pulse-badge');
+                            if (existing) existing.remove();
+                            badgesContainer.insertAdjacentHTML('beforeend', pulseHtml);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to fetch pulse for ${repoName}:`, e);
+            }
+        });
+    };
+
     const refreshRepoHealth = async (repoNames) => {
         if (!repoNames || repoNames.length === 0) return;
 
@@ -446,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             let badgesHtml = '';
                             if (health.ci_status) {
                                 const ciClass = health.ci_status === 'success' ? 'bg-success' : (health.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
-                                badgesHtml += `<span class="badge ${ciClass} ms-1" title="CI Status: ${health.ci_status}">CI: ${health.ci_status.toUpperCase()}</span>`;
+                                badgesHtml += `<span class="badge ${ciClass} ms-1 health-ci-badge" title="CI Status: ${health.ci_status}">CI: ${health.ci_status.toUpperCase()}</span>`;
 
                                 const ciTextEl = item.querySelector('.ci-text-status');
                                 if (ciTextEl) {
@@ -458,12 +490,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const ms = health.next_milestone;
                                 const msClass = ms.overdue ? 'bg-danger' : 'bg-primary';
                                 const dueStr = new Date(ms.due_on).toLocaleDateString();
-                                badgesHtml += `<span class="badge ${msClass} ms-1" title="Next Milestone: ${escapeHTML(ms.title)} (Due: ${dueStr})">🎯 ${escapeHTML(ms.title)}</span>`;
+                                badgesHtml += `<span class="badge ${msClass} ms-1 health-ms-badge" title="Next Milestone: ${escapeHTML(ms.title)} (Due: ${dueStr})">🎯 ${escapeHTML(ms.title)}</span>`;
                             }
                             if (health.production_status) {
-                                badgesHtml += `<span class="badge bg-info text-dark ms-1" title="Production Ref: ${health.production_status.ref}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
+                                badgesHtml += `<span class="badge bg-info text-dark ms-1 health-prod-badge" title="Production Ref: ${health.production_status.ref}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
                             }
-                            badgesContainer.innerHTML = badgesHtml;
+
+                            badgesContainer.querySelectorAll('.health-ci-badge, .health-ms-badge, .health-prod-badge').forEach(el => el.remove());
+                            badgesContainer.insertAdjacentHTML('afterbegin', badgesHtml);
                         }
                     }
                 });
@@ -643,10 +677,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+
+            refreshPortfolioPulse();
         } catch (error) {
             portfolioList.innerHTML = `<p class="text-danger p-3">Error: ${escapeHTML(error.message)}</p>`;
         }
     };
+
+    const refreshPortfolioPulse = async () => {
+        const card = document.getElementById('portfolioPulseCard');
+        if (!card) return;
+
+        if (!lastPortfolioData || lastPortfolioData.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = 'block';
+        const repoNames = lastPortfolioData.map(item => item.full_name).filter(Boolean);
+        if (repoNames.length === 0) return;
+
+        try {
+            const response = await fetch(`/api/workspace/portfolio/pulse?repos=${encodeURIComponent(repoNames.join(','))}`);
+            const data = await response.json();
+            if (response.ok) {
+                const m = data.metrics;
+                document.getElementById('portfolioFreq').textContent = m.deployment_frequency;
+                document.getElementById('portfolioLead').textContent = m.lead_time_to_change_hours !== null ? m.lead_time_to_change_hours : '-';
+                document.getElementById('portfolioCFR').textContent = m.change_failure_rate_percent + '%';
+                document.getElementById('portfolioRestore').textContent = m.time_to_restore_hours !== null ? m.time_to_restore_hours : '-';
+            }
+        } catch (e) {
+            console.error('Failed to fetch portfolio pulse:', e);
+        }
+    };
+
+    const refreshPortfolioPulseBtn = document.getElementById('refreshPortfolioPulseBtn');
+    if (refreshPortfolioPulseBtn) {
+        refreshPortfolioPulseBtn.addEventListener('click', () => {
+            toggleLoading(refreshPortfolioPulseBtn, true);
+            refreshPortfolioPulse().finally(() => toggleLoading(refreshPortfolioPulseBtn, false));
+        });
+    }
 
     const refreshPortfolioBtn = document.getElementById('refreshPortfolioBtn');
     if (refreshPortfolioBtn) {

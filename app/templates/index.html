@@ -66,6 +66,33 @@
             <div class="tab-pane fade show active" id="dashboard" role="tabpanel" aria-labelledby="dashboard-tab">
                 <div class="row mb-4">
                     <div class="col-12">
+                        <div class="card shadow-sm border-dark mb-4" id="portfolioPulseCard" style="display:none;">
+                            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Portfolio Pulse (DORA)</h5>
+                                <button id="refreshPortfolioPulseBtn" class="btn btn-sm btn-light" aria-label="Refresh Portfolio Pulse">Refresh</button>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row text-center" id="portfolioPulseMetrics">
+                                    <div class="col-md-3">
+                                        <div class="h3 mb-0" id="portfolioFreq">-</div>
+                                        <small class="text-muted text-uppercase fw-bold">Deploy Freq (30d)</small>
+                                    </div>
+                                    <div class="col-md-3 border-start">
+                                        <div class="h3 mb-0" id="portfolioLead">-</div>
+                                        <small class="text-muted text-uppercase fw-bold">Lead Time (h)</small>
+                                    </div>
+                                    <div class="col-md-3 border-start">
+                                        <div class="h3 mb-0" id="portfolioCFR">-</div>
+                                        <small class="text-muted text-uppercase fw-bold">Failure Rate (%)</small>
+                                    </div>
+                                    <div class="col-md-3 border-start">
+                                        <div class="h3 mb-0" id="portfolioRestore">-</div>
+                                        <small class="text-muted text-uppercase fw-bold">Restore Time (h)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card shadow-sm border-info mb-4">
                             <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Portfolio Roadmap</h5>
