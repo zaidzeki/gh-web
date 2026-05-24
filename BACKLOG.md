@@ -100,6 +100,11 @@
     - [x] Create Context Switcher in the application header.
     - [x] Implement context-aware filtering for the Repository list.
     - [x] Integrate organizational context into the Task Inbox.
+- [ ] **Epic: Project Pulse - Strategic Delivery Metrics**
+    - [ ] Implement `GET /api/repos/<full_name>/pulse` for DORA metrics.
+    - [ ] Implement `GET /api/workspace/portfolio/pulse` for portfolio aggregation.
+    - [ ] Integrate Pulse metrics into Dashboard repository cards.
+    - [ ] Create Portfolio Pulse view on the Dashboard.
 - [x] **Epic: Team-Aware Collaboration**
     - [x] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
     - [x] Update `GET /api/repos` to support `team_id` filtering.

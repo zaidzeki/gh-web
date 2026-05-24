@@ -117,6 +117,8 @@ These operations apply to the repository currently active in the server's worksp
 | `GET` | `/api/repos/<full_name>/milestones` | Returns list of milestones with progress. |
 | `POST` | `/api/repos/<full_name>/milestones` | Creates a new milestone. |
 | `POST` | `/api/repos/<full_name>/issues/<n>/milestone` | Updates an issue/PR milestone assignment. |
+| `GET` | `/api/repos/<full_name>/pulse` | Returns DORA metrics for a repository. |
+| `GET` | `/api/workspace/portfolio/pulse` | Aggregates DORA metrics across active workspaces. |
 
 ## 6. Frontend Structure
 
