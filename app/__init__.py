@@ -31,6 +31,7 @@ def create_app(test_config=None):
     from .actions import routes as actions_routes
     from .deployments import routes as deployments_routes
     from .milestones import routes as milestones_routes
+    from .pulse import routes as pulse_routes
 
     app.register_blueprint(auth_routes.bp)
     app.register_blueprint(repos_routes.bp)
@@ -42,6 +43,7 @@ def create_app(test_config=None):
     app.register_blueprint(actions_routes.bp)
     app.register_blueprint(deployments_routes.bp)
     app.register_blueprint(milestones_routes.bp)
+    app.register_blueprint(pulse_routes.bp)
 
     @app.after_request
     def add_security_headers(response):
