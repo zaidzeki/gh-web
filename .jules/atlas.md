@@ -61,3 +61,7 @@
 ## 2026-05-23 - [Consolidating Governance Logic]
 **Learning:** In a multi-repo dashboard, "Overdue" status must be calculated on the backend to ensure consistency across different UI components (Roadmap cards vs. Task Inbox list). Client-side date comparison leads to "UI Drift" due to timezone discrepancies or stale local clocks.
 **Action:** Centralize governance rules (like deadline status) in the backend normalization layer to maintain a single source of truth for project health.
+
+## 2026-05-24 - [From Tactical Visibility to Strategic Pulse]
+**Learning:** While surfacing real-time CI status and environment health (Operational Health) is crucial for tactical "now" decisions, teams also need long-term "Pulse" metrics (DORA) to understand their delivery velocity and stability trends. Tactical data tells you "Is it broken now?", but strategic metrics tell you "Are we getting better or worse at delivering?".
+**Action:** Extend the "Operational Health" architecture to aggregate historical deployment and PR data, enabling the calculation of DORA metrics (Lead Time, Deployment Frequency) as a baseline for strategic governance.
