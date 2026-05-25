@@ -28,19 +28,30 @@ Without these metrics, teams are flying blind regarding their operational maturi
     - **Change Failure Rate:** Percentage of deployments that resulted in a `failure` status.
     - **Time to Restore:** Median time to recover from a `failure` deployment status.
 
-### 4.2. Portfolio Aggregation
+### 4.2. Performance Benchmarking (Tiers)
+- Automatically categorize repository performance into **Elite**, **High**, **Medium**, or **Low** tiers based on 2024 DORA benchmarks:
+    - **Elite:** Deploy on-demand, Lead time < 1 day, CFR < 15%, Restore < 1 hour.
+    - **High:** Deploy daily/weekly, Lead time < 1 week, CFR 16-30%, Restore < 1 day.
+    - **Medium:** Deploy weekly/monthly, Lead time < 1 month, CFR 31-45%, Restore < 1 week.
+    - **Low:** Deploy > monthly, Lead time > 1 month, CFR > 45%, Restore > 1 week.
+
+### 4.3. Period-over-Period Trends
+- Compare the last 30 days of data against the *previous* 30 days (Day 31-60).
+- Display "Improving" (Green ↑/↓), "Degrading" (Red ↑/↓), or "Stable" indicators for each metric.
+
+### 4.4. Portfolio Aggregation
 - Support for viewing these metrics at both a per-repository level and an aggregated "Team/Org" level.
 
-### 4.3. Visual Trends
-- Simple sparklines or "up/down" indicators comparing the current 30-day period to the previous one.
-
 ## 5. Acceptance Criteria
-- [ ] Backend API `GET /api/repos/<full_name>/pulse` returns DORA metrics for the last 30 days.
-- [ ] Metrics are calculated using GitHub's Deployments and Pull Request APIs.
-- [ ] Frontend displays the "Pulse" metrics on the Dashboard repository cards (lazy-loaded).
-- [ ] Aggregated "Portfolio Pulse" view is available for the active workspace context.
+- [x] Backend API `GET /api/repos/<full_name>/pulse` returns DORA metrics for the last 30 days.
+- [ ] Backend API supports trend analysis by comparing two 30-day windows.
+- [ ] Backend API includes a `tier` classification for each metric and the overall repository.
+- [ ] Frontend displays the "Pulse" metrics with color-coded tier badges and trend arrows.
+- [x] Metrics are calculated using GitHub's Deployments and Pull Request APIs.
+- [ ] Portfolio Pulse includes aggregated trend and tier data.
 
 ## 6. Technical Considerations
-- **Data Depth:** Calculating Lead Time requires matching merged PRs to the deployments that contained their SHAs. This may require scanning up to 100 recent deployments and PRs.
+- **Data Depth:** Calculating Lead Time and Trends requires scanning up to 60 days of history. To maintain performance, limit historical scan to 100 items per window.
+- **Trend Inversion:** Ensure logic accounts for "Less is Better" metrics (Lead Time, CFR, Restore) vs. "More is Better" (Frequency).
 - **Caching:** Pulse metrics should be cached server-side (e.g., for 1 hour) as they are computationally more expensive than real-time health checks.
 - **Definition of 'Production':** Reuse the existing "Operational Health" logic for identifying the 'production' environment.
