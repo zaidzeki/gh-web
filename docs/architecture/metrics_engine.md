@@ -33,6 +33,23 @@ The "Project Pulse" engine is responsible for aggregating and calculating DORA m
     4. Metric = Median of all restore times.
 - **Goal:** Lower time indicates better incident response and recovery capabilities.
 
+### 2.5. Trend Calculation
+- **Calculation:** For each metric, calculate the value for `[T0, T30]` (current) and `[T31, T60]` (previous).
+- **Trend:** `((Current - Previous) / Previous) * 100` if Previous > 0.
+- **Directional Health:**
+    - Frequency: Increasing is healthy.
+    - Lead Time, CFR, Restore: Decreasing is healthy.
+
+### 2.6. Performance Benchmarking (Tiers)
+The engine evaluates the 30-day metrics against the following constants (based on DORA 2024):
+
+| Metric | Elite | High | Medium | Low |
+| :--- | :--- | :--- | :--- | :--- |
+| **Deployment Freq** | > 30/mo | 1-30/mo | 0.25-1/mo | < 0.25/mo |
+| **Lead Time** | < 24h | < 1wk | < 1mo | > 1mo |
+| **Change Failure Rate** | < 15% | 16-30% | 31-45% | > 45% |
+| **Time to Restore** | < 1h | < 24h | < 1wk | > 1wk |
+
 ## 3. API Design
 
 ### 3.1. Repository Pulse
@@ -49,8 +66,15 @@ The "Project Pulse" engine is responsible for aggregating and calculating DORA m
     "time_to_restore_hours": 1.2
   },
   "trends": {
-    "deployment_frequency": "up",
-    "lead_time_to_change": "down"
+    "deployment_frequency": {"value": 20, "direction": "up", "status": "improving"},
+    "lead_time_to_change_hours": {"value": -10, "direction": "down", "status": "improving"}
+  },
+  "benchmarks": {
+    "overall_tier": "High",
+    "deployment_frequency": "High",
+    "lead_time_to_change_hours": "Elite",
+    "change_failure_rate_percent": "Elite",
+    "time_to_restore_hours": "High"
   }
 }
 ```

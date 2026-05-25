@@ -65,3 +65,7 @@
 ## 2026-05-24 - [From Tactical Visibility to Strategic Pulse]
 **Learning:** While surfacing real-time CI status and environment health (Operational Health) is crucial for tactical "now" decisions, teams also need long-term "Pulse" metrics (DORA) to understand their delivery velocity and stability trends. Tactical data tells you "Is it broken now?", but strategic metrics tell you "Are we getting better or worse at delivering?".
 **Action:** Extend the "Operational Health" architecture to aggregate historical deployment and PR data, enabling the calculation of DORA metrics (Lead Time, Deployment Frequency) as a baseline for strategic governance.
+
+## 2026-05-25 - [Contextualizing Velocity with Benchmarks & Trends]
+**Learning:** Raw DORA metrics (e.g., "5 deployments/month") are meaningless without context. To provide true strategic value, a dashboard must answer: "Is this good?" (Benchmarks) and "Are we improving?" (Trends). 2024 DORA research provides clear performance clusters (Elite, High, Medium, Low) that transform metrics into actionable governance signals.
+**Action:** Always pair DORA metric implementations with period-over-period trend analysis and industry-standard performance tiering to bridge the 'Strategic Insight Gap'.
