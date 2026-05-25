@@ -24,6 +24,10 @@ def list_milestones(full_name):
 
     state = request.args.get('state', 'open')
 
+    # Security Enhancement: Whitelist state parameter
+    if state not in ['open', 'closed', 'all']:
+        return jsonify({"error": "Invalid state parameter"}), 400
+
     try:
         repo = g.get_repo(full_name)
         milestones = repo.get_milestones(state=state)

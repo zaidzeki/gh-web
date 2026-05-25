@@ -444,8 +444,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (badgesContainer) {
                             const m = data.metrics;
                             const pulseHtml = `
-                                <span class="badge bg-dark ms-1 pulse-badge" title="DORA: ${m.deployment_frequency} deploys, ${m.lead_time_to_change_hours || '?'}h lead time">
-                                    📈 ${m.deployment_frequency}
+                                <span class="badge bg-dark ms-1 pulse-badge" title="DORA: ${escapeHTML(String(m.deployment_frequency))} deploys, ${escapeHTML(String(m.lead_time_to_change_hours || '?'))}h lead time">
+                                    📈 ${escapeHTML(String(m.deployment_frequency))}
                                 </span>
                             `;
                             const existing = badgesContainer.querySelector('.pulse-badge');
@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             let badgesHtml = '';
                             if (health.ci_status) {
                                 const ciClass = health.ci_status === 'success' ? 'bg-success' : (health.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
-                                badgesHtml += `<span class="badge ${ciClass} ms-1 health-ci-badge" title="CI Status: ${health.ci_status}">CI: ${health.ci_status.toUpperCase()}</span>`;
+                                badgesHtml += `<span class="badge ${ciClass} ms-1 health-ci-badge" title="CI Status: ${escapeHTML(health.ci_status)}">CI: ${escapeHTML(health.ci_status.toUpperCase())}</span>`;
 
                                 const ciTextEl = item.querySelector('.ci-text-status');
                                 if (ciTextEl) {
@@ -792,7 +792,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let statusBadges = '';
                 if (task.ci_status) {
                     const ciClass = task.ci_status === 'success' ? 'bg-success' : (task.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
-                    statusBadges += `<span class="badge ${ciClass} ms-1">CI: ${task.ci_status.toUpperCase()}</span>`;
+                    statusBadges += `<span class="badge ${ciClass} ms-1">CI: ${escapeHTML(task.ci_status.toUpperCase())}</span>`;
                 }
                 if (task.review_status) {
                     const revClass = task.review_status === 'approved' ? 'bg-success' : (task.review_status === 'changes_requested' ? 'bg-danger' : 'bg-warning text-dark');

@@ -190,6 +190,10 @@ def get_portfolio_pulse():
     if len(repo_names) > 50:
         return jsonify({"error": "Too many repositories requested (max 50)"}), 400
 
+    for name in repo_names:
+        if len(name) > 255:
+            return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
+
     g = get_github_client()
     now = datetime.datetime.now()
 
