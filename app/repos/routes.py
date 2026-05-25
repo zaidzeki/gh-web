@@ -76,6 +76,17 @@ def list_repos():
     org_name = request.args.get('org_name')
     team_id = request.args.get('team_id')
 
+    # Security Enhancement: Input validation and length limits
+    if search_query and len(search_query) > 200:
+        return jsonify({"error": "search query is too long"}), 400
+    if org_name and len(org_name) > 100:
+        return jsonify({"error": "org_name is too long"}), 400
+    if team_id:
+        try:
+            team_id = int(team_id)
+        except ValueError:
+            return jsonify({"error": "Invalid team_id"}), 400
+
     try:
         user = g.get_user()
 

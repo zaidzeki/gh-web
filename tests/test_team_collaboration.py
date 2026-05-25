@@ -85,6 +85,7 @@ def test_list_tasks_with_team(mock_github, client):
     mock_issue.title = "Team Task"
     mock_issue.pull_request = None
     mock_issue.updated_at = None
+    mock_issue.milestone = None
 
     # Mocking 4 calls to search_issues (Review Requests, In Progress, My PRs, Waiting Deployment)
     mock_g.search_issues.side_effect = [

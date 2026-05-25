@@ -20,6 +20,10 @@ def list_prs(full_name):
 
     state = request.args.get('state', 'open')
 
+    # Security Enhancement: Whitelist state parameter
+    if state not in ['open', 'closed', 'all']:
+        return jsonify({"error": "Invalid state parameter"}), 400
+
     try:
         repo = g.get_repo(full_name)
         prs = repo.get_pulls(state=state)

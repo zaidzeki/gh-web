@@ -74,6 +74,19 @@ def list_tasks():
     team_id = request.args.get('team_id')
     milestone = request.args.get('milestone')
 
+    # Security Enhancement: Input validation and length limits
+    if org_name and len(org_name) > 100:
+        return jsonify({"error": "org_name is too long"}), 400
+    if team_slug and len(team_slug) > 100:
+        return jsonify({"error": "team_slug is too long"}), 400
+    if milestone and len(milestone) > 256:
+        return jsonify({"error": "milestone is too long"}), 400
+    if team_id:
+        try:
+            team_id = int(team_id)
+        except ValueError:
+            return jsonify({"error": "Invalid team_id"}), 400
+
     try:
         user = g.get_user()
         login = user.login
