@@ -72,21 +72,36 @@
                                 <button id="refreshPortfolioPulseBtn" class="btn btn-sm btn-light" aria-label="Refresh Portfolio Pulse">Refresh</button>
                             </div>
                             <div class="card-body bg-light">
+                                <div class="d-flex justify-content-center mb-3">
+                                    <span id="portfolioOverallTier" class="badge rounded-pill bg-secondary fs-6">Overall Performance: -</span>
+                                </div>
                                 <div class="row text-center" id="portfolioPulseMetrics">
                                     <div class="col-md-3">
-                                        <div class="h3 mb-0" id="portfolioFreq">-</div>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="h3 mb-0" id="portfolioFreq">-</div>
+                                            <span id="portfolioFreqTrend" class="small fw-bold"></span>
+                                        </div>
                                         <small class="text-muted text-uppercase fw-bold">Deploy Freq (30d)</small>
                                     </div>
                                     <div class="col-md-3 border-start">
-                                        <div class="h3 mb-0" id="portfolioLead">-</div>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="h3 mb-0" id="portfolioLead">-</div>
+                                            <span id="portfolioLeadTrend" class="small fw-bold"></span>
+                                        </div>
                                         <small class="text-muted text-uppercase fw-bold">Lead Time (h)</small>
                                     </div>
                                     <div class="col-md-3 border-start">
-                                        <div class="h3 mb-0" id="portfolioCFR">-</div>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="h3 mb-0" id="portfolioCFR">-</div>
+                                            <span id="portfolioCFRTrend" class="small fw-bold"></span>
+                                        </div>
                                         <small class="text-muted text-uppercase fw-bold">Failure Rate (%)</small>
                                     </div>
                                     <div class="col-md-3 border-start">
-                                        <div class="h3 mb-0" id="portfolioRestore">-</div>
+                                        <div class="d-flex align-items-center justify-content-center gap-1">
+                                            <div class="h3 mb-0" id="portfolioRestore">-</div>
+                                            <span id="portfolioRestoreTrend" class="small fw-bold"></span>
+                                        </div>
                                         <small class="text-muted text-uppercase fw-bold">Restore Time (h)</small>
                                     </div>
                                 </div>

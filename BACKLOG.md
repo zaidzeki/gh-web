@@ -100,18 +100,18 @@
     - [x] Create Context Switcher in the application header.
     - [x] Implement context-aware filtering for the Repository list.
     - [x] Integrate organizational context into the Task Inbox.
-- [ ] **Epic: Project Pulse - Strategic Delivery Metrics**
+- [x] **Epic: Project Pulse - Strategic Delivery Metrics**
     - [x] Implement `GET /api/repos/<full_name>/pulse` for DORA metrics.
     - [x] Implement `GET /api/workspace/portfolio/pulse` for portfolio aggregation.
-    - [ ] Integrate Pulse metrics into Dashboard repository cards.
-    - [ ] Create Portfolio Pulse view on the Dashboard.
-- [ ] **Epic: Strategic Delivery Governance: Benchmarks & Trends**
-    - [ ] Update `calculate_repo_pulse` to support dual-window trend calculation (Current 30d vs Previous 30d).
-    - [ ] Implement DORA Tier Classification logic (Elite, High, Medium, Low) in the backend.
-    - [ ] Enrich `GET /api/repos/<full_name>/pulse` response with `trends` and `benchmarks` objects.
-    - [ ] Update Portfolio Pulse aggregation to include averaged trends and dominant tiers.
-    - [ ] Create Tier-specific badges (e.g., 'High Performance') in the Dashboard UI.
-    - [ ] Add trend indicators (↑/↓) with color-coding (improving/degrading) to the Pulse Dashboard component.
+    - [x] Integrate Pulse metrics into Dashboard repository cards.
+    - [x] Create Portfolio Pulse view on the Dashboard.
+- [x] **Epic: Strategic Delivery Governance: Benchmarks & Trends**
+    - [x] Update `calculate_repo_pulse` to support dual-window trend calculation (Current 30d vs Previous 30d).
+    - [x] Implement DORA Tier Classification logic (Elite, High, Medium, Low) in the backend.
+    - [x] Enrich `GET /api/repos/<full_name>/pulse` response with `trends` and `benchmarks` objects.
+    - [x] Update Portfolio Pulse aggregation to include averaged trends and dominant tiers.
+    - [x] Create Tier-specific badges (e.g., 'High Performance') in the Dashboard UI.
+    - [x] Add trend indicators (↑/↓) with color-coding (improving/degrading) to the Pulse Dashboard component.
 - [x] **Epic: Team-Aware Collaboration**
     - [x] Implement `GET /api/user/orgs/<org>/teams` for team discovery.
     - [x] Update `GET /api/repos` to support `team_id` filtering.
