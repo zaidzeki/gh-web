@@ -443,9 +443,32 @@ document.addEventListener('DOMContentLoaded', () => {
                         const badgesContainer = item.querySelector('.health-badges');
                         if (badgesContainer) {
                             const m = data.metrics;
+                            const t = data.trends;
+                            const b = data.benchmarks;
+
+                            const tierClasses = {
+                                'Elite': 'bg-primary',
+                                'High': 'bg-success',
+                                'Medium': 'bg-warning text-dark',
+                                'Low': 'bg-danger'
+                            };
+
+                            const getTrendArrow = (curr, prev) => {
+                                if (curr == null || prev == null || curr === prev) return '';
+                                return curr > prev ? '↑' : '↓';
+                            };
+
+                            const trendClass = (status) => {
+                                if (status === 'improving') return 'text-success';
+                                if (status === 'degrading') return 'text-danger';
+                                return 'text-muted';
+                            };
+
+                            const pm = data.previous_metrics || {};
                             const pulseHtml = `
-                                <span class="badge bg-dark ms-1 pulse-badge" title="DORA: ${escapeHTML(String(m.deployment_frequency))} deploys, ${escapeHTML(String(m.lead_time_to_change_hours || '?'))}h lead time">
-                                    📈 ${escapeHTML(String(m.deployment_frequency))}
+                                <span class="badge ${tierClasses[b.overall] || 'bg-dark'} ms-1 pulse-badge"
+                                      title="DORA Tier: ${escapeHTML(b.overall)}. Metrics: ${escapeHTML(String(m.deployment_frequency))} deploys ${getTrendArrow(m.deployment_frequency, pm.deployment_frequency)}, ${escapeHTML(String(m.lead_time_to_change_hours || '?'))}h lead time ${getTrendArrow(m.lead_time_to_change_hours, pm.lead_time_to_change_hours)}">
+                                    📈 ${escapeHTML(String(m.deployment_frequency))} <span class="${trendClass(t.deployment_frequency)}">${getTrendArrow(m.deployment_frequency, pm.deployment_frequency)}</span>
                                 </span>
                             `;
                             const existing = badgesContainer.querySelector('.pulse-badge');
@@ -702,10 +725,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             if (response.ok) {
                 const m = data.metrics;
-                document.getElementById('portfolioFreq').textContent = m.deployment_frequency;
-                document.getElementById('portfolioLead').textContent = m.lead_time_to_change_hours !== null ? m.lead_time_to_change_hours : '-';
-                document.getElementById('portfolioCFR').textContent = m.change_failure_rate_percent + '%';
-                document.getElementById('portfolioRestore').textContent = m.time_to_restore_hours !== null ? m.time_to_restore_hours : '-';
+                const t = data.trends;
+                const b = data.benchmarks;
+
+                const tierClasses = {
+                    'Elite': 'bg-primary',
+                    'High': 'bg-success',
+                    'Medium': 'bg-warning text-dark',
+                    'Low': 'bg-danger'
+                };
+
+                const tierEl = document.getElementById('portfolioOverallTier');
+                if (tierEl) {
+                    tierEl.textContent = `Overall Performance: ${b.overall}`;
+                    tierEl.className = `badge rounded-pill ${tierClasses[b.overall] || 'bg-secondary'} fs-6`;
+                }
+
+                const pm = data.previous_metrics || {};
+                const renderMetric = (id, val, prevVal, trend, suffix = '') => {
+                    const el = document.getElementById(id);
+                    const trendEl = document.getElementById(`${id}Trend`);
+                    if (el) el.textContent = val !== null ? val + suffix : '-';
+                    if (trendEl) {
+                        let arrow = '';
+                        if (val !== null && prevVal !== null) {
+                            if (val > prevVal) arrow = '↑';
+                            else if (val < prevVal) arrow = '↓';
+                        }
+                        trendEl.textContent = arrow;
+                        trendEl.className = `small fw-bold ${trend === 'improving' ? 'text-success' : (trend === 'degrading' ? 'text-danger' : 'text-muted')}`;
+                    }
+                };
+
+                renderMetric('portfolioFreq', m.deployment_frequency, pm.deployment_frequency, t.deployment_frequency);
+                renderMetric('portfolioLead', m.lead_time_to_change_hours, pm.lead_time_to_change_hours, t.lead_time_to_change_hours);
+                renderMetric('portfolioCFR', m.change_failure_rate_percent, pm.change_failure_rate_percent, t.change_failure_rate_percent, '%');
+                renderMetric('portfolioRestore', m.time_to_restore_hours, pm.time_to_restore_hours, t.time_to_restore_hours);
             }
         } catch (e) {
             console.error('Failed to fetch portfolio pulse:', e);
