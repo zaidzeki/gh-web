@@ -62,7 +62,8 @@ def test_list_tasks_success(mock_auth, mock_github, client):
         [mock_pr], # review-requested
         [mock_issue], # assigned
         [], # author
-        [] # waiting_deployment
+        [], # waiting_deployment
+        []  # security_alerts
     ]
 
     response = client.get('/api/tasks')
@@ -110,7 +111,8 @@ def test_list_tasks_prioritization_and_deduplication(mock_auth, mock_github, cli
         [mock_pr], # review-requested
         [mock_pr], # assigned
         [mock_pr], # author
-        [] # waiting_deployment
+        [], # waiting_deployment
+        []  # security_alerts
     ]
 
     response = client.get('/api/tasks')
@@ -156,7 +158,8 @@ def test_list_tasks_review_status_enrichment(mock_auth, mock_github, client):
         [], # review-requested
         [mock_pr], # assigned (PR in In Progress category)
         [], # author
-        [] # waiting_deployment
+        [], # waiting_deployment
+        []  # security_alerts
     ]
 
     response = client.get('/api/tasks')
@@ -207,7 +210,8 @@ def test_list_tasks_waiting_deployment(mock_auth, mock_github, client):
         [], # review-requested
         [], # assigned
         [], # author
-        [mock_pr] # waiting_deployment
+        [mock_pr], # waiting_deployment
+        []  # security_alerts
     ]
 
     response = client.get('/api/tasks')
