@@ -69,3 +69,7 @@
 ## 2026-05-25 - [Contextualizing Velocity with Benchmarks & Trends]
 **Learning:** Raw DORA metrics (e.g., "5 deployments/month") are meaningless without context. To provide true strategic value, a dashboard must answer: "Is this good?" (Benchmarks) and "Are we improving?" (Trends). 2024 DORA research provides clear performance clusters (Elite, High, Medium, Low) that transform metrics into actionable governance signals.
 **Action:** Always pair DORA metric implementations with period-over-period trend analysis and industry-standard performance tiering to bridge the 'Strategic Insight Gap'.
+
+## 2026-05-26 - [From Strategic Delivery to Secure Delivery]
+**Learning:** Strategic delivery metrics (DORA) and tactical health (CI/CD) provide a "Velocity and Stability" view, but ignore "Security Integrity". A high-velocity team that deploys critical vulnerabilities or exposed secrets is not "Elite"—it's "At Risk". True governance requires a "Secure Operational Health" view that elevates vulnerability management from a secondary tab to a primary dashboard signal.
+**Action:** Pivot the operational health architecture to include a "Security Health" score, ensuring that critical vulnerabilities block the "Success" status of a repository regardless of CI/CD state.
