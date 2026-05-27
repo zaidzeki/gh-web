@@ -236,6 +236,82 @@ def create_repo():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+def fetch_security_info(repo):
+    summary = {
+        "vulnerabilities": {"critical": 0, "high": 0, "medium": 0, "low": 0},
+        "secrets": {"open": 0},
+        "code_scanning": {"errors": 0, "warnings": 0}
+    }
+    alerts = []
+
+    # 1. Dependabot Alerts
+    try:
+        dep_alerts = repo.get_dependabot_alerts(state='open')
+        for alert in dep_alerts:
+            severity = str(alert.security_advisory.severity).lower()
+            if severity in summary["vulnerabilities"]:
+                summary["vulnerabilities"][severity] += 1
+
+            alerts.append({
+                "type": "dependabot",
+                "severity": severity,
+                "package": str(alert.security_vulnerability.package.name),
+                "fixed_in": str(alert.security_vulnerability.first_patched_version_identifier) if alert.security_vulnerability.first_patched_version_identifier else None,
+                "html_url": str(alert.html_url)
+            })
+    except Exception:
+        pass
+
+    # 2. Secret Scanning Alerts
+    try:
+        secret_alerts = repo.get_secret_scanning_alerts(state='open')
+        for alert in secret_alerts:
+            summary["secrets"]["open"] += 1
+            alerts.append({
+                "type": "secret",
+                "secret_type": str(alert.secret_type),
+                "html_url": str(alert.html_url)
+            })
+    except Exception:
+        pass
+
+    # 3. Code Scanning Alerts
+    try:
+        code_alerts = repo.get_codescan_alerts(state='open')
+        for alert in code_alerts:
+            severity = str(alert.rule.severity).lower()
+            if severity == 'error':
+                summary["code_scanning"]["errors"] += 1
+            elif severity in ['warning', 'note']:
+                summary["code_scanning"]["warnings"] += 1
+
+            alerts.append({
+                "type": "code_scanning",
+                "severity": severity,
+                "rule": str(alert.rule.description),
+                "html_url": str(alert.html_url)
+            })
+    except Exception:
+        pass
+
+    return summary, alerts
+
+@bp.route('/api/repos/<path:full_name>/security/alerts', methods=['GET'])
+def get_security_alerts(full_name):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = g.get_repo(full_name)
+        summary, alerts = fetch_security_info(repo)
+        return jsonify({
+            "summary": summary,
+            "alerts": alerts
+        }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/repos/health', methods=['GET'])
 def get_repos_health():
     g = get_github_client()
@@ -262,8 +338,28 @@ def get_repos_health():
             health = {
                 "full_name": full_name,
                 "ci_status": None,
-                "production_status": None
+                "production_status": None,
+                "security_status": "success",
+                "security_summary": None
             }
+
+            # 0. Security Status
+            try:
+                sec_summary, _ = fetch_security_info(repo)
+                health["security_summary"] = sec_summary
+
+                # Scoring Logic: failure for critical/high vulnerabilities or open secrets
+                if (sec_summary["vulnerabilities"]["critical"] > 0 or
+                    sec_summary["vulnerabilities"]["high"] > 0 or
+                    sec_summary["secrets"]["open"] > 0):
+                    health["security_status"] = "failure"
+                elif (sec_summary["vulnerabilities"]["medium"] > 0 or
+                      sec_summary["vulnerabilities"]["low"] > 0 or
+                      sec_summary["code_scanning"]["errors"] > 0 or
+                      sec_summary["code_scanning"]["warnings"] > 0):
+                    health["security_status"] = "warning"
+            except:
+                pass
 
             # 1. CI Status for default branch
             try:

@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshTaskInbox();
                 refreshPortfolioRoadmap();
                 refreshPortfolioPulse();
+                refreshPortfolioSecurity();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -279,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             allRepos = repos;
             renderRepoList(repos);
-            refreshRepoHealth(repos.map(r => r.full_name));
+            await refreshRepoHealth(repos.map(r => r.full_name));
             refreshRepoPulse(repos.map(r => r.full_name));
 
             // Update datalist for autosuggest
@@ -519,7 +520,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 badgesHtml += `<span class="badge bg-info text-dark ms-1 health-prod-badge" title="Production Ref: ${health.production_status.ref}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
                             }
 
-                            badgesContainer.querySelectorAll('.health-ci-badge, .health-ms-badge, .health-prod-badge').forEach(el => el.remove());
+                            if (health.security_status) {
+                                const secClass = health.security_status === 'failure' ? 'bg-danger' : (health.security_status === 'warning' ? 'bg-warning text-dark' : 'bg-success');
+                                const s = health.security_summary;
+                                const title = s ? `Security: ${s.vulnerabilities.critical} Crit, ${s.vulnerabilities.high} High, ${s.secrets.open} Secrets` : `Security Status: ${health.security_status}`;
+                                badgesHtml += `<span class="badge ${secClass} ms-1 health-sec-badge" title="${escapeHTML(title)}">🛡️</span>`;
+                            }
+
+                            badgesContainer.querySelectorAll('.health-ci-badge, .health-ms-badge, .health-prod-badge, .health-sec-badge').forEach(el => el.remove());
                             badgesContainer.insertAdjacentHTML('afterbegin', badgesHtml);
                         }
                     }
@@ -702,6 +710,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             refreshPortfolioPulse();
+            refreshPortfolioSecurity();
         } catch (error) {
             portfolioList.innerHTML = `<p class="text-danger p-3">Error: ${escapeHTML(error.message)}</p>`;
         }
@@ -783,6 +792,94 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const refreshPortfolioSecurity = async () => {
+        const container = document.getElementById('portfolioSecurityContainer');
+        const card = document.getElementById('portfolioSecurityCard');
+        if (!container || !card) return;
+
+        if (!lastPortfolioData || lastPortfolioData.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        const vulnerableRepos = lastPortfolioData.filter(repo => {
+            const health = healthDataCache[repo.full_name];
+            return health && (health.security_status === 'failure' || health.security_status === 'warning');
+        });
+
+        if (vulnerableRepos.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = 'block';
+        container.innerHTML = '';
+
+        vulnerableRepos.forEach(repo => {
+            const health = healthDataCache[repo.full_name];
+            const s = health.security_summary;
+            const col = document.createElement('div');
+            col.className = 'col';
+
+            const badgeClass = health.security_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark';
+
+            col.innerHTML = `
+                <div class="card h-100 shadow-sm border-0 security-repo-card" style="cursor: pointer;" data-repo="${escapeHTML(repo.full_name)}">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(repo.full_name)}">${escapeHTML(repo.full_name)}</h6>
+                            <span class="badge ${badgeClass}">🛡️ ${escapeHTML(health.security_status.toUpperCase())}</span>
+                        </div>
+                        <div class="row text-center g-1">
+                            <div class="col-4">
+                                <div class="fw-bold text-danger">${s.vulnerabilities.critical}</div>
+                                <div class="small text-muted" style="font-size: 0.6rem;">CRIT</div>
+                            </div>
+                            <div class="col-4 border-start">
+                                <div class="fw-bold text-warning">${s.vulnerabilities.high}</div>
+                                <div class="small text-muted" style="font-size: 0.6rem;">HIGH</div>
+                            </div>
+                            <div class="col-4 border-start">
+                                <div class="fw-bold ${s.secrets.open > 0 ? 'text-danger' : 'text-muted'}">${s.secrets.open}</div>
+                                <div class="small text-muted" style="font-size: 0.6rem;">SECRETS</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            col.querySelector('.security-repo-card').addEventListener('click', async () => {
+                try {
+                    await fetch('/api/workspace/activate', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({repo_name: repo.name})
+                    });
+                    bootstrap.Tab.getOrCreateInstance(document.getElementById('workspace-tab')).show();
+                    refreshExplorer();
+                } catch (e) {}
+            });
+
+            container.appendChild(col);
+        });
+    };
+
+    const refreshPortfolioSecurityBtn = document.getElementById('refreshPortfolioSecurityBtn');
+    if (refreshPortfolioSecurityBtn) {
+        refreshPortfolioSecurityBtn.addEventListener('click', async () => {
+            toggleLoading(refreshPortfolioSecurityBtn, true);
+            try {
+                const repoNames = lastPortfolioData ? lastPortfolioData.map(item => item.full_name).filter(Boolean) : [];
+                if (repoNames.length > 0) {
+                    await refreshRepoHealth(repoNames);
+                }
+                await refreshPortfolioSecurity();
+            } finally {
+                toggleLoading(refreshPortfolioSecurityBtn, false);
+            }
+        });
+    }
+
     const syncAllWorkspacesBtn = document.getElementById('syncAllWorkspacesBtn');
     if (syncAllWorkspacesBtn) {
         syncAllWorkspacesBtn.addEventListener('click', async () => {
@@ -837,12 +934,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.className = 'list-group-item d-flex justify-content-between align-items-center py-3';
 
-                const typeIcon = task.type === 'pr' ? '🌿' : '🎫';
+                const typeIcon = task.type === 'pr' ? '🌿' : (task.type === 'security_vulnerability' ? '🛡️' : '🎫');
                 const categoryBadge = task.category === 'review_requested' ?
                     '<span class="badge bg-danger">Action Required</span>' :
                     (task.category === 'assigned' ? '<span class="badge bg-primary">In Progress</span>' :
                     (task.category === 'waiting_deployment' ? '<span class="badge bg-warning text-dark">Waiting Deployment</span>' :
-                    (task.category === 'team_unassigned' ? '<span class="badge bg-info text-dark">Team Unassigned</span>' : '<span class="badge bg-secondary">My PR</span>')));
+                    (task.category === 'security_vulnerability' ? '<span class="badge bg-danger">Security Alert</span>' :
+                    (task.category === 'team_unassigned' ? '<span class="badge bg-info text-dark">Team Unassigned</span>' : '<span class="badge bg-secondary">My PR</span>'))));
 
                 let statusBadges = '';
                 if (task.ci_status) {
@@ -864,6 +962,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 let actionBtn = task.type === 'pr' ?
                     `<button class="btn btn-sm btn-outline-primary review-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Review</button>` :
                     `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
+
+                if (task.type === 'security_vulnerability') {
+                    actionBtn = `<button class="btn btn-sm btn-outline-danger fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Patch</button>`;
+                }
 
                 if (task.category === 'waiting_deployment') {
                     if (task.pending_run_id) {

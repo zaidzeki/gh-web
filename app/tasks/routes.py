@@ -19,7 +19,7 @@ def normalize(issue_or_pr, category):
 
     task = {
         "id": f"{repo_full_name}#{int(issue_or_pr.number)}",
-        "type": "pr" if is_pr else "issue",
+        "type": "security_vulnerability" if category == "security_vulnerability" else ("pr" if is_pr else "issue"),
         "category": category,
         "title": str(issue_or_pr.title),
         "repo": repo_full_name,
@@ -103,6 +103,9 @@ def list_tasks():
         ip_filter = f"is:open assignee:{login}"
         my_filter = f"is:pr is:open author:{login}"
         wd_filter = f"is:pr is:merged status:pending author:{login}"
+        # Security alerts filter - only include open dependabot alerts (issues with label:dependabot or type:security-advisory)
+        # Note: GitHub issues for dependabot usually have 'dependabot' label.
+        sec_filter = f"is:open label:dependabot"
 
         if milestone:
             ar_filter += f' milestone:"{milestone}"'
@@ -126,6 +129,7 @@ def list_tasks():
         in_progress = g.search_issues(ip_filter)[:20]
         my_prs = g.search_issues(my_filter)[:20]
         waiting_deployment = g.search_issues(wd_filter)[:20]
+        security_alerts = g.search_issues(sec_filter)[:20]
 
         team_unassigned = []
         if team_id and org_name:
@@ -193,6 +197,12 @@ def list_tasks():
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
                 tasks.append(normalize(item, "team_unassigned"))
+                task_ids.add(task_id)
+
+        for item in security_alerts:
+            task_id = f"{item.repository.full_name}#{item.number}"
+            if task_id not in task_ids:
+                tasks.append(normalize(item, "security_vulnerability"))
                 task_ids.add(task_id)
 
         # Sort by updated_at desc
