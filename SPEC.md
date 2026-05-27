@@ -119,6 +119,7 @@ These operations apply to the repository currently active in the server's worksp
 | `POST` | `/api/repos/<full_name>/issues/<n>/milestone` | Updates an issue/PR milestone assignment. |
 | `GET` | `/api/repos/<full_name>/pulse` | Returns DORA metrics for a repository. |
 | `GET` | `/api/workspace/portfolio/pulse` | Aggregates DORA metrics across active workspaces. |
+| `GET` | `/api/repos/<full_name>/security/alerts` | Returns Dependabot, Secret, and Code Scanning alerts. |
 
 ## 6. Frontend Structure
 
