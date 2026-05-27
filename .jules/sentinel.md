@@ -72,3 +72,13 @@
 **Vulnerability:** Lack of global request size limits (MAX_CONTENT_LENGTH) and slightly permissive CSP allowed for potential DoS and legacy plugin exploitation. Additionally, inconsistent JSON parsing in routes caused 415 errors instead of graceful validation failure.
 **Learning:** Security must be applied at multiple layers: global configuration (Flask limits), transport/header layer (CSP), and route-level resilience (silent JSON parsing). Relying only on per-field length checks is insufficient if the overall payload is too large.
 **Prevention:** Always set `MAX_CONTENT_LENGTH` in Flask to prevent large-payload DoS. Use `request.get_json(silent=True)` to allow routes to handle both JSON and form data robustly. Continually tighten CSP as legacy features (like plugins) are phased out.
+
+## 2026-05-18 - Prevention of Root Directory Deletion in Workspaces
+**Vulnerability:** The workspace file deletion endpoint allowed passing '.' or '/' as the target path. Since these paths resolved to the workspace root and were within the allowed base directory, the  check didn't block them, potentially allowing an attacker to delete the entire active workspace.
+**Learning:** General path safety utilities like  often only check if a path is *within* a boundary. Deletion operations require a stricter check to ensure the boundary itself (the root) cannot be deleted.
+**Prevention:** Explicitly reject deletion requests for paths that resolve to the current directory ('.') or the root directory ('/') before performing filesystem operations on the joined path.
+
+## 2026-05-18 - Prevention of Root Directory Deletion in Workspaces
+**Vulnerability:** The workspace file deletion endpoint allowed passing '.' or '/' as the target path. Since these paths resolved to the workspace root and were within the allowed base directory, the `is_safe_path` check didn't block them, potentially allowing an attacker to delete the entire active workspace.
+**Learning:** General path safety utilities like `is_safe_path` often only check if a path is *within* a boundary. Deletion operations require a stricter check to ensure the boundary itself (the root) cannot be deleted.
+**Prevention:** Explicitly reject deletion requests for paths that resolve to the current directory ('.') or the root directory ('/') before performing filesystem operations on the joined path.

@@ -576,6 +576,10 @@ def delete_workspace_file():
     if not target_rel_path:
         return jsonify({"error": "Path is required"}), 400
 
+    # Security: Prevent deletion of the entire workspace root
+    if target_rel_path in ['.', './', '', '/']:
+        return jsonify({"error": "Cannot delete workspace root"}), 400
+
     full_path = os.path.join(workspace_dir, target_rel_path)
     if not is_safe_path(workspace_dir, full_path):
         # Specific check for existing tests that expect 403 for .git
