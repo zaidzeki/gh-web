@@ -21,16 +21,21 @@ def list_releases(full_name):
     try:
         repo = g.get_repo(full_name)
         releases = repo.get_releases()
-        return jsonify([{
-            "id": r.id,
-            "tag_name": r.tag_name,
-            "name": r.title,
-            "body": r.body,
-            "draft": r.draft,
-            "prerelease": r.prerelease,
-            "html_url": r.html_url,
-            "published_at": r.published_at.isoformat() if r.published_at else None
-        } for r in releases]), 200
+        # Security Enhancement: Limit to first 100 items to prevent DoS/resource exhaustion
+        results = []
+        for i, r in enumerate(releases):
+            if i >= 100: break
+            results.append({
+                "id": r.id,
+                "tag_name": r.tag_name,
+                "name": r.title,
+                "body": r.body,
+                "draft": r.draft,
+                "prerelease": r.prerelease,
+                "html_url": r.html_url,
+                "published_at": r.published_at.isoformat() if r.published_at else None
+            })
+        return jsonify(results), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 

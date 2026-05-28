@@ -70,7 +70,9 @@ def list_issues(full_name):
         repo = g.get_repo(full_name)
         # get_issues returns both issues and PRs by default
         issues = repo.get_issues(state=state)
+        # Security Enhancement: Limit to first 100 items to prevent DoS/resource exhaustion
         results = []
+        count = 0
         for issue in issues:
             # GitHub API returns PRs as issues, but they have a 'pull_request' attribute
             if issue.pull_request is None:
@@ -83,6 +85,8 @@ def list_issues(full_name):
                     "created_at": issue.created_at.isoformat() if issue.created_at else None,
                     "labels": [{"name": l.name, "color": l.color} for l in issue.labels]
                 })
+                count += 1
+                if count >= 100: break
         return jsonify(results), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

@@ -31,8 +31,10 @@ def list_milestones(full_name):
     try:
         repo = g.get_repo(full_name)
         milestones = repo.get_milestones(state=state)
+        # Security Enhancement: Limit to first 100 items to prevent DoS/resource exhaustion
         results = []
-        for ms in milestones:
+        for i, ms in enumerate(milestones):
+            if i >= 100: break
             results.append({
                 "number": int(ms.number),
                 "title": str(ms.title),

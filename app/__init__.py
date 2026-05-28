@@ -49,8 +49,10 @@ def create_app(test_config=None):
     def add_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-        # Tighten CSP: add frame-ancestors 'none' to prevent clickjacking, form-action 'self' to restrict form submissions, object-src 'none' to disable plugins, connect-src 'self' to restrict fetch/XHR, and base-uri 'none' to prevent base tag injection.
-        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://avatars.githubusercontent.com; frame-ancestors 'none'; form-action 'self'; object-src 'none'; connect-src 'self'; base-uri 'none';"
+        # Tighten CSP: add frame-ancestors 'none' to prevent clickjacking, form-action 'self' to restrict form submissions, object-src 'none' to disable plugins, connect-src 'self' to restrict fetch/XHR, and base-uri 'none' to prevent base tag injection. Also upgrade-insecure-requests.
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://avatars.githubusercontent.com; frame-ancestors 'none'; form-action 'self'; object-src 'none'; connect-src 'self'; base-uri 'none'; upgrade-insecure-requests;"
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        response.headers['Referrer-Policy'] = 'no-referrer-when-downgrade'
         return response
 
     @app.route('/')
