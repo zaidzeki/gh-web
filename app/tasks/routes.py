@@ -73,6 +73,7 @@ def list_tasks():
     team_slug = request.args.get('team_slug')
     team_id = request.args.get('team_id')
     milestone = request.args.get('milestone')
+    category_filter = request.args.get('category')
 
     # Security Enhancement: Input validation and length limits
     if org_name and len(org_name) > 100:
@@ -152,6 +153,15 @@ def list_tasks():
 
         tasks = []
         task_ids = set()
+
+        # If category_filter is set to security_vulnerability, only return those
+        if category_filter == 'security_vulnerability':
+            for item in security_alerts:
+                task_id = f"{item.repository.full_name}#{item.number}"
+                if task_id not in task_ids:
+                    tasks.append(normalize(item, "security_vulnerability"))
+                    task_ids.add(task_id)
+            return jsonify(tasks), 200
 
         for item in action_required:
             task = normalize(item, "review_requested")
