@@ -158,6 +158,71 @@ def setup_issue_fix():
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/workspace/setup-security-fix', methods=['POST'])
+def setup_security_fix():
+    g = get_github_client()
+    token = session.get('github_token')
+    if not g or not token:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json() or request.form
+    repo_full_name = data.get('repo_full_name')
+    alert_number = data.get('alert_number')
+
+    if not repo_full_name or not alert_number:
+        return jsonify({"error": "repo_full_name and alert_number are required"}), 400
+
+    repo_name = repo_full_name.split('/')[-1]
+    workspace_dir = get_workspace_dir(repo_name)
+
+    try:
+        if not os.path.exists(os.path.join(workspace_dir, '.git')):
+            auth_url = f"https://{token}@github.com/{repo_full_name}.git"
+            repo = git.Repo.clone_from(auth_url, workspace_dir)
+        else:
+            repo = git.Repo(workspace_dir)
+
+        origin = repo.remote('origin')
+        if 'github.com' in origin.url:
+            clean_url = re.sub(r'https://.*@github\.com/', 'https://github.com/', origin.url)
+            auth_url = clean_url.replace('https://github.com/', f'https://{token}@github.com/')
+            if auth_url != origin.url:
+                origin.set_url(auth_url)
+
+        origin.fetch()
+        gh_repo = g.get_repo(repo_full_name)
+        alert = gh_repo.get_dependabot_alert(int(alert_number))
+
+        # We use a similar naming convention for the branch
+        fix_branch = f"fix/dependabot-alert-{alert_number}"
+        default_branch = gh_repo.default_branch
+
+        try:
+            repo.git.checkout(fix_branch, '--')
+            msg = f"Switched to existing patch branch '{fix_branch}'"
+        except git.GitCommandError:
+            repo.git.checkout('-B', fix_branch, f"origin/{default_branch}", '--')
+            msg = f"Created patch branch '{fix_branch}' for Dependabot alert #{alert_number}"
+
+        session['active_repo'] = repo_name
+        if 'active_issues' not in session:
+            session['active_issues'] = {}
+        session['active_issues'][repo_name] = {
+            "number": alert_number,
+            "title": f"Security Patch: {alert.security_vulnerability.package.name}",
+            "default_branch": default_branch,
+            "repo_full_name": repo_full_name,
+            "is_pr": False
+        }
+
+        return jsonify({
+            "message": msg,
+            "branch": fix_branch,
+            "path": workspace_dir
+        }), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/download', methods=['POST'])
 def download_repo():
     g = get_github_client()

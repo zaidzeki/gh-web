@@ -821,6 +821,43 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.display = 'block';
         container.innerHTML = '';
 
+        // Calculate aggregated totals
+        let totalCrit = 0;
+        let totalHigh = 0;
+        let totalSecrets = 0;
+
+        vulnerableRepos.forEach(repo => {
+            const health = healthDataCache[repo.full_name];
+            if (health && health.security_summary) {
+                totalCrit += health.security_summary.vulnerabilities.critical || 0;
+                totalHigh += health.security_summary.vulnerabilities.high || 0;
+                totalSecrets += health.security_summary.secrets.open || 0;
+            }
+        });
+
+        // Add summary header
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'col-12 mb-3';
+        summaryDiv.innerHTML = `
+            <div class="alert alert-danger d-flex justify-content-around align-items-center py-2 mb-0 shadow-sm">
+                <div class="text-center">
+                    <div class="h4 mb-0 fw-bold">${totalCrit}</div>
+                    <small class="text-uppercase fw-bold" style="font-size: 0.7rem;">Critical</small>
+                </div>
+                <div class="vr"></div>
+                <div class="text-center">
+                    <div class="h4 mb-0 fw-bold text-warning">${totalHigh}</div>
+                    <small class="text-uppercase fw-bold text-muted" style="font-size: 0.7rem;">High Risk</small>
+                </div>
+                <div class="vr"></div>
+                <div class="text-center">
+                    <div class="h4 mb-0 fw-bold">${totalSecrets}</div>
+                    <small class="text-uppercase fw-bold text-muted" style="font-size: 0.7rem;">Secrets</small>
+                </div>
+            </div>
+        `;
+        container.appendChild(summaryDiv);
+
         vulnerableRepos.forEach(repo => {
             const health = healthDataCache[repo.full_name];
             if (!health || !health.security_status) return;
@@ -926,6 +963,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (milestoneFilter && milestoneFilter.value) {
                 params.set('milestone', milestoneFilter.value);
             }
+            const securityToggle = document.getElementById('securityOnlyToggle');
+            if (securityToggle && securityToggle.checked) {
+                params.set('category', 'security_vulnerability');
+            }
 
             const url = params.toString() ? `/api/tasks?${params.toString()}` : '/api/tasks';
             const response = await fetch(url);
@@ -1021,15 +1062,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             inbox.querySelectorAll('.fix-task-btn').forEach(btn => {
                 btn.addEventListener('click', async () => {
+                    const isPatch = btn.textContent.trim() === 'Patch';
                     toggleLoading(btn, true);
                     try {
-                        const resp = await fetch('/api/workspace/setup-issue-fix', {
+                        const endpoint = isPatch ? '/api/workspace/setup-security-fix' : '/api/workspace/setup-issue-fix';
+                        const payload = isPatch ? {
+                            repo_full_name: btn.dataset.repo,
+                            alert_number: btn.dataset.number
+                        } : {
+                            repo_full_name: btn.dataset.repo,
+                            issue_number: btn.dataset.number
+                        };
+
+                        const resp = await fetch(endpoint, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                repo_full_name: btn.dataset.repo,
-                                issue_number: btn.dataset.number
-                            })
+                            body: JSON.stringify(payload)
                         });
                         const res = await resp.json();
                         if (resp.ok) {
@@ -1243,6 +1291,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskMilestoneFilter = document.getElementById('taskMilestoneFilter');
     if (taskMilestoneFilter) {
         taskMilestoneFilter.addEventListener('change', () => {
+            refreshTaskInbox();
+        });
+    }
+
+    const securityOnlyToggle = document.getElementById('securityOnlyToggle');
+    if (securityOnlyToggle) {
+        securityOnlyToggle.addEventListener('change', () => {
             refreshTaskInbox();
         });
     }
@@ -3238,7 +3293,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 <div class="d-flex gap-1">
                                     <a href="${escapeHTML(alert.html_url)}" target="_blank" class="btn btn-sm btn-outline-secondary">View on GitHub</a>
-                                    ${alert.type === 'dependabot' ? `<button class="btn btn-sm btn-outline-success patch-security-btn" data-repo="${escapeHTML(repoFullName)}" data-package="${escapeHTML(alert.package)}">Patch</button>` : ''}
+                                    ${alert.type === 'dependabot' ? `<button class="btn btn-sm btn-outline-success patch-security-btn" data-repo="${escapeHTML(repoFullName)}" data-number="${alert.number}" data-package="${escapeHTML(alert.package)}">Patch</button>` : ''}
                                 </div>
                             </div>
                         `;
@@ -3246,13 +3301,31 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     listEl.querySelectorAll('.patch-security-btn').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            modal.hide();
-                            // Redirect to task inbox or auto-trigger fix logic?
-                            // For Atlas vision, we prioritize the Task Inbox for remediation.
-                            const taskTab = document.getElementById('dashboard-tab');
-                            bootstrap.Tab.getOrCreateInstance(taskTab).show();
-                            showAlert(`Locate the security task for ${btn.dataset.package} in the Task Inbox to start a fix.`);
+                        btn.addEventListener('click', async () => {
+                            toggleLoading(btn, true);
+                            try {
+                                const response = await fetch('/api/workspace/setup-security-fix', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        repo_full_name: btn.dataset.repo,
+                                        alert_number: btn.dataset.number
+                                    })
+                                });
+                                const result = await response.json();
+                                if (response.ok) {
+                                    modal.hide();
+                                    showAlert(result.message);
+                                    bootstrap.Tab.getOrCreateInstance(document.getElementById('workspace-tab')).show();
+                                    refreshExplorer();
+                                } else {
+                                    showAlert(result.error, 'danger');
+                                }
+                            } catch (err) {
+                                showAlert(err.message, 'danger');
+                            } finally {
+                                toggleLoading(btn, false);
+                            }
                         });
                     });
                 }

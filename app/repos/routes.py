@@ -254,6 +254,7 @@ def fetch_security_info(repo):
 
             alerts.append({
                 "type": "dependabot",
+                "number": int(alert.number),
                 "severity": severity,
                 "package": str(alert.security_vulnerability.package.name),
                 "fixed_in": str(alert.security_vulnerability.first_patched_version_identifier) if alert.security_vulnerability.first_patched_version_identifier else None,
