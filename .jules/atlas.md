@@ -73,3 +73,7 @@
 ## 2026-05-26 - [From Strategic Delivery to Secure Delivery]
 **Learning:** Strategic delivery metrics (DORA) and tactical health (CI/CD) provide a "Velocity and Stability" view, but ignore "Security Integrity". A high-velocity team that deploys critical vulnerabilities or exposed secrets is not "Elite"—it's "At Risk". True governance requires a "Secure Operational Health" view that elevates vulnerability management from a secondary tab to a primary dashboard signal.
 **Action:** Pivot the operational health architecture to include a "Security Health" score, ensuring that critical vulnerabilities block the "Success" status of a repository regardless of CI/CD state.
+
+## 2026-05-27 - [Transparency vs. Visibility]
+**Learning:** Surfacing a "shield" badge for security health provides *visibility*, but without a way to inspect the underlying alerts, it creates "Action Paralysis." Users see a red badge but don't know if they are facing a catastrophic secret leak or a low-risk dependency update. High-trust governance requires *transparency*—the ability to drill down into the "why" behind the status.
+**Action:** Implement a Security Alert Explorer to transform abstract health scores into actionable remediation tasks.
