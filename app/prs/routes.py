@@ -27,17 +27,22 @@ def list_prs(full_name):
     try:
         repo = g.get_repo(full_name)
         prs = repo.get_pulls(state=state)
-        return jsonify([{
-            "number": pr.number,
-            "title": pr.title,
-            "state": pr.state,
-            "html_url": pr.html_url,
-            "user": pr.user.login,
-            "head_repo_full_name": pr.head.repo.full_name if pr.head.repo else None,
-            "head_branch": pr.head.ref,
-            "can_push": pr.head.repo.permissions.push if pr.head.repo else False,
-            "labels": [{"name": l.name, "color": l.color} for l in pr.labels]
-        } for pr in prs]), 200
+        # Security Enhancement: Limit to first 100 items to prevent DoS/resource exhaustion
+        results = []
+        for i, pr in enumerate(prs):
+            if i >= 100: break
+            results.append({
+                "number": pr.number,
+                "title": pr.title,
+                "state": pr.state,
+                "html_url": pr.html_url,
+                "user": pr.user.login,
+                "head_repo_full_name": pr.head.repo.full_name if pr.head.repo else None,
+                "head_branch": pr.head.ref,
+                "can_push": pr.head.repo.permissions.push if pr.head.repo else False,
+                "labels": [{"name": l.name, "color": l.color} for l in pr.labels]
+            })
+        return jsonify(results), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 

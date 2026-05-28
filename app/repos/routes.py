@@ -46,6 +46,10 @@ def list_orgs():
 
 @bp.route('/api/user/orgs/<org_name>/teams', methods=['GET'])
 def list_teams(org_name):
+    # Security Enhancement: Input validation for org_name
+    if org_name and len(org_name) > 100:
+        return jsonify({"error": "org_name is too long"}), 400
+
     g = get_github_client()
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
