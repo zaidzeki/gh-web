@@ -131,12 +131,16 @@
     - [x] Add CI status badges to Portfolio cards on Dashboard.
     - [x] Implement client-side Health Filtering on Dashboard (Failing, Pending, Modified).
     - [x] Surface CI status indicator in Workspace tab header for active task.
-- [ ] **Epic: Security Governance & Vulnerability Management**
-    - [ ] Implement `GET /api/repos/<full_name>/security/alerts` for Dependabot, Secret, and Code scanning.
-    - [ ] Enrich `GET /api/repos/health` with `security_status`.
-    - [ ] Integrate critical security alerts into the Unified Task Inbox.
-    - [ ] Create security badges (🛡️) for Dashboard repository cards.
-    - [ ] Implement portfolio-wide security risk aggregation.
+- [x] **Epic: Security Governance & Vulnerability Management**
+    - [x] Implement `GET /api/repos/<full_name>/security/alerts` for Dependabot, Secret, and Code scanning.
+    - [x] Enrich `GET /api/repos/health` with `security_status`.
+    - [x] Integrate critical security alerts into the Unified Task Inbox.
+    - [x] Create security badges (🛡️) for Dashboard repository cards.
+    - [x] Implement portfolio-wide security risk aggregation.
+- [ ] **Epic: Security Governance Phase 2: Transparency & Remediation**
+    - [ ] Implement Security Alert Explorer Modal for detailed vulnerability inspection.
+    - [ ] Integrate Alert Explorer with Dashboard security badges.
+    - [ ] Enable "Contextual Remediation" from the Alert Explorer (linking to GitHub or Fix flow).
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

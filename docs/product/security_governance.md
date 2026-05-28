@@ -31,6 +31,11 @@ In modern software development, "Delivery" is not complete unless it is **Secure
 - Aggregated counts of vulnerabilities across all active workspaces.
 - "At Risk" repository ranking based on alert severity and count.
 
+### 4.4. Phase 2: Security Alert Explorer & Transparency
+- **Detail View:** A modal interface to inspect the specific alerts (Dependabot, Secrets, Code Scanning) summarized by the badges.
+- **Remediation Hub:** Direct links to GitHub advisory pages and integration with the "Fix" flow for automated patching.
+- **Contextual Awareness:** Clicking a security badge on any repo card opens the explorer for that specific repo.
+
 ## 5. Acceptance Criteria
 - [ ] Backend API `GET /api/repos/<full_name>/security/alerts` returns Dependabot, Secret Scanning, and Code Scanning alerts.
 - [ ] Repository cards on the Dashboard display color-coded security badges.

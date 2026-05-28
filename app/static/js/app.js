@@ -523,12 +523,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (health.security_status) {
                                 const secClass = health.security_status === 'failure' ? 'bg-danger' : (health.security_status === 'warning' ? 'bg-warning text-dark' : 'bg-success');
                                 const s = health.security_summary;
-                                const title = s ? `Security: ${s.vulnerabilities.critical} Crit, ${s.vulnerabilities.high} High, ${s.secrets.open} Secrets` : `Security Status: ${health.security_status}`;
-                                badgesHtml += `<span class="badge ${secClass} ms-1 health-sec-badge" title="${escapeHTML(title)}">🛡️</span>`;
+                                const title = s ? `Security: ${s.vulnerabilities.critical} Crit, ${s.vulnerabilities.high} High, ${s.secrets.open} Secrets. Click to explore.` : `Security Status: ${health.security_status}. Click to explore.`;
+                                badgesHtml += `<span class="badge ${secClass} ms-1 health-sec-badge" style="cursor: pointer;" title="${escapeHTML(title)}" data-repo="${escapeHTML(repoName)}">🛡️</span>`;
                             }
 
                             badgesContainer.querySelectorAll('.health-ci-badge, .health-ms-badge, .health-prod-badge, .health-sec-badge').forEach(el => el.remove());
                             badgesContainer.insertAdjacentHTML('afterbegin', badgesHtml);
+                            badgesContainer.querySelectorAll('.health-sec-badge').forEach(badge => {
+                                badge.addEventListener('click', (e) => {
+                                    e.stopPropagation();
+                                    openSecurityExplorer(badge.dataset.repo);
+                                });
+                            });
                         }
                     }
                 });
@@ -817,7 +823,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         vulnerableRepos.forEach(repo => {
             const health = healthDataCache[repo.full_name];
-            const s = health.security_summary;
+            if (!health || !health.security_status) return;
+            const s = health.security_summary || { vulnerabilities: { critical: 0, high: 0 }, secrets: { open: 0 } };
             const col = document.createElement('div');
             col.className = 'col';
 
@@ -828,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(repo.full_name)}">${escapeHTML(repo.full_name)}</h6>
-                            <span class="badge ${badgeClass}">🛡️ ${escapeHTML(health.security_status.toUpperCase())}</span>
+                            <span class="badge ${badgeClass} security-explorer-trigger" style="cursor: pointer;" data-repo="${escapeHTML(repo.full_name)}" title="Explore alerts">🛡️ ${escapeHTML(health.security_status.toUpperCase())}</span>
                         </div>
                         <div class="row text-center g-1">
                             <div class="col-4">
@@ -847,6 +854,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
+
+            col.querySelector('.security-explorer-trigger').addEventListener('click', (e) => {
+                e.stopPropagation();
+                openSecurityExplorer(repo.full_name);
+            });
 
             col.querySelector('.security-repo-card').addEventListener('click', async () => {
                 try {
@@ -3153,6 +3165,102 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             select.innerHTML = '<option value="">No Milestone (Clear)</option><option disabled>Error loading milestones</option>';
+        }
+    };
+
+    const openSecurityExplorer = async (repoFullName) => {
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('securityAlertsModal'));
+        const nameEl = document.getElementById('securityAlertsRepoName');
+        const summaryEl = document.getElementById('securityAlertsSummary');
+        const listEl = document.getElementById('securityAlertsList');
+
+        nameEl.textContent = repoFullName;
+        summaryEl.innerHTML = '';
+        listEl.innerHTML = `
+            <div class="text-center p-4">
+                <span class="spinner-border text-danger" role="status"></span>
+                <p class="mt-2 text-muted">Fetching detailed alerts for ${escapeHTML(repoFullName)}...</p>
+            </div>
+        `;
+
+        modal.show();
+
+        try {
+            const response = await fetch(`/api/repos/${repoFullName}/security/alerts`);
+            const data = await response.json();
+
+            if (response.ok) {
+                const s = data.summary;
+                summaryEl.innerHTML = `
+                    <span class="badge bg-danger">${s.vulnerabilities.critical} Critical</span>
+                    <span class="badge bg-warning text-dark">${s.vulnerabilities.high} High</span>
+                    <span class="badge bg-dark">${s.secrets.open} Secrets</span>
+                    <span class="badge bg-secondary">${s.code_scanning.errors} Code Errors</span>
+                `;
+
+                listEl.innerHTML = '';
+                if (data.alerts.length === 0) {
+                    listEl.innerHTML = '<div class="p-4 text-center text-muted">No active security alerts found.</div>';
+                } else {
+                    data.alerts.forEach(alert => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item';
+
+                        let icon = '🛡️';
+                        let badgeClass = 'bg-secondary';
+                        let detail = '';
+
+                        if (alert.type === 'dependabot') {
+                            icon = '📦';
+                            badgeClass = alert.severity === 'critical' ? 'bg-danger' : (alert.severity === 'high' ? 'bg-warning text-dark' : 'bg-info text-dark');
+                            detail = `Vulnerability in <strong>${escapeHTML(alert.package)}</strong>${alert.fixed_in ? `. Fixed in <strong>${escapeHTML(alert.fixed_in)}</strong>` : ''}`;
+                        } else if (alert.type === 'secret') {
+                            icon = '🔑';
+                            badgeClass = 'bg-danger';
+                            detail = `Exposed secret detected: <strong>${escapeHTML(alert.secret_type)}</strong>`;
+                        } else if (alert.type === 'code_scanning') {
+                            icon = '🔍';
+                            badgeClass = alert.severity === 'error' ? 'bg-danger' : 'bg-warning text-dark';
+                            detail = `Code Scanning issue: <strong>${escapeHTML(alert.rule)}</strong>`;
+                        }
+
+                        item.innerHTML = `
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex gap-2">
+                                    <span class="fs-5">${icon}</span>
+                                    <div>
+                                        <div class="mb-1">
+                                            <span class="badge ${badgeClass} small">${escapeHTML((alert.severity || alert.type).toUpperCase())}</span>
+                                            <span class="text-muted small ms-1">${escapeHTML(alert.type)}</span>
+                                        </div>
+                                        <div class="small">${detail}</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <a href="${escapeHTML(alert.html_url)}" target="_blank" class="btn btn-sm btn-outline-secondary">View on GitHub</a>
+                                    ${alert.type === 'dependabot' ? `<button class="btn btn-sm btn-outline-success patch-security-btn" data-repo="${escapeHTML(repoFullName)}" data-package="${escapeHTML(alert.package)}">Patch</button>` : ''}
+                                </div>
+                            </div>
+                        `;
+                        listEl.appendChild(item);
+                    });
+
+                    listEl.querySelectorAll('.patch-security-btn').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            modal.hide();
+                            // Redirect to task inbox or auto-trigger fix logic?
+                            // For Atlas vision, we prioritize the Task Inbox for remediation.
+                            const taskTab = document.getElementById('dashboard-tab');
+                            bootstrap.Tab.getOrCreateInstance(taskTab).show();
+                            showAlert(`Locate the security task for ${btn.dataset.package} in the Task Inbox to start a fix.`);
+                        });
+                    });
+                }
+            } else {
+                listEl.innerHTML = `<div class="p-4 text-danger text-center">Error: ${escapeHTML(data.error)}</div>`;
+            }
+        } catch (error) {
+            listEl.innerHTML = `<div class="p-4 text-danger text-center">Error: ${escapeHTML(error.message)}</div>`;
         }
     };
 

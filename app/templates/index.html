@@ -938,6 +938,33 @@
         </div>
     </div>
 
+    <!-- Security Alerts Explorer Modal -->
+    <div class="modal fade" id="securityAlertsModal" tabindex="-1" aria-labelledby="securityAlertsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-danger bg-danger text-white">
+                    <h5 class="modal-title" id="securityAlertsModalLabel">Security Alert Explorer</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div id="securityAlertsRepoInfo" class="p-3 bg-light border-bottom">
+                        <h6 id="securityAlertsRepoName" class="mb-1"></h6>
+                        <div id="securityAlertsSummary" class="d-flex gap-2"></div>
+                    </div>
+                    <div id="securityAlertsList" class="list-group list-group-flush" style="max-height: 500px; overflow-y: auto;">
+                        <div class="text-center p-4">
+                            <span class="spinner-border text-danger" role="status"></span>
+                            <p class="mt-2 text-muted">Scanning for vulnerabilities...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Assign Milestone Modal -->
     <div class="modal fade" id="assignMilestoneModal" tabindex="-1" aria-labelledby="assignMilestoneModalLabel" aria-hidden="true">
         <div class="modal-dialog">
