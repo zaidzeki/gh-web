@@ -87,12 +87,13 @@ def test_list_tasks_with_team(mock_github, client):
     mock_issue.updated_at = None
     mock_issue.milestone = None
 
-    # Mocking 4 calls to search_issues (Review Requests, In Progress, My PRs, Waiting Deployment)
+    # Mocking calls to search_issues (Review Requests, In Progress, My PRs, Waiting Deployment, Security Alerts)
     mock_g.search_issues.side_effect = [
         [mock_issue], # Action Required
         [], # In Progress
         [], # My PRs
-        []  # Waiting Deployment
+        [], # Waiting Deployment
+        []  # Security Alerts
     ]
 
     response = client.get("/api/tasks?org_name=test-org&team_slug=test-team")

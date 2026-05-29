@@ -137,10 +137,22 @@
     - [x] Integrate critical security alerts into the Unified Task Inbox.
     - [x] Create security badges (🛡️) for Dashboard repository cards.
     - [x] Implement portfolio-wide security risk aggregation.
-- [ ] **Epic: Security Governance Phase 2: Transparency & Remediation**
-    - [ ] Implement Security Alert Explorer Modal for detailed vulnerability inspection.
-    - [ ] Integrate Alert Explorer with Dashboard security badges.
-    - [ ] Enable "Contextual Remediation" from the Alert Explorer (linking to GitHub or Fix flow).
+- [x] **Epic: Security Governance Phase 2: Transparency & Remediation**
+    - [x] Implement Security Alert Explorer Modal for detailed vulnerability inspection.
+    - [x] Integrate Alert Explorer with Dashboard security badges.
+    - [x] Enable "Contextual Remediation" from the Alert Explorer (linking to GitHub or Fix flow).
+- [ ] **Epic: Security Governance Phase 3: Proactive Guardrails**
+    - [ ] Implement "Security Policy" engine (e.g. blocking merges/releases based on severity).
+    - [ ] Add security risk level to Portfolio Pulse.
+    - [ ] Integrate Code Scanning results into the Workspace Editor (inline warnings).
+
+- [ ] **Epic: Release Asset Orchestration & Artifact Governance**
+    - [ ] Implement `POST /api/repos/.../releases/<id>/assets` for workspace-to-release upload.
+    - [ ] Implement `GET /api/repos/.../releases/<id>/assets` for asset discovery.
+    - [ ] Implement `DELETE /api/repos/.../releases/assets/<id>` for asset removal.
+    - [ ] Create Asset Management modal in the Releases tab.
+    - [ ] Implement Workspace File Picker for asset selection.
+    - [ ] Add "Asset Count" indicators to the Release list.
 
 ## P2: Feature
 - [x] Create Frontend UI (Jinja2 templates, JS).

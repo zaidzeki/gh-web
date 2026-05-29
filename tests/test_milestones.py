@@ -103,4 +103,7 @@ def test_list_tasks_with_milestone_filter(mock_auth, mock_github, client):
 
     # Verify that milestone is included in search queries
     for call in mock_g.search_issues.call_args_list:
-        assert 'milestone:"v1.0"' in call[0][0]
+        query = call[0][0]
+        if 'label:dependabot' in query:
+            continue
+        assert 'milestone:"v1.0"' in query
