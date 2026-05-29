@@ -82,3 +82,8 @@
 **Vulnerability:** The workspace file deletion endpoint allowed passing '.' or '/' as the target path. Since these paths resolved to the workspace root and were within the allowed base directory, the `is_safe_path` check didn't block them, potentially allowing an attacker to delete the entire active workspace.
 **Learning:** General path safety utilities like `is_safe_path` often only check if a path is *within* a boundary. Deletion operations require a stricter check to ensure the boundary itself (the root) cannot be deleted.
 **Prevention:** Explicitly reject deletion requests for paths that resolve to the current directory ('.') or the root directory ('/') before performing filesystem operations on the joined path.
+
+## 2026-06-10 - Root Deletion Bypass via Path Traversal Sequences
+**Vulnerability:** The workspace deletion safeguard only checked for literal strings like '.' or '/'. An attacker could bypass this by using sequences like 'sub/..', which os.path.join appends literally, but shutil.rmtree treats as a traversal that resolves to the root, leading to the deletion of the entire workspace.
+**Learning:** String-based blacklists for paths are ineffective against relative traversal sequences. shutil.rmtree is particularly dangerous as it may start deleting contents before resolving the final path components or failing.
+**Prevention:** Always normalize user-provided paths using os.path.normpath BEFORE performing equality checks against forbidden boundaries or roots.

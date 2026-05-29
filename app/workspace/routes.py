@@ -616,10 +616,16 @@ def delete_workspace_file():
         return jsonify({"error": "Path is required"}), 400
 
     # Security: Prevent deletion of the entire workspace root
-    if target_rel_path in ['.', './', '', '/']:
+    # Use normpath to handle sequences like 'sub/..'
+    normalized_rel_path = os.path.normpath(target_rel_path)
+    if normalized_rel_path in ['.', './', '', '/']:
         return jsonify({"error": "Cannot delete workspace root"}), 400
 
     full_path = os.path.join(workspace_dir, target_rel_path)
+    # Also check if normalized full path is the same as workspace root
+    if os.path.normpath(full_path) == os.path.normpath(workspace_dir):
+        return jsonify({"error": "Cannot delete workspace root"}), 400
+
     if not is_safe_path(workspace_dir, full_path):
         # Specific check for existing tests that expect 403 for .git
         rel_path = os.path.relpath(os.path.realpath(full_path), os.path.realpath(workspace_dir))
