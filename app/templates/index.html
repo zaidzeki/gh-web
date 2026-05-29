@@ -942,6 +942,54 @@
         </div>
     </div>
 
+    <!-- Release Assets Modal -->
+    <div class="modal fade" id="releaseAssetsModal" tabindex="-1" aria-labelledby="releaseAssetsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-primary bg-primary text-white">
+                    <h5 class="modal-title" id="releaseAssetsModalLabel">Release Asset Management</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="releaseInfo" class="mb-3">
+                        <h6 id="assetModalReleaseName"></h6>
+                        <small id="assetModalRepoName" class="text-muted"></small>
+                    </div>
+
+                    <h6>Attached Assets</h6>
+                    <div id="releaseAssetsList" class="list-group mb-4">
+                        <!-- Assets populated via JS -->
+                    </div>
+
+                    <hr>
+                    <h6>Upload from Workspace</h6>
+                    <form id="uploadAssetForm">
+                        <input type="hidden" id="assetReleaseId">
+                        <div class="mb-3">
+                            <label for="assetWorkspacePath" class="form-label">Workspace File Path (Relative)</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="assetWorkspacePath" name="workspace_path" placeholder="dist/app.zip" required>
+                                <button class="btn btn-outline-secondary" type="button" id="pickWorkspaceAssetBtn">Pick File</button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="assetName" class="form-label">Asset Name (Optional)</label>
+                            <input type="text" class="form-control" id="assetName" name="name" placeholder="app-v1.0.0.zip">
+                        </div>
+                        <div class="mb-3">
+                            <label for="assetLabel" class="form-label">Label (Optional)</label>
+                            <input type="text" class="form-control" id="assetLabel" name="label" placeholder="Release Binary">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="confirmUploadAssetBtn">Upload Asset</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Security Alerts Explorer Modal -->
     <div class="modal fade" id="securityAlertsModal" tabindex="-1" aria-labelledby="securityAlertsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">

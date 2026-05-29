@@ -1,6 +1,8 @@
+import os
+import mimetypes
 from flask import Blueprint, request, session, jsonify
 from github import Github, Auth
-from ..workspace.utils import mask_token
+from ..workspace.utils import mask_token, get_workspace_dir, is_safe_path
 
 bp = Blueprint('releases', __name__)
 
@@ -25,6 +27,13 @@ def list_releases(full_name):
         results = []
         for i, r in enumerate(releases):
             if i >= 100: break
+
+            # Use pre-fetched assets attribute to avoid N+1 API calls
+            try:
+                assets_count = len(r.assets)
+            except Exception:
+                assets_count = 0
+
             results.append({
                 "id": r.id,
                 "tag_name": r.tag_name,
@@ -33,9 +42,106 @@ def list_releases(full_name):
                 "draft": r.draft,
                 "prerelease": r.prerelease,
                 "html_url": r.html_url,
-                "published_at": r.published_at.isoformat() if r.published_at else None
+                "published_at": r.published_at.isoformat() if r.published_at else None,
+                "assets_count": assets_count
             })
         return jsonify(results), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/releases/<int:release_id>/assets', methods=['GET'])
+def list_release_assets(full_name, release_id):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = g.get_repo(full_name)
+        release = repo.get_release(release_id)
+        assets = release.get_assets()
+
+        results = []
+        for i, a in enumerate(assets):
+            if i >= 100: break
+            results.append({
+                "id": a.id,
+                "name": a.name,
+                "label": a.label,
+                "size": a.size,
+                "download_count": a.download_count,
+                "created_at": a.created_at.isoformat(),
+                "browser_download_url": a.browser_download_url
+            })
+        return jsonify(results), 200
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/releases/<int:release_id>/assets', methods=['POST'])
+def upload_release_asset(full_name, release_id):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or request.form
+    workspace_path = data.get('workspace_path')
+    name = data.get('name')
+    label = data.get('label', '')
+
+    if not workspace_path:
+        return jsonify({"error": "workspace_path is required"}), 400
+
+    repo_name = full_name.split('/')[-1]
+    try:
+        workspace_dir = get_workspace_dir(repo_name)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    full_path = os.path.join(workspace_dir, workspace_path)
+    if not is_safe_path(workspace_dir, full_path) or not os.path.isfile(full_path):
+        return jsonify({"error": "Invalid workspace file path"}), 400
+
+    if not name:
+        name = os.path.basename(full_path)
+
+    try:
+        repo = g.get_repo(full_name)
+        release = repo.get_release(release_id)
+
+        content_type, _ = mimetypes.guess_type(full_path)
+        if not content_type:
+            content_type = 'application/octet-stream'
+
+        # PyGithub's upload_asset takes the path and handles streaming
+        asset = release.upload_asset(
+            path=full_path,
+            label=label,
+            name=name,
+            content_type=content_type
+        )
+
+        return jsonify({
+            "message": "Asset uploaded successfully",
+            "id": asset.id,
+            "name": asset.name,
+            "browser_download_url": asset.browser_download_url
+        }), 201
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/repos/<path:full_name>/releases/assets/<int:asset_id>', methods=['DELETE'])
+def delete_release_asset(full_name, asset_id):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        repo = g.get_repo(full_name)
+        # GitReleaseAsset doesn't have a direct way to be deleted from repo object easily in PyGithub
+        # without first getting the release, but we can try to use raw API or just get the asset
+        # Actually PyGithub has repo.get_release_asset(id)
+        asset = repo.get_release_asset(asset_id)
+        asset.delete_asset()
+        return jsonify({"message": "Asset deleted successfully"}), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 

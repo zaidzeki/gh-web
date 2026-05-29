@@ -2492,18 +2492,139 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${badge}
                                 <a href="${escapeHTML(r.html_url)}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">${escapeHTML(r.name || r.tag_name)}</a>
                             </h6>
-                            <small class="text-muted font-monospace">${escapeHTML(r.tag_name)}</small>
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-sm btn-outline-info manage-assets-btn" data-id="${r.id}" data-name="${escapeHTML(r.name || r.tag_name)}" data-repo="${escapeHTML(repoFull)}">Assets (${r.assets_count})</button>
+                                <small class="text-muted font-monospace">${escapeHTML(r.tag_name)}</small>
+                            </div>
                         </div>
                         <p class="mb-1 small text-truncate" style="max-width: 90%;">${escapeHTML(r.body || 'No description provided.')}</p>
                         <small class="text-muted">${r.published_at ? new Date(r.published_at).toLocaleString() : 'Not published yet'}</small>
                     `;
                     list.appendChild(div);
                 });
+
+                list.querySelectorAll('.manage-assets-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        openReleaseAssets(btn.dataset.repo, btn.dataset.id, btn.dataset.name);
+                    });
+                });
             } catch (error) {
                 showAlert(error.message, 'danger');
             } finally {
                 toggleLoading(listBtn, false);
             }
+        });
+    }
+
+    const openReleaseAssets = async (repoFull, releaseId, releaseName) => {
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('releaseAssetsModal'));
+        document.getElementById('assetModalReleaseName').textContent = releaseName;
+        document.getElementById('assetModalRepoName').textContent = repoFull;
+        document.getElementById('assetReleaseId').value = releaseId;
+
+        refreshReleaseAssets(repoFull, releaseId);
+        modal.show();
+    };
+
+    const refreshReleaseAssets = async (repoFull, releaseId) => {
+        const listEl = document.getElementById('releaseAssetsList');
+        listEl.innerHTML = '<div class="text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+
+        try {
+            const response = await fetch(`/api/repos/${repoFull}/releases/${releaseId}/assets`);
+            const assets = await response.json();
+
+            if (response.ok) {
+                listEl.innerHTML = '';
+                if (assets.length === 0) {
+                    listEl.innerHTML = '<p class="text-muted p-2 mb-0">No assets attached to this release.</p>';
+                } else {
+                    assets.forEach(asset => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        const sizeKb = Math.round(asset.size / 1024);
+                        item.innerHTML = `
+                            <div class="text-truncate me-2">
+                                <div class="fw-bold small">${escapeHTML(asset.name)} ${asset.label ? `<span class="text-muted">(${escapeHTML(asset.label)})</span>` : ''}</div>
+                                <small class="text-muted">${sizeKb} KB | ${asset.download_count} downloads | Created ${timeAgo(asset.created_at)}</small>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <a href="${escapeHTML(asset.browser_download_url)}" target="_blank" class="btn btn-sm btn-outline-secondary">Download</a>
+                                <button class="btn btn-sm btn-outline-danger delete-asset-btn" data-id="${asset.id}">Delete</button>
+                            </div>
+                        `;
+                        listEl.appendChild(item);
+                    });
+
+                    listEl.querySelectorAll('.delete-asset-btn').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            if (!confirm('Are you sure you want to delete this asset?')) return;
+                            toggleLoading(btn, true);
+                            try {
+                                const resp = await fetch(`/api/repos/${repoFull}/releases/assets/${btn.dataset.id}`, {
+                                    method: 'DELETE'
+                                });
+                                const res = await resp.json();
+                                if (resp.ok) {
+                                    showAlert(res.message);
+                                    refreshReleaseAssets(repoFull, releaseId);
+                                } else {
+                                    showAlert(res.error, 'danger');
+                                }
+                            } catch (err) {
+                                showAlert(err.message, 'danger');
+                            } finally {
+                                toggleLoading(btn, false);
+                            }
+                        });
+                    });
+                }
+            } else {
+                listEl.innerHTML = `<p class="text-danger p-2 mb-0">Error: ${escapeHTML(assets.error)}</p>`;
+            }
+        } catch (error) {
+            listEl.innerHTML = `<p class="text-danger p-2 mb-0">Error: ${escapeHTML(error.message)}</p>`;
+        }
+    };
+
+    const uploadAssetForm = document.getElementById('uploadAssetForm');
+    if (uploadAssetForm) {
+        uploadAssetForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('confirmUploadAssetBtn');
+            const repoFull = document.getElementById('assetModalRepoName').textContent;
+            const releaseId = document.getElementById('assetReleaseId').value;
+
+            toggleLoading(submitBtn, true);
+            const formData = new URLSearchParams(new FormData(uploadAssetForm));
+            try {
+                const response = await fetch(`/api/repos/${repoFull}/releases/${releaseId}/assets`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert(result.message);
+                    uploadAssetForm.reset();
+                    refreshReleaseAssets(repoFull, releaseId);
+                } else {
+                    showAlert(result.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
+    const pickWorkspaceAssetBtn = document.getElementById('pickWorkspaceAssetBtn');
+    if (pickWorkspaceAssetBtn) {
+        pickWorkspaceAssetBtn.addEventListener('click', () => {
+            // Switch to Workspace tab and alert user
+            const workspaceTab = document.getElementById('workspace-tab');
+            bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+            showAlert('Pick a file from the explorer and copy its path back to the release asset form.', 'info');
         });
     }
 
