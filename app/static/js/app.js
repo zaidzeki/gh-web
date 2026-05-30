@@ -282,6 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderRepoList(repos);
             await refreshRepoHealth(repos.map(r => r.full_name));
             refreshRepoPulse(repos.map(r => r.full_name));
+            refreshRepoPolicy(repos.map(r => r.full_name));
 
             // Update datalist for autosuggest
             const datalist = document.getElementById('userReposList');
@@ -341,6 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="${repoAriaLabel}">
                             ${escapeHTML(repo.full_name)}
                         </h6>
+                        <span class="policy-badge ms-1"></span>
                         ${issueBadge}
                         ${prBadge}
                         <span class="health-badges ms-2"></span>
@@ -480,6 +482,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (e) {
                 console.error(`Failed to fetch pulse for ${repoName}:`, e);
+            }
+        });
+    };
+
+    const refreshRepoPolicy = async (repoNames) => {
+        if (!repoNames || repoNames.length === 0) return;
+        repoNames.forEach(async (repoName) => {
+            try {
+                const response = await fetch(`/api/repos/${repoName}/governance/policy`);
+                const data = await response.json();
+                if (response.ok) {
+                    const item = document.querySelector(`.repo-item[data-repo="${repoName}"]`);
+                    if (item) {
+                        const badgeContainer = item.querySelector('.policy-badge');
+                        if (badgeContainer) {
+                            const badgeClass = data.compliant ? 'bg-success' : 'bg-danger';
+                            const title = data.compliant ? 'Policy Compliant' : `Policy Violations: ${data.violations.map(v => v.message).join(', ')}`;
+                            badgeContainer.innerHTML = `<span class="badge ${badgeClass} small" title="${escapeHTML(title)}">POL</span>`;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error(`Failed to fetch policy for ${repoName}:`, e);
             }
         });
     };
@@ -776,6 +801,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderMetric('portfolioLead', m.lead_time_to_change_hours, pm.lead_time_to_change_hours, t.lead_time_to_change_hours);
                 renderMetric('portfolioCFR', m.change_failure_rate_percent, pm.change_failure_rate_percent, t.change_failure_rate_percent, '%');
                 renderMetric('portfolioRestore', m.time_to_restore_hours, pm.time_to_restore_hours, t.time_to_restore_hours);
+                renderMetric('portfolioMTTR', m.security_mttr_hours, pm.security_mttr_hours, t.security_mttr_hours);
+                renderMetric('portfolioFreshness', m.dependency_freshness_index, null, null, '%');
             }
         } catch (e) {
             console.error('Failed to fetch portfolio pulse:', e);
@@ -2296,10 +2323,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             toggleLoading(listPrsBtn, true);
             try {
-                const response = await fetch(`/api/repos/${repoFull}/prs?state=${state}`);
-                const prs = await response.json();
+                const [prResponse, policyResponse] = await Promise.all([
+                    fetch(`/api/repos/${repoFull}/prs?state=${state}`),
+                    fetch(`/api/repos/${repoFull}/governance/policy`)
+                ]);
+                const prs = await prResponse.json();
+                const policy = await policyResponse.json();
 
-                if (!response.ok) {
+                if (!prResponse.ok) {
                     showAlert(prs.error || 'Failed to fetch PRs', 'danger');
                     return;
                 }
@@ -2337,7 +2368,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="d-flex gap-1">
                                 <button class="btn btn-sm btn-outline-info comments-pr-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="View comments for PR #${escapeHTML(String(pr.number))}">Comments</button>
                                 <button class="btn btn-sm btn-outline-secondary assign-pr-milestone-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Assign milestone to PR #${escapeHTML(String(pr.number))}">Assign</button>
-                                ${pr.state === 'open' ? `<button class="btn btn-sm btn-success merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}">Merge</button>` : ''}
+                                ${pr.state === 'open' ? `<button class="btn btn-sm ${policy.compliant ? 'btn-success' : 'btn-outline-danger'} merge-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Merge pull request #${escapeHTML(String(pr.number))}" ${policy.compliant ? '' : 'title="Policy Violation: ' + escapeHTML(policy.violations.map(v => v.message).join(', ')) + '"'}>${policy.compliant ? 'Merge' : '⚠ Blocked'}</button>` : ''}
                                 ${pr.state === 'open' ? `<button class="btn btn-sm btn-primary review-btn" data-number="${escapeHTML(String(pr.number))}" aria-label="Review pull request #${escapeHTML(String(pr.number))}">Review</button>` : ''}
                                 ${triageBtn}
                             </div>

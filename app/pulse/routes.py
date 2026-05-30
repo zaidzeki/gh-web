@@ -3,7 +3,7 @@ import statistics
 from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, session, jsonify
 from github import Github, Auth
-from ..workspace.utils import mask_token
+from ..workspace.utils import mask_token, get_workspace_dir, calculate_dependency_freshness
 
 bp = Blueprint('pulse', __name__)
 
@@ -140,6 +140,7 @@ def _calculate_trends(current, previous):
     trends["lead_time_to_change_hours"] = get_trend(current["lead_time_to_change_hours"], previous["lead_time_to_change_hours"], False)
     trends["change_failure_rate_percent"] = get_trend(current["change_failure_rate_percent"], previous["change_failure_rate_percent"], False)
     trends["time_to_restore_hours"] = get_trend(current["time_to_restore_hours"], previous["time_to_restore_hours"], False)
+    trends["security_mttr_hours"] = get_trend(current.get("security_mttr_hours"), previous.get("security_mttr_hours"), False)
 
     return trends
 
@@ -195,34 +196,64 @@ def _classify_tier(metrics):
         "metrics": metric_tiers
     }
 
+def _get_security_mttr(repo, start_date, end_date):
+    """Calculates Security MTTR for a specific time window."""
+    try:
+        fixed_alerts = repo.get_dependabot_alerts(state='fixed')
+        mttr_list = []
+        for a in fixed_alerts:
+            # Use updated_at as proxy for fixed_at
+            fixed_at = a.updated_at.replace(tzinfo=datetime.timezone.utc)
+            if start_date <= fixed_at <= end_date:
+                created_at = a.created_at.replace(tzinfo=datetime.timezone.utc)
+                delta = fixed_at - created_at
+                mttr_list.append(delta.total_seconds() / 3600)
+        if mttr_list:
+            return round(statistics.mean(mttr_list), 2)
+    except:
+        pass
+    return None
+
 def calculate_repo_pulse(g, repo_full_name):
     try:
         repo = g.get_repo(repo_full_name)
         prod_env = get_production_environment(repo)
 
-        if not prod_env:
-            return {
-                "repo": repo_full_name,
-                "metrics": {
-                    "deployment_frequency": 0,
-                    "lead_time_to_change_hours": None,
-                    "change_failure_rate_percent": 0.0,
-                    "time_to_restore_hours": None
-                },
-                "info": "No production environment found"
-            }
-
         now = datetime.datetime.now(datetime.timezone.utc)
         thirty_days_ago = now - datetime.timedelta(days=30)
         sixty_days_ago = now - datetime.timedelta(days=60)
 
-        current_metrics = _get_window_metrics(g, repo, prod_env, thirty_days_ago, now)
-        previous_metrics = _get_window_metrics(g, repo, prod_env, sixty_days_ago, thirty_days_ago)
+        info = None
+        if not prod_env:
+            current_metrics = {
+                "deployment_frequency": 0,
+                "lead_time_to_change_hours": None,
+                "change_failure_rate_percent": 0.0,
+                "time_to_restore_hours": None
+            }
+            previous_metrics = current_metrics.copy()
+            info = "No production environment found"
+        else:
+            current_metrics = _get_window_metrics(g, repo, prod_env, thirty_days_ago, now)
+            previous_metrics = _get_window_metrics(g, repo, prod_env, sixty_days_ago, thirty_days_ago)
+
+        # 6. Security MTTR (Repo-level)
+        current_metrics["security_mttr_hours"] = _get_security_mttr(repo, thirty_days_ago, now)
+        previous_metrics["security_mttr_hours"] = _get_security_mttr(repo, sixty_days_ago, thirty_days_ago)
+
+        # 7. Dependency Freshness (Scanned from workspace)
+        freshness_index = None
+        try:
+            workspace_dir = get_workspace_dir(repo.name)
+            freshness_index = calculate_dependency_freshness(workspace_dir)
+        except:
+            pass
+        current_metrics["dependency_freshness_index"] = freshness_index
 
         trends = _calculate_trends(current_metrics, previous_metrics)
         benchmarks = _classify_tier(current_metrics)
 
-        return {
+        result = {
             "repo": repo_full_name,
             "window_days": 30,
             "metrics": current_metrics,
@@ -230,6 +261,9 @@ def calculate_repo_pulse(g, repo_full_name):
             "trends": trends,
             "benchmarks": benchmarks
         }
+        if info:
+            result["info"] = info
+        return result
     except Exception as e:
         return {"error": mask_token(str(e))}
 
@@ -309,13 +343,16 @@ def get_portfolio_pulse():
         "deployment_frequency": 0,
         "lead_time_to_change_hours": [],
         "change_failure_rate_percent": [],
-        "time_to_restore_hours": []
+        "time_to_restore_hours": [],
+        "security_mttr_hours": [],
+        "dependency_freshness_index": []
     }
     prev_agg = {
         "deployment_frequency": 0,
         "lead_time_to_change_hours": [],
         "change_failure_rate_percent": [],
-        "time_to_restore_hours": []
+        "time_to_restore_hours": [],
+        "security_mttr_hours": []
     }
 
     valid_repos = 0
@@ -331,6 +368,10 @@ def get_portfolio_pulse():
         agg["change_failure_rate_percent"].append(m["change_failure_rate_percent"])
         if m["time_to_restore_hours"] is not None:
             agg["time_to_restore_hours"].append(m["time_to_restore_hours"])
+        if m.get("security_mttr_hours") is not None:
+            agg["security_mttr_hours"].append(m["security_mttr_hours"])
+        if m.get("dependency_freshness_index") is not None:
+            agg["dependency_freshness_index"].append(m["dependency_freshness_index"])
 
         pm = res.get("previous_metrics")
         if pm:
@@ -340,12 +381,16 @@ def get_portfolio_pulse():
             prev_agg["change_failure_rate_percent"].append(pm["change_failure_rate_percent"])
             if pm["time_to_restore_hours"] is not None:
                 prev_agg["time_to_restore_hours"].append(pm["time_to_restore_hours"])
+            if pm.get("security_mttr_hours") is not None:
+                prev_agg["security_mttr_hours"].append(pm["security_mttr_hours"])
 
     summary = {
         "deployment_frequency": agg["deployment_frequency"],
         "lead_time_to_change_hours": round(statistics.mean(agg["lead_time_to_change_hours"]), 2) if agg["lead_time_to_change_hours"] else None,
         "change_failure_rate_percent": round(statistics.mean(agg["change_failure_rate_percent"]), 2) if agg["change_failure_rate_percent"] else 0.0,
         "time_to_restore_hours": round(statistics.mean(agg["time_to_restore_hours"]), 2) if agg["time_to_restore_hours"] else None,
+        "security_mttr_hours": round(statistics.mean(agg["security_mttr_hours"]), 2) if agg["security_mttr_hours"] else None,
+        "dependency_freshness_index": round(statistics.mean(agg["dependency_freshness_index"]), 2) if agg["dependency_freshness_index"] else None,
         "repo_count": valid_repos
     }
 
@@ -353,7 +398,8 @@ def get_portfolio_pulse():
         "deployment_frequency": prev_agg["deployment_frequency"],
         "lead_time_to_change_hours": round(statistics.mean(prev_agg["lead_time_to_change_hours"]), 2) if prev_agg["lead_time_to_change_hours"] else None,
         "change_failure_rate_percent": round(statistics.mean(prev_agg["change_failure_rate_percent"]), 2) if prev_agg["change_failure_rate_percent"] else 0.0,
-        "time_to_restore_hours": round(statistics.mean(prev_agg["time_to_restore_hours"]), 2) if prev_agg["time_to_restore_hours"] else None
+        "time_to_restore_hours": round(statistics.mean(prev_agg["time_to_restore_hours"]), 2) if prev_agg["time_to_restore_hours"] else None,
+        "security_mttr_hours": round(statistics.mean(prev_agg["security_mttr_hours"]), 2) if prev_agg["security_mttr_hours"] else None
     }
 
     trends = _calculate_trends(summary, prev_summary)
