@@ -542,7 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 badgesHtml += `<span class="badge ${msClass} ms-1 health-ms-badge" title="Next Milestone: ${escapeHTML(ms.title)} (Due: ${dueStr})">🎯 ${escapeHTML(ms.title)}</span>`;
                             }
                             if (health.production_status) {
-                                badgesHtml += `<span class="badge bg-info text-dark ms-1 health-prod-badge" title="Production Ref: ${health.production_status.ref}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
+                                badgesHtml += `<span class="badge bg-info text-dark ms-1 health-prod-badge" title="Production Ref: ${escapeHTML(health.production_status.ref)}">Prod: ${escapeHTML(health.production_status.ref)}</span>`;
                             }
 
                             if (health.security_status) {
@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let ciBadge = '';
                 if (item.ci_status) {
                     const ciClass = item.ci_status === 'success' ? 'bg-success' : (item.ci_status === 'failure' ? 'bg-danger' : 'bg-warning text-dark');
-                    ciBadge = `<span class="badge ${ciClass} ms-1" title="CI Status: ${item.ci_status}">CI</span>`;
+                    ciBadge = `<span class="badge ${ciClass} ms-1" title="CI Status: ${escapeHTML(item.ci_status)}">CI</span>`;
                 }
 
                 let activeTaskHtml = '';
@@ -1491,7 +1491,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 issues.forEach(issue => {
                     const tr = document.createElement('tr');
                     const labelBadges = (issue.labels || []).map(l =>
-                        `<span class="badge rounded-pill me-1" style="background-color: #${l.color}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
+                        `<span class="badge rounded-pill me-1" style="background-color: #${escapeHTML(l.color)}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
                     ).join('');
 
                     const triageBtn = issue.state === 'open' ?
@@ -2347,7 +2347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         '<span class="badge bg-secondary ms-1" title="Read-only access to this PR branch">Read-Only</span>';
 
                     const labelBadges = (pr.labels || []).map(l =>
-                        `<span class="badge rounded-pill me-1" style="background-color: #${l.color}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
+                        `<span class="badge rounded-pill me-1" style="background-color: #${escapeHTML(l.color)}; color: ${parseInt(l.color, 16) > 0xffffff / 2 ? 'black' : 'white'}">${escapeHTML(l.name)}</span>`
                     ).join('');
 
                     const triageBtn = pr.state === 'open' ?
