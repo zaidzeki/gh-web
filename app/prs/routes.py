@@ -125,6 +125,14 @@ def merge_pr(full_name, pr_number):
 
     try:
         repo = g.get_repo(full_name)
+
+        # Server-side Policy Enforcement
+        from ..governance.routes import evaluate_repo_policy
+        compliant, violations, _ = evaluate_repo_policy(repo)
+        if not compliant:
+            msgs = [v['message'] for v in violations]
+            return jsonify({"error": f"Merge blocked by governance policy: {', '.join(msgs)}"}), 403
+
         pr = repo.get_pull(pr_number)
         status = pr.merge(commit_message=commit_message, merge_method=merge_method)
         if status.merged:

@@ -189,3 +189,33 @@ def render_template_dir(source_path, target_path, context, is_safe_path_func=Non
                 import shutil
                 # Security: set follow_symlinks=False to avoid following symlinks.
                 shutil.copy2(source_file_path, dest_file_path, follow_symlinks=False)
+
+
+def calculate_dependency_freshness(workspace_dir):
+    """
+    Scans requirements.txt and calculates a freshness index (0-100).
+    MVP Logic:
+    - 100: All dependencies are pinned with '=='
+    - 50: Some dependencies are pinned, others are not (e.g., '>=', or unpinned)
+    - 0: No dependencies are pinned or no requirements.txt found
+    """
+    req_path = os.path.join(workspace_dir, 'requirements.txt')
+    if not os.path.exists(req_path):
+        return None
+
+    try:
+        with open(req_path, 'r') as f:
+            lines = [l.strip() for l in f.readlines() if l.strip() and not l.startswith('#')]
+
+        if not lines:
+            return 100
+
+        pinned = 0
+        for line in lines:
+            if '==' in line:
+                pinned += 1
+
+        score = (pinned / len(lines)) * 100
+        return round(score, 2)
+    except:
+        return 0
