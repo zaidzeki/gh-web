@@ -76,13 +76,13 @@
     - [x] Implement `POST /api/workspace/templates/<template_name>/publish` for template distribution.
     - [x] Add "Publish" action to Template Library in UI.
     - [x] Create Publish Template modal with repository configuration.
-- [ ] **Epic: Continuous Delivery & Environment Governance**
+- [x] **Epic: Continuous Delivery & Environment Governance**
     - [x] Implement `GET /api/repos/.../environments` for environment discovery.
     - [x] Implement `GET /api/repos/.../deployments` for tracking history and status.
     - [x] Implement `POST /api/repos/.../deployments` for triggering promotions.
     - [x] Create Environments Tab UI with Environment Cards.
     - [x] Integrate deployment approvals into Task Inbox.
-- [ ] **Epic: Milestone Orchestration & Goal Governance**
+- [x] **Epic: Milestone Orchestration & Goal Governance**
     - [x] Implement `GET /api/repos/.../milestones` for goal discovery.
     - [x] Implement `POST /api/repos/.../milestones` for goal creation.
     - [x] Implement `POST /api/repos/.../issues/<n>/milestone` for task assignment.
@@ -141,20 +141,22 @@
     - [x] Implement Security Alert Explorer Modal for detailed vulnerability inspection.
     - [x] Integrate Alert Explorer with Dashboard security badges.
     - [x] Enable "Contextual Remediation" from the Alert Explorer (linking to GitHub or Fix flow).
-- [ ] **Epic: Security Governance Phase 3: Proactive Guardrails**
-    - [ ] Implement "Security Policy" engine (e.g. blocking merges/releases based on severity).
-    - [ ] Add security risk level to Portfolio Pulse.
-    - [ ] Integrate Code Scanning results into the Workspace Editor (inline warnings).
-
-- [ ] **Epic: Release Asset Orchestration & Artifact Governance**
-    - [ ] Implement `POST /api/repos/.../releases/<id>/assets` for workspace-to-release upload.
-    - [ ] Implement `GET /api/repos/.../releases/<id>/assets` for asset discovery.
-    - [ ] Implement `DELETE /api/repos/.../releases/assets/<id>` for asset removal.
-    - [ ] Create Asset Management modal in the Releases tab.
-    - [ ] Implement Workspace File Picker for asset selection.
-    - [ ] Add "Asset Count" indicators to the Release list.
+- [x] **Epic: Release Asset Orchestration & Artifact Governance**
+    - [x] Implement `POST /api/repos/.../releases/<id>/assets` for workspace-to-release upload.
+    - [x] Implement `GET /api/repos/.../releases/<id>/assets` for asset discovery.
+    - [x] Implement `DELETE /api/repos/.../releases/assets/<id>` for asset removal.
+    - [x] Create Asset Management modal in the Releases tab.
+    - [x] Implement Workspace File Picker for asset selection.
+    - [x] Add "Asset Count" indicators to the Release list.
 
 ## P2: Feature
+- [ ] **Epic: Strategic Governance Phase 3: Policy Guardrails & Modernization Pulse**
+    - [ ] Implement `GET /api/repos/<full_name>/governance/policy` for rule evaluation.
+    - [ ] Extend Pulse API to include `security_mttr_hours` and `dependency_freshness_index`.
+    - [ ] Implement Workspace Dependency Scanner for freshness analysis.
+    - [ ] Add "Policy Status" badges to Dashboard repository cards.
+    - [ ] Visually "Lock" merge buttons in the PR UI if policies are violated.
+    - [ ] Create Portfolio Governance Heatmap on the Dashboard.
 - [x] Create Frontend UI (Jinja2 templates, JS).
 - [x] Add toast notifications for API responses.
 
