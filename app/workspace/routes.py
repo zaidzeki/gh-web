@@ -682,6 +682,10 @@ def get_file_content():
         if content is None:
             return jsonify({"error": "content is required"}), 400
 
+        # Security Enhancement: Limit file save size to 1MB to prevent disk exhaustion
+        if len(content) > 1024 * 1024:
+            return jsonify({"error": "File too large (max 1MB)"}), 400
+
         try:
             with open(full_path, 'w', encoding='utf-8') as f:
                 f.write(content)
