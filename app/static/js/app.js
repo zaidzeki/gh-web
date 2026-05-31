@@ -149,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 refreshPortfolioRoadmap();
                 refreshPortfolioPulse();
                 refreshPortfolioSecurity();
+                refreshPortfolioHeatmap();
             } else {
                 profileDiv.classList.add('d-none');
                 profileDiv.classList.remove('d-flex');
@@ -742,6 +743,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             refreshPortfolioPulse();
             refreshPortfolioSecurity();
+            refreshPortfolioHeatmap();
         } catch (error) {
             portfolioList.innerHTML = `<p class="text-danger p-3">Error: ${escapeHTML(error.message)}</p>`;
         }
@@ -939,6 +941,108 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(col);
         });
     };
+
+    const renderHeatmap = (data) => {
+        const container = document.getElementById('governanceHeatmapContainer');
+        if (!container) return;
+
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const padding = 30;
+
+        // Quadrant Logic Thresholds
+        const FRESHNESS_THRESHOLD = 80;
+        const MTTR_THRESHOLD = 24;
+
+        // Map thresholds to pixel coordinates
+        const thresholdX = padding + (FRESHNESS_THRESHOLD / 100) * (width - 2 * padding);
+        const thresholdY = padding + (Math.min(MTTR_THRESHOLD, 100) / 100) * (height - 2 * padding);
+
+        let svg = `
+            <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+                <!-- Grid Lines (Mapped to thresholds) -->
+                <line x1="${padding}" y1="${thresholdY}" x2="${width - padding}" y2="${thresholdY}" stroke="#eee" stroke-dasharray="4" />
+                <line x1="${thresholdX}" y1="${padding}" x2="${thresholdX}" y2="${height - padding}" stroke="#eee" stroke-dasharray="4" />
+
+                <!-- Axes Labels -->
+                <text x="${width - padding}" y="${height / 2 + 15}" font-size="10" fill="#999" text-anchor="end">Dependency Freshness</text>
+                <text x="${width / 2 + 5}" y="${padding}" font-size="10" fill="#999" transform="rotate(90, ${width / 2 + 5}, ${padding})">Security MTTR</text>
+
+                <!-- Quadrant Labels -->
+                <text x="${width - padding - 5}" y="${padding - 5}" font-size="10" font-weight="bold" fill="#007bff" text-anchor="end">ELITE</text>
+                <text x="${padding + 5}" y="${padding - 5}" font-size="10" font-weight="bold" fill="#28a745">ARTISANS</text>
+                <text x="${padding + 5}" y="${height - padding + 15}" font-size="10" font-weight="bold" fill="#dc3545">CRITICAL DEBT</text>
+                <text x="${width - padding - 5}" y="${height - padding + 15}" font-size="10" font-weight="bold" fill="#ffc107" text-anchor="end">FRAGILE ELITE</text>
+        `;
+
+        data.forEach(repo => {
+            // X: Freshness (0-100) -> padding to width-padding
+            const x = padding + (repo.x / 100) * (width - 2 * padding);
+
+            // Y: MTTR (0-100+) -> padding to height-padding.
+            // Invert: 0 MTTR is at top, high MTTR at bottom. Cap at 100h for scale.
+            const cappedMTTR = Math.min(repo.y, 100);
+            const y = padding + (cappedMTTR / 100) * (height - 2 * padding);
+
+            const color = repo.quadrant === 'Elite' ? '#007bff' :
+                          (repo.quadrant === 'Artisans' ? '#28a745' :
+                          (repo.quadrant === 'Critical Debt' ? '#dc3545' : '#ffc107'));
+
+            const stroke = repo.compliant ? 'none' : '#000';
+            const strokeWidth = repo.compliant ? 0 : 2;
+            const radius = repo.sla_violation ? 8 : 5;
+            const pulseClass = repo.sla_violation ? 'animate-pulse' : '';
+
+            svg += `
+                <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}" class="${pulseClass}">
+                    <title>${escapeHTML(repo.repo)}\nQuadrant: ${escapeHTML(repo.quadrant)}\nFreshness: ${repo.x}%\nMTTR: ${repo.y}h\nCompliant: ${repo.compliant}\nSLA Violated: ${repo.sla_violation}</title>
+                </circle>
+            `;
+        });
+
+        svg += `</svg>`;
+        container.innerHTML = svg;
+    };
+
+    const refreshPortfolioHeatmap = async () => {
+        const card = document.getElementById('portfolioGovernanceCard');
+        if (!card) return;
+
+        if (!lastPortfolioData || lastPortfolioData.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = 'block';
+        const repoNames = lastPortfolioData.map(item => item.full_name).filter(Boolean);
+        if (repoNames.length === 0) return;
+
+        try {
+            const response = await fetch(`/api/workspace/portfolio/governance/heatmap?repos=${encodeURIComponent(repoNames.join(','))}`);
+            const data = await response.json();
+            if (response.ok) {
+                renderHeatmap(data);
+
+                // Update global SLA alert
+                const slaAlert = document.getElementById('slaViolationAlert');
+                if (slaAlert) {
+                    const hasViolation = data.some(r => r.sla_violation);
+                    if (hasViolation) slaAlert.classList.remove('d-none');
+                    else slaAlert.classList.add('d-none');
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch portfolio heatmap:', e);
+        }
+    };
+
+    const refreshHeatmapBtn = document.getElementById('refreshHeatmapBtn');
+    if (refreshHeatmapBtn) {
+        refreshHeatmapBtn.addEventListener('click', () => {
+            toggleLoading(refreshHeatmapBtn, true);
+            refreshPortfolioHeatmap().finally(() => toggleLoading(refreshHeatmapBtn, false));
+        });
+    }
 
     const refreshPortfolioSecurityBtn = document.getElementById('refreshPortfolioSecurityBtn');
     if (refreshPortfolioSecurityBtn) {

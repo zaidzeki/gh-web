@@ -1,0 +1,17 @@
+{
+  "scopes": {
+    "global": {
+      "block_merge_on_critical_security": true,
+      "block_merge_on_failing_ci": true,
+      "sla_critical_hours": 48,
+      "block_merge_on_sla_violation": true
+    },
+    "orgs": {},
+    "repos": {
+      "owner/repo": {
+        "block_merge_on_critical_security": false,
+        "block_merge_on_sla_violation": false
+      }
+    }
+  }
+}
