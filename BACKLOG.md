@@ -150,13 +150,22 @@
     - [x] Add "Asset Count" indicators to the Release list.
 
 ## P2: Feature
-- [ ] **Epic: Strategic Governance Phase 3: Policy Guardrails & Modernization Pulse**
-    - [ ] Implement `GET /api/repos/<full_name>/governance/policy` for rule evaluation.
-    - [ ] Extend Pulse API to include `security_mttr_hours` and `dependency_freshness_index`.
-    - [ ] Implement Workspace Dependency Scanner for freshness analysis.
-    - [ ] Add "Policy Status" badges to Dashboard repository cards.
-    - [ ] Visually "Lock" merge buttons in the PR UI if policies are violated.
+- [x] **Epic: Strategic Governance Phase 3: Policy Guardrails & Modernization Pulse**
+    - [x] Implement `GET /api/repos/<full_name>/governance/policy` for rule evaluation.
+    - [x] Extend Pulse API to include `security_mttr_hours` and `dependency_freshness_index`.
+    - [x] Implement Workspace Dependency Scanner for freshness analysis.
+    - [x] Add "Policy Status" badges to Dashboard repository cards.
+    - [x] Visually "Lock" merge buttons in the PR UI if policies are violated.
     - [ ] Create Portfolio Governance Heatmap on the Dashboard.
+
+- [ ] **Epic: Strategic Governance Phase 4: Dynamic Orchestration & Debt Heatmap**
+    - [ ] Implement `PolicyStore` with JSON persistence.
+    - [ ] Implement `PATCH /api/repos/<full_name>/governance/policy` for overrides.
+    - [ ] Implement `GovernanceAggregationService` for heatmap coordinates.
+    - [ ] Implement `GET /api/workspace/portfolio/governance/heatmap` API.
+    - [ ] Create Portfolio Governance Heatmap UI component (Scatter Plot).
+    - [ ] Implement "SLA Violation" tracking for critical security alerts.
+    - [ ] Add "SLA Warning" indicators to Task Inbox and Repo Cards.
 - [x] Create Frontend UI (Jinja2 templates, JS).
 - [x] Add toast notifications for API responses.
 

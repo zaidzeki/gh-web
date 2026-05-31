@@ -81,3 +81,7 @@
 ## 2026-05-28 - [Sustainable & Secure Velocity]
 **Learning:** High delivery velocity (DORA) is a vanity metric if it's built on a foundation of critical vulnerabilities and aging dependencies. To be truly "Elite," a team must demonstrate high "Remediation Velocity" (MTTR) and maintain "Dependency Freshness." Strategic governance must evolve to identify when tactical speed is causing strategic debt.
 **Action:** Spec out a Governance Policy Engine that can enforce quality/security guardrails and extend Project Pulse to track MTTR and framework modernization.
+
+## 2026-05-29 - [Beyond Passive Governance: Policy Orchestration]
+**Learning:** High-fidelity delivery governance must shift from "Passive Monitoring" (observing state) to "Active Policy Orchestration" (enforcing state). DORA and Security metrics are tactical indicators, but without a persistent, dynamic Policy Engine, they remain "Advisory." The true value for stakeholders lies in visualizing organizational debt (Heatmaps) and enforcing remediation velocity via Compliance SLAs.
+**Action:** Transition the Governance architecture to support a persistent PolicyStore and implement a Portfolio Heatmap to identify high-risk outliers across delivery velocity and security integrity.
