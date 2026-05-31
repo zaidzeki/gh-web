@@ -22,6 +22,8 @@ def test_get_security_alerts(mock_github, client):
 
     # Mock Dependabot Alerts
     mock_dep_alert = MagicMock()
+    import datetime
+    mock_dep_alert.created_at = datetime.datetime.now(datetime.timezone.utc)
     mock_dep_alert.security_advisory.severity = 'critical'
     mock_dep_alert.security_vulnerability.package.name = 'django'
     mock_dep_alert.security_vulnerability.first_patched_version_identifier = '4.2.1'

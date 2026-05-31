@@ -35,3 +35,19 @@ h6[role="button"] {
 .deployment-info {
     max-width: 65%;
 }
+
+/* Strategic Governance Heatmap */
+@keyframes pulse-animation {
+    0% { r: 5; opacity: 1; }
+    50% { r: 10; opacity: 0.6; }
+    100% { r: 5; opacity: 1; }
+}
+
+.animate-pulse {
+    animation: pulse-animation 2s infinite ease-in-out;
+}
+
+#governanceHeatmapContainer {
+    background-image: radial-gradient(#f0f0f0 1px, transparent 1px);
+    background-size: 20px 20px;
+}

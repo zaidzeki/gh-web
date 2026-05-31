@@ -262,7 +262,8 @@ def fetch_security_info(repo):
                 "severity": severity,
                 "package": str(alert.security_vulnerability.package.name),
                 "fixed_in": str(alert.security_vulnerability.first_patched_version_identifier) if alert.security_vulnerability.first_patched_version_identifier else None,
-                "html_url": str(alert.html_url)
+                "html_url": str(alert.html_url),
+                "created_at": alert.created_at.isoformat() if alert.created_at else None
             })
     except Exception:
         pass
