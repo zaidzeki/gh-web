@@ -87,3 +87,8 @@
 **Vulnerability:** The workspace deletion safeguard only checked for literal strings like '.' or '/'. An attacker could bypass this by using sequences like 'sub/..', which os.path.join appends literally, but shutil.rmtree treats as a traversal that resolves to the root, leading to the deletion of the entire workspace.
 **Learning:** String-based blacklists for paths are ineffective against relative traversal sequences. shutil.rmtree is particularly dangerous as it may start deleting contents before resolving the final path components or failing.
 **Prevention:** Always normalize user-provided paths using os.path.normpath BEFORE performing equality checks against forbidden boundaries or roots.
+
+## 2026-06-11 - Policy Store Race Condition and Mass Assignment
+**Vulnerability:** The `PolicyStore` suffered from a race condition where concurrent updates could lose data because the lock was only held during `_load` and `_save` separately, not the entire update cycle. It also lacked input whitelisting, allowing mass assignment of arbitrary keys.
+**Learning:** Thread safety in stateful stores requires locking the entire read-modify-write cycle, not just the I/O operations. Re-entrant locks (`RLock`) are necessary when internal methods also acquire the same lock.
+**Prevention:** Always use `RLock` for stateful managers and wrap the entire logical update in a single lock block. Enforce strict whitelists for any data updates originating from user-supplied JSON.
