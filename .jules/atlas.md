@@ -85,3 +85,7 @@
 ## 2026-05-29 - [Beyond Passive Governance: Policy Orchestration]
 **Learning:** High-fidelity delivery governance must shift from "Passive Monitoring" (observing state) to "Active Policy Orchestration" (enforcing state). DORA and Security metrics are tactical indicators, but without a persistent, dynamic Policy Engine, they remain "Advisory." The true value for stakeholders lies in visualizing organizational debt (Heatmaps) and enforcing remediation velocity via Compliance SLAs.
 **Action:** Transition the Governance architecture to support a persistent PolicyStore and implement a Portfolio Heatmap to identify high-risk outliers across delivery velocity and security integrity.
+
+## 2026-06-02 - [Interactive Policy Orchestration & Tactical Governance]
+**Learning:** Visualizing debt via Heatmaps and tracking SLAs is a critical first step, but it creates a "Governance Gap" if the user cannot immediately act on those insights. A dashboard that shows a repository is in the "Red Zone" must also provide the controls to adjust policies or prioritize fixes. Insights without interactivity lead to frustration; orchestration requires a tight loop between observation and enforcement.
+**Action:** Close the loop by implementing interactive Heatmap navigation and a unified Governance Settings interface that allows for per-repository and per-organization policy overrides.

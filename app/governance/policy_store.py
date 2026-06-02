@@ -61,6 +61,31 @@ class PolicyStore:
 
         return policy
 
+    def get_org_policy(self, org_name):
+        """
+        Resolves policy for an organization: Org overrides + Global defaults.
+        """
+        data = self._load()
+        scopes = data.get("scopes", {})
+
+        policy = scopes.get("global", {}).copy()
+        if org_name in scopes.get("orgs", {}):
+            policy.update(scopes["orgs"][org_name])
+
+        return policy
+
+    def update_org_policy(self, org_name, updates):
+        data = self._load()
+        if "orgs" not in data["scopes"]:
+            data["scopes"]["orgs"] = {}
+
+        if org_name not in data["scopes"]["orgs"]:
+            data["scopes"]["orgs"][org_name] = {}
+
+        data["scopes"]["orgs"][org_name].update(updates)
+        self._save(data)
+        return data["scopes"]["orgs"][org_name]
+
     def update_repo_policy(self, repo_full_name, updates):
         data = self._load()
         if "repos" not in data["scopes"]:

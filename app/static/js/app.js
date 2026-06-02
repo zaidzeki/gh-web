@@ -359,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-sm btn-outline-secondary pr-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View pull requests for ${escapeHTML(repo.full_name)}">PRs</button>
                     <button class="btn btn-sm btn-outline-secondary actions-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View actions for ${escapeHTML(repo.full_name)}">Actions</button>
                     <button class="btn btn-sm btn-outline-secondary releases-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View releases for ${escapeHTML(repo.full_name)}">Releases</button>
+                    <button class="btn btn-sm btn-outline-dark governance-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="Manage governance for ${escapeHTML(repo.full_name)}">Gov</button>
                     <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="Clone repository ${escapeHTML(repo.full_name)}">Clone</button>
                 </div>
             `;
@@ -430,6 +431,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('repoUrl').value = url;
                 const workspaceTab = document.getElementById('workspace-tab');
                 bootstrap.Tab.getOrCreateInstance(workspaceTab).show();
+            });
+        });
+
+        repoList.querySelectorAll('.governance-action').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openGovernanceManager(btn.getAttribute('data-repo'));
             });
         });
     };
@@ -942,6 +949,130 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const openGovernanceManager = async (repoFullName) => {
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('governanceModal'));
+        const repoNameEl = document.getElementById('repoPolicyName');
+        const orgNameEl = document.getElementById('orgPolicyName');
+        const orgTab = document.getElementById('org-policy-tab');
+
+        repoNameEl.textContent = repoFullName;
+        const orgName = repoFullName.split('/')[0];
+        orgNameEl.textContent = orgName;
+
+        modal.show();
+
+        // Fetch Repo Policy
+        try {
+            const resp = await fetch(`/api/repos/${repoFullName}/governance/policy`);
+            const data = await resp.json();
+            if (resp.ok) {
+                const p = data.policies;
+                document.getElementById('repo_block_merge_on_critical_security').checked = p.block_merge_on_critical_security;
+                document.getElementById('repo_block_merge_on_failing_ci').checked = p.block_merge_on_failing_ci;
+                document.getElementById('repo_block_merge_on_sla_violation').checked = p.block_merge_on_sla_violation;
+                document.getElementById('repo_sla_critical_hours').value = p.sla_critical_hours;
+            } else {
+                showAlert(data.error || 'Failed to fetch repository policy', 'danger');
+            }
+        } catch (e) {
+            console.error('Failed to fetch repo policy:', e);
+        }
+
+        // Fetch Org Policy
+        try {
+            const resp = await fetch(`/api/governance/orgs/${orgName}/policy`);
+            const data = await resp.json();
+            if (resp.ok) {
+                const p = data.policies;
+                document.getElementById('org_block_merge_on_critical_security').checked = p.block_merge_on_critical_security;
+                document.getElementById('org_block_merge_on_failing_ci').checked = p.block_merge_on_failing_ci;
+                document.getElementById('org_block_merge_on_sla_violation').checked = p.block_merge_on_sla_violation;
+                document.getElementById('org_sla_critical_hours').value = p.sla_critical_hours;
+                orgTab.disabled = false;
+                orgTab.classList.remove('disabled');
+            } else {
+                orgTab.disabled = true;
+                orgTab.classList.add('disabled');
+            }
+        } catch (e) {
+            console.error('Failed to fetch organization policy:', e);
+            orgTab.disabled = true;
+            orgTab.classList.add('disabled');
+        }
+    };
+
+    const repoPolicyForm = document.getElementById('repoPolicyForm');
+    if (repoPolicyForm) {
+        repoPolicyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const repoFullName = document.getElementById('repoPolicyName').textContent;
+            const submitBtn = repoPolicyForm.querySelector('button[type="submit"]');
+            toggleLoading(submitBtn, true);
+
+            const payload = {
+                block_merge_on_critical_security: document.getElementById('repo_block_merge_on_critical_security').checked,
+                block_merge_on_failing_ci: document.getElementById('repo_block_merge_on_failing_ci').checked,
+                block_merge_on_sla_violation: document.getElementById('repo_block_merge_on_sla_violation').checked,
+                sla_critical_hours: parseInt(document.getElementById('repo_sla_critical_hours').value)
+            };
+
+            try {
+                const resp = await fetch(`/api/repos/${repoFullName}/governance/policy`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const res = await resp.json();
+                if (resp.ok) {
+                    showAlert(res.message);
+                    refreshDashboardRepos();
+                } else {
+                    showAlert(res.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
+    const orgPolicyForm = document.getElementById('orgPolicyForm');
+    if (orgPolicyForm) {
+        orgPolicyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orgName = document.getElementById('orgPolicyName').textContent;
+            const submitBtn = orgPolicyForm.querySelector('button[type="submit"]');
+            toggleLoading(submitBtn, true);
+
+            const payload = {
+                block_merge_on_critical_security: document.getElementById('org_block_merge_on_critical_security').checked,
+                block_merge_on_failing_ci: document.getElementById('org_block_merge_on_failing_ci').checked,
+                block_merge_on_sla_violation: document.getElementById('org_block_merge_on_sla_violation').checked,
+                sla_critical_hours: parseInt(document.getElementById('org_sla_critical_hours').value)
+            };
+
+            try {
+                const resp = await fetch(`/api/governance/orgs/${orgName}/policy`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const res = await resp.json();
+                if (resp.ok) {
+                    showAlert(res.message);
+                    refreshDashboardRepos();
+                } else {
+                    showAlert(res.error, 'danger');
+                }
+            } catch (error) {
+                showAlert(error.message, 'danger');
+            } finally {
+                toggleLoading(submitBtn, false);
+            }
+        });
+    }
+
     const renderHeatmap = (data) => {
         const container = document.getElementById('governanceHeatmapContainer');
         if (!container) return;
@@ -994,14 +1125,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const pulseClass = repo.sla_violation ? 'animate-pulse' : '';
 
             svg += `
-                <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}" class="${pulseClass}">
-                    <title>${escapeHTML(repo.repo)}\nQuadrant: ${escapeHTML(repo.quadrant)}\nFreshness: ${repo.x}%\nMTTR: ${repo.y}h\nCompliant: ${repo.compliant}\nSLA Violated: ${repo.sla_violation}</title>
+                <circle cx="${x}" cy="${y}" r="${radius}" fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}"
+                        class="${pulseClass} heatmap-dot" style="cursor: pointer;" data-repo="${escapeHTML(repo.repo)}">
+                    <title>${escapeHTML(repo.repo)}\nQuadrant: ${escapeHTML(repo.quadrant)}\nFreshness: ${repo.x}%\nMTTR: ${repo.y}h\nCompliant: ${repo.compliant}\nSLA Violated: ${repo.sla_violation}\n\nClick to manage governance.</title>
                 </circle>
             `;
         });
 
         svg += `</svg>`;
         container.innerHTML = svg;
+
+        container.querySelectorAll('.heatmap-dot').forEach(dot => {
+            dot.addEventListener('click', () => {
+                openGovernanceManager(dot.dataset.repo);
+            });
+        });
     };
 
     const refreshPortfolioHeatmap = async () => {
@@ -1134,6 +1272,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (task.review_status) {
                     const revClass = task.review_status === 'approved' ? 'bg-success' : (task.review_status === 'changes_requested' ? 'bg-danger' : 'bg-warning text-dark');
                     statusBadges += `<span class="badge ${revClass} ms-1">Review: ${task.review_status.replace('_', ' ').toUpperCase()}</span>`;
+                }
+
+                if (task.type === 'security_vulnerability' && task.sla_status) {
+                    const slaClass = task.sla_status === 'exceeded' ? 'bg-danger' : (task.sla_status === 'critical' ? 'bg-warning text-dark' : 'bg-info text-dark');
+                    const slaLabel = task.sla_status === 'exceeded' ? 'SLA EXCEEDED' : `SLA: ${task.sla_remaining_hours}h left`;
+                    statusBadges += `<span class="badge ${slaClass} ms-1" title="SLA Status: ${task.sla_status}. Deadline: ${task.sla_deadline}">${slaLabel}</span>`;
                 }
 
                 if (task.milestone) {
