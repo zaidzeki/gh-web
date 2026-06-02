@@ -158,14 +158,22 @@
     - [x] Visually "Lock" merge buttons in the PR UI if policies are violated.
     - [ ] Create Portfolio Governance Heatmap on the Dashboard.
 
-- [ ] **Epic: Strategic Governance Phase 4: Dynamic Orchestration & Debt Heatmap**
-    - [ ] Implement `PolicyStore` with JSON persistence.
-    - [ ] Implement `PATCH /api/repos/<full_name>/governance/policy` for overrides.
-    - [ ] Implement `GovernanceAggregationService` for heatmap coordinates.
-    - [ ] Implement `GET /api/workspace/portfolio/governance/heatmap` API.
-    - [ ] Create Portfolio Governance Heatmap UI component (Scatter Plot).
-    - [ ] Implement "SLA Violation" tracking for critical security alerts.
-    - [ ] Add "SLA Warning" indicators to Task Inbox and Repo Cards.
+- [x] **Epic: Strategic Governance Phase 4: Dynamic Orchestration & Debt Heatmap**
+    - [x] Implement `PolicyStore` with JSON persistence.
+    - [x] Implement `PATCH /api/repos/<full_name>/governance/policy` for overrides.
+    - [x] Implement `GovernanceAggregationService` for heatmap coordinates.
+    - [x] Implement `GET /api/workspace/portfolio/governance/heatmap` API.
+    - [x] Create Portfolio Governance Heatmap UI component (Scatter Plot).
+    - [x] Implement "SLA Violation" tracking for critical security alerts.
+    - [x] Add "SLA Warning" indicators to Task Inbox and Repo Cards.
+
+- [ ] **Epic: Strategic Governance Phase 5: Interactive Orchestration & Tactical SLAs**
+    - [ ] Implement `GET/PATCH /api/governance/orgs/<org>/policy` for organizational guardrails.
+    - [ ] Enrich Task Inbox with relative SLA countdowns (e.g. "12h remaining").
+    - [ ] Implement "Interactive Heatmap" navigation (Click repo dot to manage).
+    - [ ] Create Unified Governance Manager Modal (Repo vs. Org scope).
+    - [ ] Add "Governance" quick-actions to Dashboard repository cards.
+    - [ ] Implement "Inheritance Visualization" in Policy UI (Global > Org > Repo).
 - [x] Create Frontend UI (Jinja2 templates, JS).
 - [x] Add toast notifications for API responses.
 

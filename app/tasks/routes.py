@@ -2,6 +2,7 @@ from flask import Blueprint, request, session, jsonify
 import github
 import datetime
 from ..workspace.utils import mask_token
+from ..governance.routes import policy_store
 
 bp = Blueprint('tasks', __name__)
 
@@ -21,6 +22,9 @@ def normalize(issue_or_pr, category):
         "id": f"{repo_full_name}#{int(issue_or_pr.number)}",
         "type": "security_vulnerability" if category == "security_vulnerability" else ("pr" if is_pr else "issue"),
         "category": category,
+        "sla_status": None,
+        "sla_deadline": None,
+        "sla_remaining_hours": None,
         "title": str(issue_or_pr.title),
         "repo": repo_full_name,
         "number": int(issue_or_pr.number),
@@ -114,18 +118,10 @@ def list_tasks():
             my_filter += f' milestone:"{milestone}"'
             wd_filter += f' milestone:"{milestone}"'
 
-        # Team/Org extensions
         if org_name:
             if team_slug:
-                # Add team-specific review requests
                 ar_filter = f"is:pr is:open (review-requested:{login} OR team-review-requested:{org_name}/{team_slug})"
-                # Optionally search for all open items in team-context (not just assigned to me)
-                # But let's keep it focused on actionable items for now as per "Task Inbox" philosophy.
-            else:
-                # No team specified, but org is. We could scope to org, but global search is often what users want for "My Tasks"
-                pass
 
-        # Limit to top 20 each to avoid performance/rate-limit issues
         action_required = g.search_issues(ar_filter)[:20]
         in_progress = g.search_issues(ip_filter)[:20]
         my_prs = g.search_issues(my_filter)[:20]
@@ -139,7 +135,6 @@ def list_tasks():
                 team = org.get_team(int(team_id))
                 team_repos = team.get_repos(sort='pushed', direction='desc')
 
-                # Fetch unassigned tasks from the first 5 repositories of the team
                 repo_filters = []
                 for i, repo in enumerate(team_repos):
                     if i >= 5: break
@@ -154,12 +149,41 @@ def list_tasks():
         tasks = []
         task_ids = set()
 
-        # If category_filter is set to security_vulnerability, only return those
+        # Helper to enrich with SLA
+        repo_policies = {}
+        def enrich_sla(task, item):
+            repo_full_name = item.repository.full_name
+            if repo_full_name not in repo_policies:
+                repo_policies[repo_full_name] = policy_store.get_effective_policy(repo_full_name)
+
+            policy = repo_policies[repo_full_name]
+            sla_hours = policy.get("sla_critical_hours", 48)
+
+            created_at = item.created_at.replace(tzinfo=datetime.timezone.utc) if item.created_at else None
+            if created_at:
+                deadline = created_at + datetime.timedelta(hours=sla_hours)
+                now = datetime.datetime.now(datetime.timezone.utc)
+                remaining = (deadline - now).total_seconds() / 3600
+
+                task["sla_deadline"] = deadline.isoformat()
+                task["sla_remaining_hours"] = round(remaining, 1)
+
+                if remaining < 0:
+                    task["sla_status"] = "exceeded"
+                elif remaining < 12:
+                    task["sla_status"] = "critical"
+                elif remaining < 24:
+                    task["sla_status"] = "warning"
+                else:
+                    task["sla_status"] = "healthy"
+
         if category_filter == 'security_vulnerability':
             for item in security_alerts:
                 task_id = f"{item.repository.full_name}#{item.number}"
                 if task_id not in task_ids:
-                    tasks.append(normalize(item, "security_vulnerability"))
+                    task = normalize(item, "security_vulnerability")
+                    enrich_sla(task, item)
+                    tasks.append(task)
                     task_ids.add(task_id)
             return jsonify(tasks), 200
 
@@ -184,12 +208,8 @@ def list_tasks():
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
                 task = normalize(item, "waiting_deployment")
-
-                # Enrich waiting_deployment tasks with pending run_id if available
                 try:
                     repo = item.repository
-                    # Search for workflow runs for the merge commit of this PR
-                    # Merged PRs have a merge_commit_sha
                     pr = item.as_pull_request()
                     if pr.merge_commit_sha:
                         runs = repo.get_workflow_runs(event='push', status='waiting')
@@ -197,9 +217,7 @@ def list_tasks():
                             if str(run.head_sha) == str(pr.merge_commit_sha):
                                 task["pending_run_id"] = int(run.id)
                                 break
-                except:
-                    pass
-
+                except: pass
                 tasks.append(task)
                 task_ids.add(task_id)
 
@@ -212,12 +230,13 @@ def list_tasks():
         for item in security_alerts:
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
-                tasks.append(normalize(item, "security_vulnerability"))
+                task = normalize(item, "security_vulnerability")
+                enrich_sla(task, item)
+                tasks.append(task)
                 task_ids.add(task_id)
 
         # Sort by updated_at desc
         tasks.sort(key=lambda x: x['updated_at'] if x['updated_at'] else '', reverse=True)
-
         return jsonify(tasks), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

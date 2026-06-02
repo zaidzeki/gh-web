@@ -103,6 +103,60 @@ def get_repo_governance(full_name):
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500
 
+@bp.route('/api/governance/orgs/<path:org_name>/policy', methods=['GET'])
+def get_org_governance(org_name):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # Check if org exists
+        g.get_organization(org_name)
+        policy = policy_store.get_org_policy(org_name)
+
+        return jsonify({
+            "org": org_name,
+            "policies": policy
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
+@bp.route('/api/governance/orgs/<path:org_name>/policy', methods=['PATCH'])
+def update_org_governance(org_name):
+    g = get_github_client()
+    if not g:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # Verify user is an admin or has sufficient permissions in the org
+        org = g.get_organization(org_name)
+        user = g.get_user()
+
+        # Simple permission check: must be a member, and we'll check if they can push to a repo in the org as a proxy for 'maintainer'
+        # Ideally we check org membership role, but that requires specific scopes.
+        # For Phase 5, we'll check if they are a member.
+        try:
+            membership = org.get_membership(user.login)
+            if membership.role not in ['admin', 'maintainer']:
+                 return jsonify({"error": f"Forbidden: {membership.role} role does not have permission to update organization policy"}), 403
+        except:
+            return jsonify({"error": "Forbidden: Organization access required"}), 403
+
+        data = request.get_json(silent=True) or request.form
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+
+        updated_policy = policy_store.update_org_policy(org_name, data)
+
+        return jsonify({
+            "message": f"Policy for {org_name} updated successfully",
+            "policies": updated_policy
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": mask_token(str(e))}), 500
+
 @bp.route('/api/workspace/portfolio/governance/heatmap', methods=['GET'])
 def get_portfolio_heatmap():
     token = session.get('github_token')

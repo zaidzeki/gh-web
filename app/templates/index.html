@@ -1063,6 +1063,78 @@
         </div>
     </div>
 
+    <!-- Governance Settings Modal -->
+    <div class="modal fade" id="governanceModal" tabindex="-1" aria-labelledby="governanceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-dark bg-dark text-white">
+                    <h5 class="modal-title" id="governanceModalLabel">Governance Orchestration</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-pills mb-3" id="governanceTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="repo-policy-tab" data-bs-toggle="pill" data-bs-target="#repo-policy" type="button" role="tab">Repository Policy</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="org-policy-tab" data-bs-toggle="pill" data-bs-target="#org-policy" type="button" role="tab">Organization Policy</button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="governanceTabsContent">
+                        <div class="tab-pane fade show active" id="repo-policy" role="tabpanel">
+                            <div id="repoPolicyInfo" class="alert alert-light border small mb-3">
+                                Managing policy for: <strong id="repoPolicyName"></strong>
+                            </div>
+                            <form id="repoPolicyForm">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="repo_block_merge_on_critical_security" name="block_merge_on_critical_security">
+                                    <label class="form-check-label" for="repo_block_merge_on_critical_security">Block Merge on Critical Security Vulnerabilities</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="repo_block_merge_on_failing_ci" name="block_merge_on_failing_ci">
+                                    <label class="form-check-label" for="repo_block_merge_on_failing_ci">Block Merge on Failing CI</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="repo_block_merge_on_sla_violation" name="block_merge_on_sla_violation">
+                                    <label class="form-check-label" for="repo_block_merge_on_sla_violation">Block Merge on SLA Violation</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="repo_sla_critical_hours" class="form-label">Critical Alert SLA (Hours)</label>
+                                    <input type="number" class="form-control" id="repo_sla_critical_hours" name="sla_critical_hours" min="1" max="720">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Repository Policy</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="org-policy" role="tabpanel">
+                            <div id="orgPolicyInfo" class="alert alert-light border small mb-3">
+                                Managing policy for organization: <strong id="orgPolicyName"></strong>
+                            </div>
+                            <form id="orgPolicyForm">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="org_block_merge_on_critical_security" name="block_merge_on_critical_security">
+                                    <label class="form-check-label" for="org_block_merge_on_critical_security">Block Merge on Critical Security (Org Default)</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="org_block_merge_on_failing_ci" name="block_merge_on_failing_ci">
+                                    <label class="form-check-label" for="org_block_merge_on_failing_ci">Block Merge on Failing CI (Org Default)</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="org_block_merge_on_sla_violation" name="block_merge_on_sla_violation">
+                                    <label class="form-check-label" for="org_block_merge_on_sla_violation">Block Merge on SLA Violation (Org Default)</label>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="org_sla_critical_hours" class="form-label">Critical Alert SLA (Hours - Org Default)</label>
+                                    <input type="number" class="form-control" id="org_sla_critical_hours" name="sla_critical_hours" min="1" max="720">
+                                </div>
+                                <button type="submit" class="btn btn-danger">Update Organization Policy</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Assign Milestone Modal -->
     <div class="modal fade" id="assignMilestoneModal" tabindex="-1" aria-labelledby="assignMilestoneModalLabel" aria-hidden="true">
         <div class="modal-dialog">

@@ -7,11 +7,6 @@
       "block_merge_on_sla_violation": true
     },
     "orgs": {},
-    "repos": {
-      "owner/repo": {
-        "block_merge_on_critical_security": false,
-        "block_merge_on_sla_violation": false
-      }
-    }
+    "repos": {}
   }
 }
