@@ -128,7 +128,7 @@ def merge_pr(full_name, pr_number):
 
         # Server-side Policy Enforcement
         from ..governance.routes import evaluate_repo_policy
-        compliant, violations, _ = evaluate_repo_policy(repo)
+        compliant, violations, _, _ = evaluate_repo_policy(repo)
         if not compliant:
             msgs = [v['message'] for v in violations]
             return jsonify({"error": f"Merge blocked by governance policy: {', '.join(msgs)}"}), 403

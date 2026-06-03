@@ -20,9 +20,9 @@ def get_github_client():
 def evaluate_repo_policy(repo):
     """
     Evaluates repository compliance against standard governance rules.
-    Returns: (compliant, violations, policies)
+    Returns: (compliant, violations, policies, sources)
     """
-    policies = policy_store.get_effective_policy(repo.full_name)
+    policies, sources = policy_store.get_effective_policy_with_sources(repo.full_name)
 
     violations = []
 
@@ -81,7 +81,7 @@ def evaluate_repo_policy(repo):
         except:
             pass
 
-    return len(violations) == 0, violations, policies
+    return len(violations) == 0, violations, policies, sources
 
 @bp.route('/api/repos/<path:full_name>/governance/policy', methods=['GET'])
 def get_repo_governance(full_name):
@@ -91,11 +91,12 @@ def get_repo_governance(full_name):
 
     try:
         repo = g.get_repo(full_name)
-        compliant, violations, policies = evaluate_repo_policy(repo)
+        compliant, violations, policies, sources = evaluate_repo_policy(repo)
 
         return jsonify({
             "repo": full_name,
             "policies": policies,
+            "sources": sources,
             "compliant": compliant,
             "violations": violations
         }), 200
@@ -112,11 +113,12 @@ def get_org_governance(org_name):
     try:
         # Check if org exists
         g.get_organization(org_name)
-        policy = policy_store.get_org_policy(org_name)
+        policy, sources = policy_store.get_org_policy_with_sources(org_name)
 
         return jsonify({
             "org": org_name,
-            "policies": policy
+            "policies": policy,
+            "sources": sources
         }), 200
 
     except Exception as e:
@@ -178,7 +180,7 @@ def get_portfolio_heatmap():
         try:
             repo = g.get_repo(full_name)
             pulse = calculate_repo_pulse(g, full_name)
-            compliant, violations, policies = evaluate_repo_policy(repo)
+            compliant, violations, policies, sources = evaluate_repo_policy(repo)
 
             freshness = pulse.get("metrics", {}).get("dependency_freshness_index", 0) or 0
             mttr = pulse.get("metrics", {}).get("security_mttr_hours", 0) or 0

@@ -949,6 +949,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    const updateSourceBadges = (tabId, sources) => {
+        const tab = document.getElementById(tabId);
+        if (!tab) return;
+        tab.querySelectorAll('.policy-source-badge').forEach(badge => {
+            const policyKey = badge.dataset.policy;
+            const source = sources[policyKey];
+            if (source) {
+                let badgeClass = 'bg-secondary';
+                let text = 'Global';
+                if (source === 'org') {
+                    badgeClass = 'bg-info text-dark';
+                    text = 'Org';
+                } else if (source === 'repo') {
+                    badgeClass = 'bg-primary';
+                    text = 'Repo';
+                }
+                badge.innerHTML = `<span class="badge ${badgeClass}" style="font-size: 0.6rem;">${text}</span>`;
+                badge.title = `Source: ${source.toUpperCase()}`;
+            } else {
+                badge.innerHTML = '';
+            }
+        });
+    };
+
     const openGovernanceManager = async (repoFullName) => {
         const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('governanceModal'));
         const repoNameEl = document.getElementById('repoPolicyName');
@@ -971,6 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('repo_block_merge_on_failing_ci').checked = p.block_merge_on_failing_ci;
                 document.getElementById('repo_block_merge_on_sla_violation').checked = p.block_merge_on_sla_violation;
                 document.getElementById('repo_sla_critical_hours').value = p.sla_critical_hours;
+                updateSourceBadges('repo-policy', data.sources || {});
             } else {
                 showAlert(data.error || 'Failed to fetch repository policy', 'danger');
             }
@@ -988,6 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('org_block_merge_on_failing_ci').checked = p.block_merge_on_failing_ci;
                 document.getElementById('org_block_merge_on_sla_violation').checked = p.block_merge_on_sla_violation;
                 document.getElementById('org_sla_critical_hours').value = p.sla_critical_hours;
+                updateSourceBadges('org-policy', data.sources || {});
                 orgTab.disabled = false;
                 orgTab.classList.remove('disabled');
             } else {
