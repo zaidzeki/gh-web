@@ -92,3 +92,8 @@
 **Vulnerability:** The `PolicyStore` suffered from a race condition where concurrent updates could lose data because the lock was only held during `_load` and `_save` separately, not the entire update cycle. It also lacked input whitelisting, allowing mass assignment of arbitrary keys.
 **Learning:** Thread safety in stateful stores requires locking the entire read-modify-write cycle, not just the I/O operations. Re-entrant locks (`RLock`) are necessary when internal methods also acquire the same lock.
 **Prevention:** Always use `RLock` for stateful managers and wrap the entire logical update in a single lock block. Enforce strict whitelists for any data updates originating from user-supplied JSON.
+
+## 2026-06-03 - Type Confusion in Policy Engine Validation
+**Vulnerability:** Policy updates lacked type validation, allowing strings or other truthy values to bypass boolean checks, or non-integer values to cause crashes (DoS) during SLA evaluation.
+**Learning:** In Python, `bool` is a subclass of `int`, so `isinstance(True, int)` is true. For strict security validation where a boolean should not be accepted as an integer (e.g. for hours), `type(v) is int` is required.
+**Prevention:** Always implement strict type and value validation at the persistence layer (e.g. PolicyStore) before saving user-controlled state, and handle validation errors gracefully in API routes.

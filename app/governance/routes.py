@@ -149,7 +149,10 @@ def update_org_governance(org_name):
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
-        updated_policy = policy_store.update_org_policy(org_name, data)
+        try:
+            updated_policy = policy_store.update_org_policy(org_name, data)
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
 
         return jsonify({
             "message": f"Policy for {org_name} updated successfully",
@@ -238,7 +241,10 @@ def update_repo_governance(full_name):
         if not data:
             return jsonify({"error": "No data provided"}), 400
 
-        updated_policy = policy_store.update_repo_policy(full_name, data)
+        try:
+            updated_policy = policy_store.update_repo_policy(full_name, data)
+        except ValueError as ve:
+            return jsonify({"error": str(ve)}), 400
 
         return jsonify({
             "message": f"Policy for {full_name} updated successfully",
