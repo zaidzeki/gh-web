@@ -1086,20 +1086,26 @@
                                 Managing policy for: <strong id="repoPolicyName"></strong>
                             </div>
                             <form id="repoPolicyForm">
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="repo_block_merge_on_critical_security" name="block_merge_on_critical_security">
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="repo_block_merge_on_critical_security" name="block_merge_on_critical_security">
                                     <label class="form-check-label" for="repo_block_merge_on_critical_security">Block Merge on Critical Security Vulnerabilities</label>
+                                    <span class="policy-source-badge ms-2" data-policy="block_merge_on_critical_security"></span>
                                 </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="repo_block_merge_on_failing_ci" name="block_merge_on_failing_ci">
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="repo_block_merge_on_failing_ci" name="block_merge_on_failing_ci">
                                     <label class="form-check-label" for="repo_block_merge_on_failing_ci">Block Merge on Failing CI</label>
+                                    <span class="policy-source-badge ms-2" data-policy="block_merge_on_failing_ci"></span>
                                 </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="repo_block_merge_on_sla_violation" name="block_merge_on_sla_violation">
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="repo_block_merge_on_sla_violation" name="block_merge_on_sla_violation">
                                     <label class="form-check-label" for="repo_block_merge_on_sla_violation">Block Merge on SLA Violation</label>
+                                    <span class="policy-source-badge ms-2" data-policy="block_merge_on_sla_violation"></span>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="repo_sla_critical_hours" class="form-label">Critical Alert SLA (Hours)</label>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <label for="repo_sla_critical_hours" class="form-label mb-0">Critical Alert SLA (Hours)</label>
+                                        <span class="policy-source-badge ms-2" data-policy="sla_critical_hours"></span>
+                                    </div>
                                     <input type="number" class="form-control" id="repo_sla_critical_hours" name="sla_critical_hours" min="1" max="720">
                                 </div>
                                 <button type="submit" class="btn btn-primary">Update Repository Policy</button>
@@ -1110,20 +1116,26 @@
                                 Managing policy for organization: <strong id="orgPolicyName"></strong>
                             </div>
                             <form id="orgPolicyForm">
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="org_block_merge_on_critical_security" name="block_merge_on_critical_security">
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="org_block_merge_on_critical_security" name="block_merge_on_critical_security">
                                     <label class="form-check-label" for="org_block_merge_on_critical_security">Block Merge on Critical Security (Org Default)</label>
+                                    <span class="policy-source-badge ms-2" data-policy="block_merge_on_critical_security"></span>
                                 </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="org_block_merge_on_failing_ci" name="block_merge_on_failing_ci">
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="org_block_merge_on_failing_ci" name="block_merge_on_failing_ci">
                                     <label class="form-check-label" for="org_block_merge_on_failing_ci">Block Merge on Failing CI (Org Default)</label>
+                                    <span class="policy-source-badge ms-2" data-policy="block_merge_on_failing_ci"></span>
                                 </div>
-                                <div class="mb-3 form-check">
-                                    <input type="checkbox" class="form-check-input" id="org_block_merge_on_sla_violation" name="block_merge_on_sla_violation">
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="org_block_merge_on_sla_violation" name="block_merge_on_sla_violation">
                                     <label class="form-check-label" for="org_block_merge_on_sla_violation">Block Merge on SLA Violation (Org Default)</label>
+                                    <span class="policy-source-badge ms-2" data-policy="block_merge_on_sla_violation"></span>
                                 </div>
                                 <div class="mb-3">
-                                    <label for="org_sla_critical_hours" class="form-label">Critical Alert SLA (Hours - Org Default)</label>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <label for="org_sla_critical_hours" class="form-label mb-0">Critical Alert SLA (Hours - Org Default)</label>
+                                        <span class="policy-source-badge ms-2" data-policy="sla_critical_hours"></span>
+                                    </div>
                                     <input type="number" class="form-control" id="org_sla_critical_hours" name="sla_critical_hours" min="1" max="720">
                                 </div>
                                 <button type="submit" class="btn btn-danger">Update Organization Policy</button>

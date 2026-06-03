@@ -6,7 +6,15 @@
       "sla_critical_hours": 48,
       "block_merge_on_sla_violation": true
     },
-    "orgs": {},
-    "repos": {}
+    "orgs": {
+      "acme": {
+        "sla_critical_hours": 24
+      }
+    },
+    "repos": {
+      "acme/app": {
+        "block_merge_on_failing_ci": false
+      }
+    }
   }
 }

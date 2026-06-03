@@ -69,37 +69,65 @@ class PolicyStore:
         """
         Resolves policy using hierarchy: Repo -> Org -> Global.
         """
+        policy, _ = self.get_effective_policy_with_sources(repo_full_name)
+        return policy
+
+    def get_effective_policy_with_sources(self, repo_full_name):
+        """
+        Resolves policy using hierarchy: Repo -> Org -> Global.
+        Returns (policy, sources)
+        """
         with self.lock:
             data = self._load()
             scopes = data.get("scopes", {})
 
             # 1. Global defaults
             policy = scopes.get("global", {}).copy()
+            sources = {k: "global" for k in policy.keys()}
 
             # 2. Org overrides
             org_name = repo_full_name.split('/')[0] if '/' in repo_full_name else None
             if org_name and org_name in scopes.get("orgs", {}):
-                policy.update(scopes["orgs"][org_name])
+                org_policy = scopes["orgs"][org_name]
+                for k, v in org_policy.items():
+                    policy[k] = v
+                    sources[k] = "org"
 
             # 3. Repo overrides
             if repo_full_name in scopes.get("repos", {}):
-                policy.update(scopes["repos"][repo_full_name])
+                repo_policy = scopes["repos"][repo_full_name]
+                for k, v in repo_policy.items():
+                    policy[k] = v
+                    sources[k] = "repo"
 
-            return policy
+            return policy, sources
 
     def get_org_policy(self, org_name):
         """
         Resolves policy for an organization: Org overrides + Global defaults.
+        """
+        policy, _ = self.get_org_policy_with_sources(org_name)
+        return policy
+
+    def get_org_policy_with_sources(self, org_name):
+        """
+        Resolves policy for an organization: Org overrides + Global defaults.
+        Returns (policy, sources)
         """
         with self.lock:
             data = self._load()
             scopes = data.get("scopes", {})
 
             policy = scopes.get("global", {}).copy()
-            if org_name in scopes.get("orgs", {}):
-                policy.update(scopes["orgs"][org_name])
+            sources = {k: "global" for k in policy.keys()}
 
-            return policy
+            if org_name in scopes.get("orgs", {}):
+                org_policy = scopes["orgs"][org_name]
+                for k, v in org_policy.items():
+                    policy[k] = v
+                    sources[k] = "org"
+
+            return policy, sources
 
     def update_org_policy(self, org_name, updates):
         with self.lock:
