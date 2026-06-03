@@ -129,6 +129,16 @@ class PolicyStore:
 
             return policy, sources
 
+    def _validate_updates(self, updates):
+        """Validates that policy updates have correct types and values."""
+        for k, v in updates.items():
+            if k in ["block_merge_on_critical_security", "block_merge_on_failing_ci", "block_merge_on_sla_violation"]:
+                if not isinstance(v, bool):
+                    raise ValueError(f"Value for {k} must be a boolean")
+            elif k == "sla_critical_hours":
+                if type(v) is not int or v <= 0:
+                    raise ValueError(f"Value for {k} must be a positive integer")
+
     def update_org_policy(self, org_name, updates):
         with self.lock:
             data = self._load()
@@ -140,6 +150,7 @@ class PolicyStore:
 
             # Security: Whitelist keys to prevent mass assignment
             filtered_updates = {k: v for k, v in updates.items() if k in self.ALLOWED_POLICY_KEYS}
+            self._validate_updates(filtered_updates)
 
             data["scopes"]["orgs"][org_name].update(filtered_updates)
             self._save(data)
@@ -156,6 +167,7 @@ class PolicyStore:
 
             # Security: Whitelist keys to prevent mass assignment
             filtered_updates = {k: v for k, v in updates.items() if k in self.ALLOWED_POLICY_KEYS}
+            self._validate_updates(filtered_updates)
 
             data["scopes"]["repos"][repo_full_name].update(filtered_updates)
             self._save(data)
