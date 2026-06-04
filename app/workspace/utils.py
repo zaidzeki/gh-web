@@ -1,6 +1,7 @@
 import os
 import json
 import re
+from urllib.parse import urlparse
 from flask import session
 from werkzeug.utils import secure_filename
 from jinja2.sandbox import SandboxedEnvironment
@@ -65,6 +66,31 @@ def get_repo_full_name_from_url(url):
         return None
     match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
     return match.group(1) if match else None
+
+def validate_github_url(url):
+    """
+    SSRF Protection: Robustly validates that the URL is an official GitHub repository URL.
+    Uses urlparse to prevent hostname-based bypasses (e.g., github.com.evil.com).
+    """
+    if not url or not isinstance(url, str):
+        return False
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ['http', 'https']:
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        hostname = hostname.lower()
+        if hostname != 'github.com' and hostname != 'www.github.com':
+            return False
+        # Prevent path traversal in the URL itself which might confuse downstream logic
+        path_parts = parsed.path.split('/')
+        if '..' in path_parts:
+            return False
+        return True
+    except Exception:
+        return False
 
 def is_safe_path(basedir, path, follow_symlinks=True):
     basedir = os.path.realpath(basedir)

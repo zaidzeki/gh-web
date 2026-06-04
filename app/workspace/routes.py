@@ -11,7 +11,8 @@ import git
 from werkzeug.utils import secure_filename
 from .utils import (
     get_template_manifest, render_template_dir, is_safe_path, mask_token,
-    get_templates_root, get_repo_full_name_from_url, get_workspace_dir
+    get_templates_root, get_repo_full_name_from_url, get_workspace_dir,
+    validate_github_url
 )
 
 bp = Blueprint('workspace', __name__)
@@ -41,11 +42,14 @@ def clone_repo():
         return jsonify({"error": "repo_url is required"}), 400
 
     # SSRF Protection: Only allow official GitHub URLs (HTTPS preferred)
-    if not re.match(r'^https?://(www\.)?github\.com/', repo_url, re.IGNORECASE):
+    if not validate_github_url(repo_url):
         return jsonify({"error": "Invalid repository URL. Only github.com URLs are allowed."}), 400
 
     repo_name = repo_url.split('/')[-1].replace('.git', '')
-    workspace_dir = get_workspace_dir(repo_name)
+    try:
+        workspace_dir = get_workspace_dir(repo_name)
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
 
     if os.path.exists(os.path.join(workspace_dir, '.git')):
         session['active_repo'] = repo_name
@@ -743,7 +747,7 @@ def import_template():
         return jsonify({"error": "repo_url is required"}), 400
 
     # SSRF Protection: Only allow official GitHub URLs (HTTPS preferred)
-    if not re.match(r'^https?://(www\.)?github\.com/', repo_url, re.IGNORECASE):
+    if not validate_github_url(repo_url):
         return jsonify({"error": "Invalid repository URL. Only github.com URLs are allowed."}), 400
 
     if not template_name:
