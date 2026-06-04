@@ -167,14 +167,21 @@
     - [x] Implement "SLA Violation" tracking for critical security alerts.
     - [x] Add "SLA Warning" indicators to Task Inbox and Repo Cards.
 
-- [ ] **Epic: Strategic Governance Phase 5: Interactive Orchestration & Tactical SLAs**
-    - [ ] Implement `GET/PATCH /api/governance/orgs/<org>/policy` for organizational guardrails.
-    - [ ] Enrich Task Inbox with relative SLA countdowns (e.g. "12h remaining").
-    - [ ] Implement "Interactive Heatmap" navigation (Click repo dot to manage).
-    - [ ] Create Unified Governance Manager Modal (Repo vs. Org scope).
-    - [ ] Add "Governance" quick-actions to Dashboard repository cards.
-    - [ ] Implement "Inheritance Visualization" in Policy UI (Global > Org > Repo).
+- [x] **Epic: Strategic Governance Phase 5: Interactive Orchestration & Tactical SLAs**
+    - [x] Implement `GET/PATCH /api/governance/orgs/<org>/policy` for organizational guardrails.
+    - [x] Enrich Task Inbox with relative SLA countdowns (e.g. "12h remaining").
+    - [x] Implement "Interactive Heatmap" navigation (Click repo dot to manage).
+    - [x] Create Unified Governance Manager Modal (Repo vs. Org scope).
+    - [x] Add "Governance" quick-actions to Dashboard repository cards.
+    - [x] Implement "Inheritance Visualization" in Policy UI (Global > Org > Repo).
 - [x] Create Frontend UI (Jinja2 templates, JS).
+
+- [ ] **Epic: Strategic Governance Phase 6: Predictive Delivery & Intelligent Remediation**
+    - [ ] Implement Delivery Certainty Engine (Progress + Velocity).
+    - [ ] Implement "At Risk" milestone forecasting in Portfolio Roadmap.
+    - [ ] Implement `POST /api/governance/remediate/batch` for multi-repo patching.
+    - [ ] Create Remediation Orchestrator UI for common vulnerabilities.
+    - [ ] Implement proactive Risk Guardrails (`warn_on_at_risk_milestone`).
 - [x] Add toast notifications for API responses.
 
 ## P3: Polish

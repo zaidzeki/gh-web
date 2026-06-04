@@ -89,3 +89,7 @@
 ## 2026-06-02 - [Interactive Policy Orchestration & Tactical Governance]
 **Learning:** Visualizing debt via Heatmaps and tracking SLAs is a critical first step, but it creates a "Governance Gap" if the user cannot immediately act on those insights. A dashboard that shows a repository is in the "Red Zone" must also provide the controls to adjust policies or prioritize fixes. Insights without interactivity lead to frustration; orchestration requires a tight loop between observation and enforcement.
 **Action:** Close the loop by implementing interactive Heatmap navigation and a unified Governance Settings interface that allows for per-repository and per-organization policy overrides.
+
+## 2026-06-03 - [From Reactive Guardrails to Predictive Certainty]
+**Learning:** High-fidelity governance reaches a point of diminishing returns when it only reacts to failures (CI red, SLA violated). To scale delivery management across large portfolios, the system must shift from "Current State" visibility to "Trajectory" forecasting. Predicting a failure allows for early intervention, transforming governance from a "Policeman" to a "Pilot."
+**Action:** Extend the strategic governance vision to include a "Delivery Certainty Engine" that uses Pulse velocity to forecast milestone completion risks before they manifest.
