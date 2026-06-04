@@ -4,6 +4,7 @@ GitPython
 httpx
 pytest
 pytest-httpx
+pytest-mock
 syrupy
 playwright
 pytest-playwright
