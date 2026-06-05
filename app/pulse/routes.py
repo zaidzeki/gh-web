@@ -214,9 +214,9 @@ def _get_security_mttr(repo, start_date, end_date):
         pass
     return None
 
-def calculate_repo_pulse(g, repo_full_name):
+def calculate_repo_pulse(g, repo_full_name, repo_obj=None):
     try:
-        repo = g.get_repo(repo_full_name)
+        repo = repo_obj if repo_obj else g.get_repo(repo_full_name)
         prod_env = get_production_environment(repo)
 
         now = datetime.datetime.now(datetime.timezone.utc)

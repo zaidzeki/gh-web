@@ -1313,6 +1313,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusBadges += `<span class="badge ${msClass} ms-1" title="Milestone: ${escapeHTML(task.milestone.title)}${dueStr}">🎯 ${escapeHTML(task.milestone.title)}</span>`;
                 }
 
+                if (task.predictive_risk === 'at_risk') {
+                    statusBadges += `<span class="badge bg-warning text-dark ms-1" title="${escapeHTML(task.risk_message)}">⚠️ RISK: Overdue Predicted</span>`;
+                }
+
                 let actionBtn = task.type === 'pr' ?
                     `<button class="btn btn-sm btn-outline-primary review-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Review</button>` :
                     `<button class="btn btn-sm btn-outline-success fix-task-btn" data-repo="${escapeHTML(task.repo)}" data-number="${escapeHTML(String(task.number))}">Fix</button>`;
@@ -1520,8 +1524,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     const dueDate = ms.due_on ? new Date(ms.due_on).toLocaleDateString() : 'No due date';
                     const percent = Math.round(ms.progress);
 
-                    const borderClass = ms.is_overdue ? 'border-danger' : 'border-light';
-                    const badgeClass = ms.is_overdue ? 'bg-danger' : 'bg-info text-dark';
+                    let borderClass = 'border-light';
+                    let badgeClass = 'bg-info text-dark';
+                    let certaintyBadge = '';
+
+                    if (ms.is_overdue) {
+                        borderClass = 'border-danger';
+                        badgeClass = 'bg-danger';
+                    } else if (ms.certainty && ms.certainty.tier) {
+                        const tier = ms.certainty.tier;
+                        if (tier === 'Low') {
+                            borderClass = 'border-warning';
+                            certaintyBadge = `<span class="badge bg-danger ms-1" title="${escapeHTML(ms.certainty.message)}">Certainty: Low (${ms.certainty.score})</span>`;
+                        } else if (tier === 'Medium') {
+                            certaintyBadge = `<span class="badge bg-warning text-dark ms-1" title="${escapeHTML(ms.certainty.message)}">Certainty: Med (${ms.certainty.score})</span>`;
+                        } else if (tier === 'High') {
+                            certaintyBadge = `<span class="badge bg-success ms-1" title="${escapeHTML(ms.certainty.message)}">Certainty: High (${ms.certainty.score})</span>`;
+                        }
+                    }
 
                     col.innerHTML = `
                         <div class="card h-100 shadow-sm ${borderClass} portfolio-milestone-card"
@@ -1533,9 +1553,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(ms.title)}">${escapeHTML(ms.title)}</h6>
                                     <span class="badge ${badgeClass} small">${escapeHTML(ms.repo_name)}</span>
                                 </div>
-                                <div class="small ${ms.is_overdue ? 'text-danger fw-bold' : 'text-muted'} mb-2">
+                                <div class="small ${ms.is_overdue ? 'text-danger fw-bold' : 'text-muted'} mb-1">
                                     <i class="bi bi-calendar"></i> Due: ${escapeHTML(dueDate)}
                                     ${ms.is_overdue ? ' <span class="badge bg-danger">OVERDUE</span>' : ''}
+                                </div>
+                                <div class="mb-2">
+                                    ${certaintyBadge}
                                 </div>
                                 <div class="progress mb-1" style="height: 6px;">
                                     <div class="progress-bar bg-success" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
