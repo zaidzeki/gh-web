@@ -10,6 +10,15 @@ class PolicyStore:
         "block_merge_on_sla_violation"
     }
 
+    # Security: Hardcoded defaults ensure that even if the persistence layer is corrupted
+    # or missing, the application defaults to a secure (fail-closed) state.
+    GLOBAL_DEFAULTS = {
+        "block_merge_on_critical_security": True,
+        "block_merge_on_failing_ci": True,
+        "sla_critical_hours": 48,
+        "block_merge_on_sla_violation": True
+    }
+
     def __init__(self, storage_path='app/data/policies.json'):
         self.storage_path = storage_path
         # Use RLock to allow nested locking if needed and safer multi-threaded access
@@ -28,12 +37,7 @@ class PolicyStore:
 
                 default_data = {
                     "scopes": {
-                        "global": {
-                            "block_merge_on_critical_security": True,
-                            "block_merge_on_failing_ci": True,
-                            "sla_critical_hours": 48,
-                            "block_merge_on_sla_violation": True
-                        },
+                        "global": self.GLOBAL_DEFAULTS.copy(),
                         "orgs": {},
                         "repos": {}
                     }
@@ -41,8 +45,7 @@ class PolicyStore:
                 self._save(default_data)
 
     def _load(self):
-        # This method is used internally by update methods under lock
-        # but also by getters.
+        """Loads data from storage. Returns empty structure if missing or corrupted."""
         with self.lock:
             try:
                 if not os.path.exists(self.storage_path):
@@ -53,17 +56,21 @@ class PolicyStore:
                 return {"scopes": {"global": {}, "orgs": {}, "repos": {}}}
 
     def _save(self, data):
-        # This method should be called under lock
+        """Atomic write to persistence layer with restricted permissions."""
         with self.lock:
-            # Atomic write via temporary file is preferred but here we ensure permissions
-            with open(self.storage_path, 'w') as f:
-                json.dump(data, f, indent=2)
-
-            # Ensure file has restricted permissions (0600)
+            temp_path = self.storage_path + ".tmp"
             try:
-                os.chmod(self.storage_path, 0o600)
-            except OSError:
-                pass
+                with open(temp_path, 'w') as f:
+                    json.dump(data, f, indent=2)
+
+                # Ensure restricted permissions (0600) before moving into place
+                os.chmod(temp_path, 0o600)
+                # Atomic swap
+                os.replace(temp_path, self.storage_path)
+            except Exception:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                raise
 
     def get_effective_policy(self, repo_full_name):
         """
@@ -81,9 +88,14 @@ class PolicyStore:
             data = self._load()
             scopes = data.get("scopes", {})
 
-            # 1. Global defaults
-            policy = scopes.get("global", {}).copy()
+            # 1. Global defaults (hardcoded fallback + persistence overrides)
+            policy = self.GLOBAL_DEFAULTS.copy()
             sources = {k: "global" for k in policy.keys()}
+
+            persisted_global = scopes.get("global", {})
+            for k, v in persisted_global.items():
+                if k in self.ALLOWED_POLICY_KEYS:
+                    policy[k] = v
 
             # 2. Org overrides
             org_name = repo_full_name.split('/')[0] if '/' in repo_full_name else None
@@ -118,8 +130,14 @@ class PolicyStore:
             data = self._load()
             scopes = data.get("scopes", {})
 
-            policy = scopes.get("global", {}).copy()
+            # Start with hardcoded defaults, overlay persisted global overrides
+            policy = self.GLOBAL_DEFAULTS.copy()
             sources = {k: "global" for k in policy.keys()}
+
+            persisted_global = scopes.get("global", {})
+            for k, v in persisted_global.items():
+                if k in self.ALLOWED_POLICY_KEYS:
+                    policy[k] = v
 
             if org_name in scopes.get("orgs", {}):
                 org_policy = scopes["orgs"][org_name]
