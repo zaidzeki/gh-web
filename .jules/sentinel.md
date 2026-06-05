@@ -97,3 +97,8 @@
 **Vulnerability:** Policy updates lacked type validation, allowing strings or other truthy values to bypass boolean checks, or non-integer values to cause crashes (DoS) during SLA evaluation.
 **Learning:** In Python, `bool` is a subclass of `int`, so `isinstance(True, int)` is true. For strict security validation where a boolean should not be accepted as an integer (e.g. for hours), `type(v) is int` is required.
 **Prevention:** Always implement strict type and value validation at the persistence layer (e.g. PolicyStore) before saving user-controlled state, and handle validation errors gracefully in API routes.
+
+## 2026-06-15 - Fail-Open Security Gates on Persistence Corruption
+**Vulnerability:** The `PolicyStore` defaulted to an empty configuration if the persistence file was malformed or missing keys. This caused security gates (like blocking merges on critical vulnerabilities) to silently disable themselves, resulting in a "fail-open" posture.
+**Learning:** Relying solely on external configuration files for security critical logic creates a single point of failure. If the file is corrupted, the system must fallback to a hardcoded "fail-closed" state to maintain protection.
+**Prevention:** Always define hardcoded secure defaults within the codebase that serve as the base for any configuration resolution. Implement atomic writes (temp file + rename) to minimize the risk of file corruption during updates.
