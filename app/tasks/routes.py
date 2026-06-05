@@ -3,6 +3,8 @@ import github
 import datetime
 from ..workspace.utils import mask_token
 from ..governance.routes import policy_store
+from ..milestones.routes import calculate_certainty
+from ..pulse.routes import calculate_repo_pulse
 
 bp = Blueprint('tasks', __name__)
 
@@ -25,6 +27,8 @@ def normalize(issue_or_pr, category):
         "sla_status": None,
         "sla_deadline": None,
         "sla_remaining_hours": None,
+        "predictive_risk": None,
+        "risk_message": None,
         "title": str(issue_or_pr.title),
         "repo": repo_full_name,
         "number": int(issue_or_pr.number),
@@ -177,31 +181,60 @@ def list_tasks():
                 else:
                     task["sla_status"] = "healthy"
 
+        # Cache for Pulse data to avoid N+1 API calls
+        pulse_cache = {}
+
+        def enrich_predictive_risk(task, item):
+            if not task["milestone"]:
+                return
+
+            repo_full_name = task["repo"]
+            if repo_full_name not in pulse_cache:
+                pulse_cache[repo_full_name] = calculate_repo_pulse(g, repo_full_name, repo_obj=item.repository)
+
+            pulse = pulse_cache[repo_full_name]
+            lead_time = pulse.get("metrics", {}).get("lead_time_to_change_hours")
+
+            due = item.milestone.due_on
+            if due and due.tzinfo is None:
+                due = due.replace(tzinfo=datetime.timezone.utc)
+
+            certainty = calculate_certainty(int(item.milestone.open_issues), lead_time, due)
+            if certainty.get("tier") == "Low":
+                task["predictive_risk"] = "at_risk"
+                task["risk_message"] = certainty.get("message", "Milestone completion predicted to exceed deadline.")
+
         if category_filter == 'security_vulnerability':
             for item in security_alerts:
                 task_id = f"{item.repository.full_name}#{item.number}"
                 if task_id not in task_ids:
                     task = normalize(item, "security_vulnerability")
                     enrich_sla(task, item)
+                    enrich_predictive_risk(task, item)
                     tasks.append(task)
                     task_ids.add(task_id)
             return jsonify(tasks), 200
 
         for item in action_required:
             task = normalize(item, "review_requested")
+            enrich_predictive_risk(task, item)
             tasks.append(task)
             task_ids.add(task["id"])
 
         for item in in_progress:
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
-                tasks.append(normalize(item, "assigned"))
+                task = normalize(item, "assigned")
+                enrich_predictive_risk(task, item)
+                tasks.append(task)
                 task_ids.add(task_id)
 
         for item in my_prs:
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
-                tasks.append(normalize(item, "authored"))
+                task = normalize(item, "authored")
+                enrich_predictive_risk(task, item)
+                tasks.append(task)
                 task_ids.add(task_id)
 
         for item in waiting_deployment:
@@ -224,7 +257,9 @@ def list_tasks():
         for item in team_unassigned:
             task_id = f"{item.repository.full_name}#{item.number}"
             if task_id not in task_ids:
-                tasks.append(normalize(item, "team_unassigned"))
+                task = normalize(item, "team_unassigned")
+                enrich_predictive_risk(task, item)
+                tasks.append(task)
                 task_ids.add(task_id)
 
         for item in security_alerts:
@@ -232,6 +267,7 @@ def list_tasks():
             if task_id not in task_ids:
                 task = normalize(item, "security_vulnerability")
                 enrich_sla(task, item)
+                enrich_predictive_risk(task, item)
                 tasks.append(task)
                 task_ids.add(task_id)
 

@@ -3,11 +3,52 @@ from flask import Blueprint, request, session, jsonify
 import github
 from github import Github
 import git
+import datetime
 from werkzeug.utils import secure_filename
 from concurrent.futures import ThreadPoolExecutor
 from ..workspace.utils import mask_token, get_repo_full_name_from_url
+from ..pulse.routes import calculate_repo_pulse
 
 bp = Blueprint('milestones', __name__)
+
+def calculate_certainty(open_issues, lead_time_hours, due_on):
+    """
+    Calculates the Delivery Certainty Score.
+    Certainty = Time Remaining / (Remaining Work * Velocity)
+    """
+    if not due_on:
+        return {"score": None, "tier": "Unknown", "message": "No deadline set"}
+
+    if open_issues == 0:
+        return {"score": 2.0, "tier": "High", "message": "All tasks completed"}
+
+    # Use a default velocity of 48h if no historical lead time is available
+    velocity = lead_time_hours if lead_time_hours is not None else 48.0
+    time_needed = open_issues * velocity
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if due_on.tzinfo is None:
+        due_on = due_on.replace(tzinfo=datetime.timezone.utc)
+
+    time_remaining_td = due_on - now
+    time_remaining_hours = time_remaining_td.total_seconds() / 3600
+
+    if time_remaining_hours <= 0:
+        return {"score": 0.0, "tier": "Low", "message": "Deadline passed"}
+
+    certainty = time_remaining_hours / time_needed
+
+    tier = "Low"
+    if certainty > 1.2:
+        tier = "High"
+    elif certainty >= 0.9:
+        tier = "Medium"
+
+    return {
+        "score": round(certainty, 2),
+        "tier": tier,
+        "message": f"Predicted to finish {'ahead of' if certainty > 1 else 'behind'} schedule"
+    }
 
 def get_github_client():
     token = session.get('github_token')
@@ -124,6 +165,10 @@ def workspace_portfolio_milestones():
             gh_repo = g.get_repo(full_name)
             milestones = gh_repo.get_milestones(state='open')
 
+            # Fetch Pulse for Lead Time
+            pulse = calculate_repo_pulse(g, full_name, repo_obj=gh_repo)
+            lead_time = pulse.get("metrics", {}).get("lead_time_to_change_hours")
+
             import datetime
             now = datetime.datetime.now(datetime.timezone.utc)
 
@@ -132,12 +177,14 @@ def workspace_portfolio_milestones():
                 total = int(ms.open_issues) + int(ms.closed_issues)
                 progress = (int(ms.closed_issues) / total * 100) if total > 0 else 0
                 is_overdue = False
+                due = ms.due_on
                 if ms.due_on:
                     # ms.due_on is often naive but usually UTC from PyGithub
-                    due = ms.due_on
                     if due.tzinfo is None:
                         due = due.replace(tzinfo=datetime.timezone.utc)
                     is_overdue = due < now
+
+                certainty = calculate_certainty(int(ms.open_issues), lead_time, due)
 
                 repo_milestones.append({
                     "repo_name": str(repo_dir),
@@ -150,6 +197,7 @@ def workspace_portfolio_milestones():
                     "due_on": ms.due_on.isoformat() if ms.due_on else None,
                     "progress": float(progress),
                     "is_overdue": bool(is_overdue),
+                    "certainty": certainty,
                     "html_url": str(ms.html_url)
                 })
             return repo_milestones
