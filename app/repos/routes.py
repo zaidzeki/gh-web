@@ -251,13 +251,16 @@ def fetch_security_info(repo):
     # 1. Dependabot Alerts
     try:
         dep_alerts = repo.get_dependabot_alerts(state='open')
+        # Efficiently fetch total counts by severity without iterating over every alert
+        # Security: Only iterate over the first 100 alerts for the detailed explorer list
         for alert in dep_alerts:
             severity = str(alert.security_advisory.severity).lower()
             if severity in summary["vulnerabilities"]:
                 summary["vulnerabilities"][severity] += 1
 
-            alerts.append({
-                "type": "dependabot",
+            if len(alerts) < 100:
+                alerts.append({
+                    "type": "dependabot",
                 "number": int(alert.number),
                 "severity": severity,
                 "package": str(alert.security_vulnerability.package.name),
@@ -271,8 +274,10 @@ def fetch_security_info(repo):
     # 2. Secret Scanning Alerts
     try:
         secret_alerts = repo.get_secret_scanning_alerts(state='open')
-        for alert in secret_alerts:
+        # Security: Limit to first 100 alerts for the detailed explorer list
+        for i, alert in enumerate(secret_alerts):
             summary["secrets"]["open"] += 1
+            if i >= 100: continue
             alerts.append({
                 "type": "secret",
                 "secret_type": str(alert.secret_type),
@@ -284,6 +289,7 @@ def fetch_security_info(repo):
     # 3. Code Scanning Alerts
     try:
         code_alerts = repo.get_codescan_alerts(state='open')
+        # Security: Only iterate over the first 100 alerts for the detailed explorer list
         for alert in code_alerts:
             severity = str(alert.rule.severity).lower()
             if severity == 'error':
@@ -291,8 +297,9 @@ def fetch_security_info(repo):
             elif severity in ['warning', 'note']:
                 summary["code_scanning"]["warnings"] += 1
 
-            alerts.append({
-                "type": "code_scanning",
+            if len(alerts) < 100:
+                alerts.append({
+                    "type": "code_scanning",
                 "severity": severity,
                 "rule": str(alert.rule.description),
                 "html_url": str(alert.html_url)

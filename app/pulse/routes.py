@@ -201,7 +201,9 @@ def _get_security_mttr(repo, start_date, end_date):
     try:
         fixed_alerts = repo.get_dependabot_alerts(state='fixed')
         mttr_list = []
-        for a in fixed_alerts:
+        # Security: Limit to first 250 alerts to prevent resource exhaustion while maintaining accuracy
+        for i, a in enumerate(fixed_alerts):
+            if i >= 250: break
             # Use updated_at as proxy for fixed_at
             fixed_at = a.updated_at.replace(tzinfo=datetime.timezone.utc)
             if start_date <= fixed_at <= end_date:
