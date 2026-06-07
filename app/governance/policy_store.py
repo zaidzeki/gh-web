@@ -7,7 +7,8 @@ class PolicyStore:
         "block_merge_on_critical_security",
         "block_merge_on_failing_ci",
         "sla_critical_hours",
-        "block_merge_on_sla_violation"
+        "block_merge_on_sla_violation",
+        "warn_on_at_risk_milestone"
     }
 
     # Security: Hardcoded defaults ensure that even if the persistence layer is corrupted
@@ -16,7 +17,8 @@ class PolicyStore:
         "block_merge_on_critical_security": True,
         "block_merge_on_failing_ci": True,
         "sla_critical_hours": 48,
-        "block_merge_on_sla_violation": True
+        "block_merge_on_sla_violation": True,
+        "warn_on_at_risk_milestone": True
     }
 
     def __init__(self, storage_path='app/data/policies.json'):
@@ -150,7 +152,7 @@ class PolicyStore:
     def _validate_updates(self, updates):
         """Validates that policy updates have correct types and values."""
         for k, v in updates.items():
-            if k in ["block_merge_on_critical_security", "block_merge_on_failing_ci", "block_merge_on_sla_violation"]:
+            if k in ["block_merge_on_critical_security", "block_merge_on_failing_ci", "block_merge_on_sla_violation", "warn_on_at_risk_milestone"]:
                 if not isinstance(v, bool):
                     raise ValueError(f"Value for {k} must be a boolean")
             elif k == "sla_critical_hours":

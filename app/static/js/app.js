@@ -994,6 +994,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('repo_block_merge_on_critical_security').checked = p.block_merge_on_critical_security;
                 document.getElementById('repo_block_merge_on_failing_ci').checked = p.block_merge_on_failing_ci;
                 document.getElementById('repo_block_merge_on_sla_violation').checked = p.block_merge_on_sla_violation;
+                document.getElementById('repo_warn_on_at_risk_milestone').checked = p.warn_on_at_risk_milestone;
                 document.getElementById('repo_sla_critical_hours').value = p.sla_critical_hours;
                 updateSourceBadges('repo-policy', data.sources || {});
             } else {
@@ -1012,6 +1013,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('org_block_merge_on_critical_security').checked = p.block_merge_on_critical_security;
                 document.getElementById('org_block_merge_on_failing_ci').checked = p.block_merge_on_failing_ci;
                 document.getElementById('org_block_merge_on_sla_violation').checked = p.block_merge_on_sla_violation;
+                document.getElementById('org_warn_on_at_risk_milestone').checked = p.warn_on_at_risk_milestone;
                 document.getElementById('org_sla_critical_hours').value = p.sla_critical_hours;
                 updateSourceBadges('org-policy', data.sources || {});
                 orgTab.disabled = false;
@@ -1039,6 +1041,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 block_merge_on_critical_security: document.getElementById('repo_block_merge_on_critical_security').checked,
                 block_merge_on_failing_ci: document.getElementById('repo_block_merge_on_failing_ci').checked,
                 block_merge_on_sla_violation: document.getElementById('repo_block_merge_on_sla_violation').checked,
+                warn_on_at_risk_milestone: document.getElementById('repo_warn_on_at_risk_milestone').checked,
                 sla_critical_hours: parseInt(document.getElementById('repo_sla_critical_hours').value)
             };
 
@@ -1075,6 +1078,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 block_merge_on_critical_security: document.getElementById('org_block_merge_on_critical_security').checked,
                 block_merge_on_failing_ci: document.getElementById('org_block_merge_on_failing_ci').checked,
                 block_merge_on_sla_violation: document.getElementById('org_block_merge_on_sla_violation').checked,
+                warn_on_at_risk_milestone: document.getElementById('org_warn_on_at_risk_milestone').checked,
                 sla_critical_hours: parseInt(document.getElementById('org_sla_critical_hours').value)
             };
 
@@ -1206,6 +1210,123 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleLoading(refreshHeatmapBtn, true);
             refreshPortfolioHeatmap().finally(() => toggleLoading(refreshHeatmapBtn, false));
         });
+    }
+
+    const openRemediationOrchestrator = async () => {
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('remediationOrchestratorModal'));
+        const list = document.getElementById('remediationSuggestionsList');
+
+        list.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-danger" role="status"></div><p class="mt-2 text-muted">Analyzing portfolio for common vulnerabilities...</p></div>';
+        modal.show();
+
+        const repoNames = lastPortfolioData ? lastPortfolioData.map(item => item.full_name).filter(Boolean) : [];
+        if (repoNames.length === 0) {
+            list.innerHTML = '<p class="text-muted p-4 text-center">No active workspaces to analyze.</p>';
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/api/governance/remediate/suggestions?repos=${encodeURIComponent(repoNames.join(','))}`);
+            const suggestions = await resp.json();
+
+            if (resp.ok) {
+                list.innerHTML = '';
+                if (suggestions.length === 0) {
+                    list.innerHTML = '<p class="text-muted p-4 text-center">No common Dependabot vulnerabilities found across your active workspaces.</p>';
+                } else {
+                    suggestions.forEach(s => {
+                        const item = document.createElement('div');
+                        item.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        item.innerHTML = `
+                            <div>
+                                <h6 class="mb-1">Upgrade <strong>${escapeHTML(s.package)}</strong> to <strong>${escapeHTML(s.fixed_version)}</strong></h6>
+                                <p class="mb-0 small text-muted">Affects ${s.repos.length} repos: ${escapeHTML(s.repos.join(', '))}</p>
+                            </div>
+                            <button class="btn btn-sm btn-danger execute-batch-trigger" data-package="${escapeHTML(s.package)}" data-version="${escapeHTML(s.fixed_version)}" data-repos="${escapeHTML(JSON.stringify(s.repos))}">Remediate Batch</button>
+                        `;
+                        list.appendChild(item);
+                    });
+
+                    list.querySelectorAll('.execute-batch-trigger').forEach(btn => {
+                        btn.addEventListener('click', () => {
+                            const pkg = btn.dataset.package;
+                            const ver = btn.dataset.version;
+                            const repos = JSON.parse(btn.dataset.repos);
+                            openBatchExecution(pkg, ver, repos);
+                        });
+                    });
+                }
+            } else {
+                list.innerHTML = `<p class="text-danger p-4 text-center">Error: ${escapeHTML(suggestions.error)}</p>`;
+            }
+        } catch (e) {
+            list.innerHTML = `<p class="text-danger p-4 text-center">Error: ${escapeHTML(e.message)}</p>`;
+        }
+    };
+
+    const openBatchExecution = (pkg, ver, repos) => {
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('batchRemediationExecModal'));
+        document.getElementById('batchPackageName').textContent = pkg;
+        document.getElementById('batchTargetVersion').textContent = ver;
+        document.getElementById('batchRepoCount').textContent = repos.length;
+        document.getElementById('batchRepoList').textContent = repos.join(', ');
+
+        document.getElementById('batchRemediationFormContainer').style.display = 'block';
+        document.getElementById('batchRemediationProgress').style.display = 'none';
+        document.getElementById('batchRemediationResults').style.display = 'none';
+        document.getElementById('confirmBatchRemediationBtn').style.display = 'block';
+        document.getElementById('batchCloseBtn').textContent = 'Cancel';
+
+        const confirmBtn = document.getElementById('confirmBatchRemediationBtn');
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        newConfirmBtn.addEventListener('click', async () => {
+            document.getElementById('batchRemediationFormContainer').style.display = 'none';
+            document.getElementById('batchRemediationProgress').style.display = 'block';
+            newConfirmBtn.style.display = 'none';
+            document.getElementById('batchCloseBtn').disabled = true;
+
+            try {
+                const resp = await fetch('/api/governance/remediate/batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ package: pkg, fixed_version: ver, repos: repos })
+                });
+                const data = await resp.json();
+
+                document.getElementById('batchRemediationProgress').style.display = 'none';
+                document.getElementById('batchRemediationResults').style.display = 'block';
+                document.getElementById('batchCloseBtn').disabled = false;
+                document.getElementById('batchCloseBtn').textContent = 'Close';
+
+                const resultsList = document.getElementById('batchResultsList');
+                resultsList.innerHTML = '';
+
+                if (resp.ok) {
+                    data.results.forEach(r => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item px-0 py-1 border-0';
+                        const statusBadge = r.status === 'success' ? '<span class="badge bg-success">Success</span>' : '<span class="badge bg-danger">Error</span>';
+                        li.innerHTML = `${statusBadge} <strong>${escapeHTML(r.repo)}</strong>: ${r.status === 'success' ? `<a href="${escapeHTML(r.detail)}" target="_blank">View PR</a>` : escapeHTML(r.detail)}`;
+                        resultsList.appendChild(li);
+                    });
+                    showAlert('Batch remediation cycle complete');
+                    refreshPortfolioSecurity();
+                } else {
+                    showAlert(data.error || 'Batch operation failed', 'danger');
+                }
+            } catch (err) {
+                showAlert(err.message, 'danger');
+            }
+        });
+
+        modal.show();
+    };
+
+    const openRemediationBtn = document.getElementById('openRemediationBtn');
+    if (openRemediationBtn) {
+        openRemediationBtn.addEventListener('click', openRemediationOrchestrator);
     }
 
     const refreshPortfolioSecurityBtn = document.getElementById('refreshPortfolioSecurityBtn');

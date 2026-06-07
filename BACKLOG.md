@@ -176,12 +176,12 @@
     - [x] Implement "Inheritance Visualization" in Policy UI (Global > Org > Repo).
 - [x] Create Frontend UI (Jinja2 templates, JS).
 
-- [ ] **Epic: Strategic Governance Phase 6: Predictive Delivery & Intelligent Remediation**
-    - [ ] Implement Delivery Certainty Engine (Progress + Velocity).
-    - [ ] Implement "At Risk" milestone forecasting in Portfolio Roadmap.
-    - [ ] Implement `POST /api/governance/remediate/batch` for multi-repo patching.
-    - [ ] Create Remediation Orchestrator UI for common vulnerabilities.
-    - [ ] Implement proactive Risk Guardrails (`warn_on_at_risk_milestone`).
+- [x] **Epic: Strategic Governance Phase 6: Predictive Delivery & Intelligent Remediation**
+    - [x] Implement Delivery Certainty Engine (Progress + Velocity).
+    - [x] Implement "At Risk" milestone forecasting in Portfolio Roadmap.
+    - [x] Implement `POST /api/governance/remediate/batch` for multi-repo patching.
+    - [x] Create Remediation Orchestrator UI for common vulnerabilities.
+    - [x] Implement proactive Risk Guardrails (`warn_on_at_risk_milestone`).
 - [x] Add toast notifications for API responses.
 
 ## P3: Polish

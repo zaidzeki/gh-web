@@ -4,7 +4,8 @@
       "block_merge_on_critical_security": true,
       "block_merge_on_failing_ci": true,
       "sla_critical_hours": 48,
-      "block_merge_on_sla_violation": true
+      "block_merge_on_sla_violation": true,
+      "warn_on_at_risk_milestone": true
     },
     "orgs": {},
     "repos": {}

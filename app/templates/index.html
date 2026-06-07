@@ -154,7 +154,10 @@
                         <div class="card shadow-sm border-danger mb-4" id="portfolioSecurityCard" style="display:none;">
                             <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Portfolio Security Risks</h5>
-                                <button id="refreshPortfolioSecurityBtn" class="btn btn-sm btn-light" aria-label="Refresh Portfolio Security">Refresh</button>
+                                <div class="d-flex gap-2">
+                                    <button id="openRemediationBtn" class="btn btn-sm btn-outline-light" aria-label="Open Remediation Orchestrator">Batch Remediation</button>
+                                    <button id="refreshPortfolioSecurityBtn" class="btn btn-sm btn-light" aria-label="Refresh Portfolio Security">Refresh</button>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div id="portfolioSecurityContainer" class="row row-cols-1 row-cols-md-3 g-3">
@@ -1101,6 +1104,11 @@
                                     <label class="form-check-label" for="repo_block_merge_on_sla_violation">Block Merge on SLA Violation</label>
                                     <span class="policy-source-badge ms-2" data-policy="block_merge_on_sla_violation"></span>
                                 </div>
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="repo_warn_on_at_risk_milestone" name="warn_on_at_risk_milestone">
+                                    <label class="form-check-label" for="repo_warn_on_at_risk_milestone">Warn on At-Risk Milestones (Predictive)</label>
+                                    <span class="policy-source-badge ms-2" data-policy="warn_on_at_risk_milestone"></span>
+                                </div>
                                 <div class="mb-3">
                                     <div class="d-flex align-items-center mb-1">
                                         <label for="repo_sla_critical_hours" class="form-label mb-0">Critical Alert SLA (Hours)</label>
@@ -1131,6 +1139,11 @@
                                     <label class="form-check-label" for="org_block_merge_on_sla_violation">Block Merge on SLA Violation (Org Default)</label>
                                     <span class="policy-source-badge ms-2" data-policy="block_merge_on_sla_violation"></span>
                                 </div>
+                                <div class="mb-3 form-check d-flex align-items-center">
+                                    <input type="checkbox" class="form-check-input me-2" id="org_warn_on_at_risk_milestone" name="warn_on_at_risk_milestone">
+                                    <label class="form-check-label" for="org_warn_on_at_risk_milestone">Warn on At-Risk Milestones (Org Default)</label>
+                                    <span class="policy-source-badge ms-2" data-policy="warn_on_at_risk_milestone"></span>
+                                </div>
                                 <div class="mb-3">
                                     <div class="d-flex align-items-center mb-1">
                                         <label for="org_sla_critical_hours" class="form-label mb-0">Critical Alert SLA (Hours - Org Default)</label>
@@ -1142,6 +1155,70 @@
                             </form>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remediation Orchestrator Modal -->
+    <div class="modal fade" id="remediationOrchestratorModal" tabindex="-1" aria-labelledby="remediationOrchestratorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header border-danger bg-danger text-white">
+                    <h5 class="modal-title" id="remediationOrchestratorModalLabel">Batch Remediation Orchestrator</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info py-2 small mb-3">
+                        <i class="bi bi-info-circle"></i> This tool identifies common vulnerabilities across your portfolio and allows you to apply patches in bulk.
+                    </div>
+                    <div id="remediationSuggestionsList" class="list-group">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-danger" role="status"></div>
+                            <p class="mt-2 text-muted">Analyzing portfolio for common vulnerabilities...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Remediation Execution Modal -->
+    <div class="modal fade" id="batchRemediationExecModal" tabindex="-1" aria-labelledby="batchRemediationExecModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header border-primary bg-primary text-white">
+                    <h5 class="modal-title" id="batchRemediationExecModalLabel">Execute Batch Remediation</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="batchRemediationProgress" style="display:none;">
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 fw-bold" id="batchStatusMsg">Processing batch...</p>
+                            <div class="progress" style="height: 10px;">
+                                <div id="batchProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="batchRemediationFormContainer">
+                        <p>You are about to patch <strong><span id="batchPackageName"></span></strong> to version <strong><span id="batchTargetVersion"></span></strong> across <strong id="batchRepoCount"></strong> repositories.</p>
+                        <div class="alert alert-warning small py-2">
+                            This will create a new branch and open a Pull Request in each repository.
+                        </div>
+                        <div id="batchRepoList" class="small text-muted mb-3" style="max-height: 150px; overflow-y: auto;"></div>
+                    </div>
+                    <div id="batchRemediationResults" style="display:none;">
+                        <h6>Results:</h6>
+                        <ul id="batchResultsList" class="list-group list-group-flush small"></ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="batchCloseBtn">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmBatchRemediationBtn">Execute Batch</button>
                 </div>
             </div>
         </div>

@@ -189,6 +189,13 @@ def list_tasks():
                 return
 
             repo_full_name = task["repo"]
+
+            if repo_full_name not in repo_policies:
+                repo_policies[repo_full_name] = policy_store.get_effective_policy(repo_full_name)
+
+            if not repo_policies[repo_full_name].get("warn_on_at_risk_milestone", True):
+                return
+
             if repo_full_name not in pulse_cache:
                 pulse_cache[repo_full_name] = calculate_repo_pulse(g, repo_full_name, repo_obj=item.repository)
 
