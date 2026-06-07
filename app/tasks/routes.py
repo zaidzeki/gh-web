@@ -107,14 +107,16 @@ def list_tasks():
         # 4. Waiting Deployment: My merged PRs pending deployment/environment status
         #    Proxy: searching for merged PRs authored by me with status:pending
 
+        # Security Enhancement: Determine repository scope to prevent leakage of global GitHub issues/alerts
+        context_scope = f"org:{org_name}" if org_name else f"user:{login}"
+
         # Base filters
-        ar_filter = f"is:pr is:open review-requested:{login}"
-        ip_filter = f"is:open assignee:{login}"
-        my_filter = f"is:pr is:open author:{login}"
-        wd_filter = f"is:pr is:merged status:pending author:{login}"
-        # Security alerts filter - only include open dependabot alerts (issues with label:dependabot or type:security-advisory)
-        # Note: GitHub issues for dependabot usually have 'dependabot' label.
-        sec_filter = f"is:open label:dependabot"
+        ar_filter = f"is:pr is:open review-requested:{login} {context_scope}"
+        ip_filter = f"is:open assignee:{login} {context_scope}"
+        my_filter = f"is:pr is:open author:{login} {context_scope}"
+        wd_filter = f"is:pr is:merged status:pending author:{login} {context_scope}"
+        # Security alerts filter - scoped to relevant org/user context
+        sec_filter = f"is:open label:dependabot {context_scope}"
 
         if milestone:
             ar_filter += f' milestone:"{milestone}"'
@@ -124,7 +126,8 @@ def list_tasks():
 
         if org_name:
             if team_slug:
-                ar_filter = f"is:pr is:open (review-requested:{login} OR team-review-requested:{org_name}/{team_slug})"
+                # Security: Ensure team-review query is also scoped to the org
+                ar_filter = f"is:pr is:open (review-requested:{login} OR team-review-requested:{org_name}/{team_slug}) org:{org_name}"
 
         action_required = g.search_issues(ar_filter)[:20]
         in_progress = g.search_issues(ip_filter)[:20]
