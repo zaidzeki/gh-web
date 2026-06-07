@@ -192,9 +192,14 @@ def update_issue_milestone(full_name, issue_number):
         issue = repo.get_issue(issue_number)
 
         if milestone_number is not None:
-            # PyGithub Issue.edit accepts milestone as a Milestone object or number?
-            # Actually it accepts a Milestone object.
-            ms = repo.get_milestone(int(milestone_number))
+            # Security Enhancement: Validate that milestone_number is a valid integer
+            try:
+                ms_num = int(milestone_number)
+            except (ValueError, TypeError):
+                return jsonify({"error": "Invalid milestone_number. Must be an integer."}), 400
+
+            # PyGithub Issue.edit accepts milestone as a Milestone object.
+            ms = repo.get_milestone(ms_num)
             issue.edit(milestone=ms)
         else:
             # Passing None or github.GithubObject.NotSet?

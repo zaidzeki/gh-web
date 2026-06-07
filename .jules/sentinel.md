@@ -102,3 +102,8 @@
 **Vulnerability:** The `PolicyStore` defaulted to an empty configuration if the persistence file was malformed or missing keys. This caused security gates (like blocking merges on critical vulnerabilities) to silently disable themselves, resulting in a "fail-open" posture.
 **Learning:** Relying solely on external configuration files for security critical logic creates a single point of failure. If the file is corrupted, the system must fallback to a hardcoded "fail-closed" state to maintain protection.
 **Prevention:** Always define hardcoded secure defaults within the codebase that serve as the base for any configuration resolution. Implement atomic writes (temp file + rename) to minimize the risk of file corruption during updates.
+
+## 2026-06-07 - Global Information Leakage in Unified Task Inbox
+**Vulnerability:** The Task Inbox security filter was unscoped, causing it to return open issues with the 'dependabot' label from the entire GitHub platform instead of the user's relevant repositories.
+**Learning:** GitHub Search API filters default to global scope unless explicitly qualified with 'repo:', 'org:', or 'user:'. Unqualified searches in multi-tenant dashboards can leak cross-tenant or public information.
+**Prevention:** Always qualify GitHub Search API queries with a strict repository or organizational scope based on the current session context to maintain data isolation.
