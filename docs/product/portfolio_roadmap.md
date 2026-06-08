@@ -6,15 +6,15 @@ GH-Web has evolved from a single-repo management tool into a multi-workspace coc
 ## ♻️ The Leverage
 - **Milestone API:** Reuses the existing `milestones` blueprint and repository discovery logic.
 - **Health Monitoring:** Extends the parallel fetching pattern used in `GET /api/repos/health`.
-- **Portfolio Engine:** Integrates with the `workspace_portfolio` to prioritize active projects.
+- **Portfolio Engine:** Integrates with the `workspace_portfolio` and the new **Contextual Mission Control** engine.
 - **UI Components:** Reuses the card-based layout and progress bars from the repository-specific milestones tab.
 
 ## 🚀 The Delta
 - **Backend:**
-    - `GET /api/workspace/portfolio/milestones`: A new endpoint that aggregates "open" milestones for all repositories in the user's active workspace portfolio.
-    - Enrichment of milestone data with `repo_name` and `portfolio_priority` (based on whether the workspace is currently active).
+    - `GET /api/workspace/portfolio/milestones`: A context-aware endpoint that aggregates "open" milestones for all repositories in the current Organization/Team scope.
+    - Enrichment of milestone data with `repo_name` and `context_relevance`.
 - **Frontend:**
-    - **Portfolio Roadmap View:** A new section on the Dashboard (or a dedicated modal) that displays milestones across all projects in a unified timeline.
+    - **Mission Control Roadmap View:** A new section on the Dashboard (or a dedicated modal) that displays milestones across the entire selected context (Org/Team).
     - **Deadline Sort:** Automatic sorting of milestones by `due_on` across different repositories.
     - **Goal-Driven Context Switching:** Clicking a milestone in the roadmap automatically activates that repository and filters the Task Inbox.
 

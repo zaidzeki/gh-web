@@ -93,3 +93,7 @@
 ## 2026-06-03 - [From Reactive Guardrails to Predictive Certainty]
 **Learning:** High-fidelity governance reaches a point of diminishing returns when it only reacts to failures (CI red, SLA violated). To scale delivery management across large portfolios, the system must shift from "Current State" visibility to "Trajectory" forecasting. Predicting a failure allows for early intervention, transforming governance from a "Policeman" to a "Pilot."
 **Action:** Extend the strategic governance vision to include a "Delivery Certainty Engine" that uses Pulse velocity to forecast milestone completion risks before they manifest.
+
+## 2026-06-04 - [The Workspace Lock & Mission Control]
+**Learning:** Forcing strategic health widgets (Pulse, Heatmap) to rely on local workspace state (the "Workspace Lock") creates a major friction point for non-developer personas. A Product Lead or Engineering Manager should not have to "clone" a microservice to see its DORA metrics. Strategic insight must be driven by current user context (Organization/Team), not just filesystem state.
+**Action:** Pivot the aggregation services to support Dynamic Portfolio Resolution, enabling a "Mission Control" dashboard that monitors entire organizations regardless of local workspace activity.

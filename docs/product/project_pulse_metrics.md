@@ -39,8 +39,9 @@ Without these metrics, teams are flying blind regarding their operational maturi
 - Compare the last 30 days of data against the *previous* 30 days (Day 31-60).
 - Display "Improving" (Green ↑/↓), "Degrading" (Red ↑/↓), or "Stable" indicators for each metric.
 
-### 4.4. Portfolio Aggregation
-- Support for viewing these metrics at both a per-repository level and an aggregated "Team/Org" level.
+### 4.4. Contextual Mission Control (Portfolio Aggregation)
+- **Context-Aware Pulse:** Support for viewing aggregated metrics for the current Organization or Team context, even if repositories are not active in the local workspace.
+- **Dynamic Selection:** Automatically aggregates the top 20 most recently active repositories in the selected scope.
 
 ## 5. Acceptance Criteria
 - [x] Backend API `GET /api/repos/<full_name>/pulse` returns DORA metrics for the last 30 days.
@@ -48,10 +49,11 @@ Without these metrics, teams are flying blind regarding their operational maturi
 - [ ] Backend API includes a `tier` classification for each metric and the overall repository.
 - [ ] Frontend displays the "Pulse" metrics with color-coded tier badges and trend arrows.
 - [x] Metrics are calculated using GitHub's Deployments and Pull Request APIs.
-- [ ] Portfolio Pulse includes aggregated trend and tier data.
+- [ ] Mission Control Pulse includes aggregated trend and tier data for the current Org/Team context.
 
 ## 6. Technical Considerations
 - **Data Depth:** Calculating Lead Time and Trends requires scanning up to 60 days of history. To maintain performance, limit historical scan to 100 items per window.
 - **Trend Inversion:** Ensure logic accounts for "Less is Better" metrics (Lead Time, CFR, Restore) vs. "More is Better" (Frequency).
-- **Caching:** Pulse metrics should be cached server-side (e.g., for 1 hour) as they are computationally more expensive than real-time health checks.
+- **Contextual Fallback:** If a repository is not cloned, the "Dependency Freshness" metric returns `N/A` instead of failing the aggregation.
+- **Caching:** Pulse metrics for Org/Team contexts are cached server-side (e.g., for 1 hour) to maintain dashboard responsiveness.
 - **Definition of 'Production':** Reuse the existing "Operational Health" logic for identifying the 'production' environment.
