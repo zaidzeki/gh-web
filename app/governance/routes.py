@@ -130,6 +130,10 @@ def get_repo_governance(full_name):
 
 @bp.route('/api/governance/orgs/<path:org_name>/policy', methods=['GET'])
 def get_org_governance(org_name):
+    # Security Enhancement: Input validation for org_name
+    if org_name and len(org_name) > 100:
+        return jsonify({"error": "org_name is too long"}), 400
+
     g = get_github_client()
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
@@ -150,6 +154,10 @@ def get_org_governance(org_name):
 
 @bp.route('/api/governance/orgs/<path:org_name>/policy', methods=['PATCH'])
 def update_org_governance(org_name):
+    # Security Enhancement: Input validation for org_name
+    if org_name and len(org_name) > 100:
+        return jsonify({"error": "org_name is too long"}), 400
+
     g = get_github_client()
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
@@ -200,6 +208,11 @@ def get_portfolio_heatmap():
 
     if len(repo_names) > 50:
         return jsonify({"error": "Too many repositories (max 50)"}), 400
+
+    # Security Enhancement: Validate repository name lengths
+    for name in repo_names:
+        if len(name) > 255:
+            return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
 
     g = get_github_client()
 
@@ -263,8 +276,19 @@ def remediate_batch():
     if not package or not fixed_version or not repos:
         return jsonify({"error": "package, fixed_version, and repos are required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(package) > 100:
+        return jsonify({"error": "package name is too long"}), 400
+    if len(fixed_version) > 100:
+        return jsonify({"error": "fixed_version is too long"}), 400
+
     if len(repos) > 20:
         return jsonify({"error": "Maximum 20 repositories per batch"}), 400
+
+    # Security Enhancement: Validate repository name lengths
+    for name in repos:
+        if len(name) > 255:
+            return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
 
     g = get_github_client()
 
@@ -357,6 +381,11 @@ def get_remediation_suggestions():
 
     if len(repo_names) > 50:
         return jsonify({"error": "Too many repositories (max 50)"}), 400
+
+    # Security Enhancement: Validate repository name lengths
+    for name in repo_names:
+        if len(name) > 255:
+            return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
 
     g = get_github_client()
 
