@@ -276,11 +276,17 @@ def remediate_batch():
     if not package or not fixed_version or not repos:
         return jsonify({"error": "package, fixed_version, and repos are required"}), 400
 
-    # Security Enhancement: Input length validation
+    # Security Enhancement: Input length and character validation
     if len(package) > 100:
         return jsonify({"error": "package name is too long"}), 400
     if len(fixed_version) > 100:
         return jsonify({"error": "fixed_version is too long"}), 400
+
+    # Ensure package and version contain only safe characters to prevent injection
+    # Allows alphanumeric, dots, dashes, underscores, and PEP 440/508 extras/version symbols
+    name_pattern = re.compile(r'^[a-zA-Z0-9._\[\]\-\+!~]+$')
+    if not name_pattern.match(package) or not name_pattern.match(fixed_version):
+        return jsonify({"error": "Invalid package or version format"}), 400
 
     if len(repos) > 20:
         return jsonify({"error": "Maximum 20 repositories per batch"}), 400
