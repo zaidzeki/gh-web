@@ -275,7 +275,8 @@ def apply_patch():
             repo.git.apply('--', filename)
         else:
             # Security: Add timeout to prevent DoS from hung patch processes
-            subprocess.run(['patch', '-p1', '-i', filename], cwd=workspace_dir, check=True, timeout=30)
+            # Also prefix with ./ to ensure filename is not interpreted as a flag
+            subprocess.run(['patch', '-p1', '-i', f'./{filename}'], cwd=workspace_dir, check=True, timeout=30)
 
         os.remove(patch_path)
         return jsonify({"message": "Patch applied successfully"}), 200
