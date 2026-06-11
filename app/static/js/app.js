@@ -1308,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const li = document.createElement('li');
                         li.className = 'list-group-item px-0 py-1 border-0';
                         const statusBadge = r.status === 'success' ? '<span class="badge bg-success">Success</span>' : '<span class="badge bg-danger">Error</span>';
-                        li.innerHTML = `${statusBadge} <strong>${escapeHTML(r.repo)}</strong>: ${r.status === 'success' ? `<a href="${escapeHTML(r.detail)}" target="_blank">View PR</a>` : escapeHTML(r.detail)}`;
+                        li.innerHTML = `${statusBadge} <strong>${escapeHTML(r.repo)}</strong>: ${r.status === 'success' ? `<a href="${escapeHTML(r.detail)}" target="_blank" rel="noopener noreferrer">View PR</a>` : escapeHTML(r.detail)}`;
                         resultsList.appendChild(li);
                     });
                     showAlert('Batch remediation cycle complete');
@@ -2998,7 +2998,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <small class="text-muted">${sizeKb} KB | ${asset.download_count} downloads | Created ${timeAgo(asset.created_at)}</small>
                             </div>
                             <div class="d-flex gap-1">
-                                <a href="${escapeHTML(asset.browser_download_url)}" target="_blank" class="btn btn-sm btn-outline-secondary">Download</a>
+                                <a href="${escapeHTML(asset.browser_download_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">Download</a>
                                 <button class="btn btn-sm btn-outline-danger delete-asset-btn" data-id="${asset.id}">Delete</button>
                             </div>
                         `;
@@ -3862,7 +3862,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                 </div>
                                 <div class="d-flex gap-1">
-                                    <a href="${escapeHTML(alert.html_url)}" target="_blank" class="btn btn-sm btn-outline-secondary">View on GitHub</a>
+                                    <a href="${escapeHTML(alert.html_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">View on GitHub</a>
                                     ${alert.type === 'dependabot' ? `<button class="btn btn-sm btn-outline-success patch-security-btn" data-repo="${escapeHTML(repoFullName)}" data-number="${alert.number}" data-package="${escapeHTML(alert.package)}">Patch</button>` : ''}
                                 </div>
                             </div>
