@@ -107,3 +107,8 @@
 **Vulnerability:** The Task Inbox security filter was unscoped, causing it to return open issues with the 'dependabot' label from the entire GitHub platform instead of the user's relevant repositories.
 **Learning:** GitHub Search API filters default to global scope unless explicitly qualified with 'repo:', 'org:', or 'user:'. Unqualified searches in multi-tenant dashboards can leak cross-tenant or public information.
 **Prevention:** Always qualify GitHub Search API queries with a strict repository or organizational scope based on the current session context to maintain data isolation.
+
+## 2026-06-16 - Ineffective Resource Capping in Paginated API Loops
+**Vulnerability:** The security alert fetcher implemented a limit on the number of alerts returned to the frontend but failed to `break` the iteration over the paginated GitHub API response. This allowed an attacker to trigger exhaustive API traversal by querying a repository with an extremely high number of alerts, leading to worker starvation and DoS.
+**Learning:** Capping the output list is insufficient for protection against resource exhaustion if the underlying iterator (especially over a remote API) is not explicitly terminated.
+**Prevention:** Always use `enumerate()` and an explicit `break` condition when iterating over potentially large or paginated collections to ensure strict resource boundaries.
