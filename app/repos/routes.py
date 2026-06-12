@@ -251,16 +251,15 @@ def fetch_security_info(repo):
     # 1. Dependabot Alerts
     try:
         dep_alerts = repo.get_dependabot_alerts(state='open')
-        # Efficiently fetch total counts by severity without iterating over every alert
-        # Security: Only iterate over the first 100 alerts for the detailed explorer list
-        for alert in dep_alerts:
+        # Security: Only iterate over the first 100 alerts to prevent DoS/resource exhaustion
+        for i, alert in enumerate(dep_alerts):
+            if i >= 100: break
             severity = str(alert.security_advisory.severity).lower()
             if severity in summary["vulnerabilities"]:
                 summary["vulnerabilities"][severity] += 1
 
-            if len(alerts) < 100:
-                alerts.append({
-                    "type": "dependabot",
+            alerts.append({
+                "type": "dependabot",
                 "number": int(alert.number),
                 "severity": severity,
                 "package": str(alert.security_vulnerability.package.name),
@@ -274,10 +273,10 @@ def fetch_security_info(repo):
     # 2. Secret Scanning Alerts
     try:
         secret_alerts = repo.get_secret_scanning_alerts(state='open')
-        # Security: Limit to first 100 alerts for the detailed explorer list
+        # Security: Limit to first 100 alerts to prevent DoS/resource exhaustion
         for i, alert in enumerate(secret_alerts):
+            if i >= 100: break
             summary["secrets"]["open"] += 1
-            if i >= 100: continue
             alerts.append({
                 "type": "secret",
                 "secret_type": str(alert.secret_type),
@@ -289,17 +288,17 @@ def fetch_security_info(repo):
     # 3. Code Scanning Alerts
     try:
         code_alerts = repo.get_codescan_alerts(state='open')
-        # Security: Only iterate over the first 100 alerts for the detailed explorer list
-        for alert in code_alerts:
+        # Security: Only iterate over the first 100 alerts to prevent DoS/resource exhaustion
+        for i, alert in enumerate(code_alerts):
+            if i >= 100: break
             severity = str(alert.rule.severity).lower()
             if severity == 'error':
                 summary["code_scanning"]["errors"] += 1
             elif severity in ['warning', 'note']:
                 summary["code_scanning"]["warnings"] += 1
 
-            if len(alerts) < 100:
-                alerts.append({
-                    "type": "code_scanning",
+            alerts.append({
+                "type": "code_scanning",
                 "severity": severity,
                 "rule": str(alert.rule.description),
                 "html_url": str(alert.html_url)
@@ -311,6 +310,10 @@ def fetch_security_info(repo):
 
 @bp.route('/api/repos/<path:full_name>/security/alerts', methods=['GET'])
 def get_security_alerts(full_name):
+    # Security Enhancement: Validate repository name length
+    if full_name and len(full_name) > 255:
+        return jsonify({"error": "Repository name is too long"}), 400
+
     g = get_github_client()
     if not g:
         return jsonify({"error": "Unauthorized"}), 401
