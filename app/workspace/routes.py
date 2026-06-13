@@ -214,6 +214,12 @@ def download_repo():
     if not repo_name_full:
         return jsonify({"error": "repo_name is required"}), 400
 
+    # Security Enhancement: Input length validation
+    if len(repo_name_full) > 255:
+        return jsonify({"error": "repo_name is too long"}), 400
+    if ref and len(ref) > 255:
+        return jsonify({"error": "ref is too long"}), 400
+
     repo_name = repo_name_full.split('/')[-1]
     workspace_dir = get_workspace_dir(repo_name)
 
@@ -575,12 +581,26 @@ def list_workspace_files():
 
     workspace_dir = get_workspace_dir(repo_name)
 
-    def build_tree(path):
+    # Security: Limit recursion depth and total items to prevent DoS via deep/massive directory trees
+    item_count = 0
+    MAX_ITEMS = 1000
+    MAX_DEPTH = 10
+
+    def build_tree(path, depth=0):
+        nonlocal item_count
         tree = []
+
+        if depth > MAX_DEPTH:
+            return tree
+
         try:
             for item in sorted(os.listdir(path)):
                 if item == '.git':
                     continue
+
+                if item_count >= MAX_ITEMS:
+                    break
+
                 full_path = os.path.join(path, item)
 
                 # Security: Ensure path is safe (doesn't point outside workspace)
@@ -588,6 +608,7 @@ def list_workspace_files():
                 if not is_safe_path(workspace_dir, full_path, follow_symlinks=True):
                     continue
 
+                item_count += 1
                 rel_path = os.path.relpath(full_path, workspace_dir)
                 is_symlink = os.path.islink(full_path)
                 is_dir = os.path.isdir(full_path)
@@ -599,7 +620,7 @@ def list_workspace_files():
                 }
                 # Only recurse if it's a real directory, not a symlink, to prevent circularity or leaks
                 if is_dir and not is_symlink:
-                    node["children"] = build_tree(full_path)
+                    node["children"] = build_tree(full_path, depth + 1)
                 tree.append(node)
         except Exception:
             pass
