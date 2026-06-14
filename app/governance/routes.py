@@ -4,7 +4,7 @@ import datetime
 import re
 from concurrent.futures import ThreadPoolExecutor
 from github import Github
-from ..workspace.utils import mask_token
+from ..workspace.utils import mask_token, resolve_effective_portfolio
 from ..repos.routes import fetch_security_info
 from ..pulse.routes import calculate_repo_pulse
 from ..milestones.routes import calculate_certainty
@@ -19,7 +19,7 @@ def get_github_client():
         return None
     return Github(auth=github.Auth.Token(token), timeout=30)
 
-def evaluate_repo_policy(repo):
+def evaluate_repo_policy(repo, g=None):
     """
     Evaluates repository compliance against standard governance rules.
     Returns: (compliant, violations, policies, sources)
@@ -87,8 +87,8 @@ def evaluate_repo_policy(repo):
     # 3. Evaluate Milestone Certainty Policy
     if policies.get("warn_on_at_risk_milestone"):
         try:
-            g = get_github_client()
-            pulse = calculate_repo_pulse(g, repo.full_name, repo_obj=repo)
+            gh_client = g if g else get_github_client()
+            pulse = calculate_repo_pulse(gh_client, repo.full_name, repo_obj=repo)
             lead_time = pulse.get("metrics", {}).get("lead_time_to_change_hours")
 
             milestones = repo.get_milestones(state='open')
@@ -115,7 +115,7 @@ def get_repo_governance(full_name):
 
     try:
         repo = g.get_repo(full_name)
-        compliant, violations, policies, sources = evaluate_repo_policy(repo)
+        compliant, violations, policies, sources = evaluate_repo_policy(repo, g=g)
 
         return jsonify({
             "repo": full_name,
@@ -200,8 +200,12 @@ def get_portfolio_heatmap():
     if not token:
         return jsonify({"error": "Unauthorized"}), 401
 
-    repo_names = request.args.get('repos', '').split(',')
-    repo_names = [r.strip() for r in repo_names if r.strip()]
+    org_name = request.args.get('org_name')
+    team_id = request.args.get('team_id')
+    repos_arg = request.args.get('repos')
+
+    g = get_github_client()
+    repo_names = resolve_effective_portfolio(g, org_name, team_id, repos_arg)
 
     if not repo_names:
         return jsonify([]), 200
@@ -214,13 +218,11 @@ def get_portfolio_heatmap():
         if len(name) > 255:
             return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
 
-    g = get_github_client()
-
     def fetch_repo_heatmap_data(full_name):
         try:
             repo = g.get_repo(full_name)
             pulse = calculate_repo_pulse(g, full_name)
-            compliant, violations, policies, sources = evaluate_repo_policy(repo)
+            compliant, violations, policies, sources = evaluate_repo_policy(repo, g=g)
 
             freshness = pulse.get("metrics", {}).get("dependency_freshness_index", 0) or 0
             mttr = pulse.get("metrics", {}).get("security_mttr_hours", 0) or 0

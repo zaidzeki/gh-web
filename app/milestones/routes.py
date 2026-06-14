@@ -6,7 +6,9 @@ import git
 import datetime
 from werkzeug.utils import secure_filename
 from concurrent.futures import ThreadPoolExecutor
-from ..workspace.utils import mask_token, get_repo_full_name_from_url
+from ..workspace.utils import (
+    mask_token, get_repo_full_name_from_url, resolve_effective_portfolio
+)
 from ..pulse.routes import calculate_repo_pulse
 
 bp = Blueprint('milestones', __name__)
@@ -135,34 +137,20 @@ def workspace_portfolio_milestones():
     if not token:
         return jsonify({"error": "Unauthorized"}), 401
 
-    session_id = secure_filename(session.get('session_id', 'default'))
-    if not session_id:
-        session_id = 'default'
-    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+    org_name = request.args.get('org_name')
+    team_id = request.args.get('team_id')
+    repos_arg = request.args.get('repos')
 
-    if not os.path.exists(workspace_root):
+    g = get_github_client()
+    repo_names = resolve_effective_portfolio(g, org_name, team_id, repos_arg)
+
+    if not repo_names:
         return jsonify([]), 200
 
-    def fetch_repo_milestones(repo_dir):
-        repo_path = os.path.join(workspace_root, repo_dir)
-        if not os.path.isdir(repo_path):
-            return []
-
-        git_path = os.path.join(repo_path, '.git')
-        if not os.path.exists(git_path):
-            return []
-
+    def fetch_repo_milestones(full_name):
         try:
-            repo = git.Repo(repo_path)
-            full_name = None
-            if 'origin' in repo.remotes:
-                full_name = get_repo_full_name_from_url(repo.remotes.origin.url)
-
-            if not full_name:
-                return []
-
-            g = Github(auth=github.Auth.Token(token), timeout=30)
-            gh_repo = g.get_repo(full_name)
+            g_local = Github(auth=github.Auth.Token(token), timeout=30)
+            gh_repo = g_local.get_repo(full_name)
             milestones = gh_repo.get_milestones(state='open')
 
             # Fetch Pulse for Lead Time
@@ -187,7 +175,7 @@ def workspace_portfolio_milestones():
                 certainty = calculate_certainty(int(ms.open_issues), lead_time, due)
 
                 repo_milestones.append({
-                    "repo_name": str(repo_dir),
+                    "repo_name": str(full_name.split('/')[-1]),
                     "full_name": str(full_name),
                     "number": int(ms.number),
                     "title": str(ms.title),
@@ -205,13 +193,10 @@ def workspace_portfolio_milestones():
             return []
 
     try:
-        repo_dirs = sorted(os.listdir(workspace_root))
-        # Scalability: Limit the number of repositories to process in a single batch portfolio view
-        repo_dirs = repo_dirs[:50]
         aggregated_milestones = []
 
         with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(fetch_repo_milestones, rd) for rd in repo_dirs]
+            futures = [executor.submit(fetch_repo_milestones, name) for name in repo_names]
             for future in futures:
                 res = future.result()
                 if res:
