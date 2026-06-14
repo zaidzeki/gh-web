@@ -307,12 +307,13 @@ def get_portfolio_pulse():
     org_name = request.args.get('org_name')
     team_id = request.args.get('team_id')
     repos_arg = request.args.get('repos')
+    force_refresh = request.args.get('force_refresh') in ['true', '1']
 
     # Context Caching
     context_key = f"{org_name}:{team_id}:{repos_arg}"
     cache_key = (token, context_key)
     now_ts = datetime.datetime.now()
-    if cache_key in _portfolio_pulse_cache:
+    if not force_refresh and cache_key in _portfolio_pulse_cache:
         timestamp, data = _portfolio_pulse_cache[cache_key]
         if now_ts - timestamp < CACHE_TTL:
             return jsonify(data), 200

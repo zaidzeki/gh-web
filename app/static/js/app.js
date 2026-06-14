@@ -336,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const isCloned = lastPortfolioData ? lastPortfolioData.some(p => p.full_name === repo.full_name || p.repo_name === repo.name) : false;
             const ghostBadge = isCloned ? '' : '<span class="badge bg-light text-muted border ms-2" title="No local workspace active for this repository. Actions will use GitHub API.">Not Cloned</span>';
+            const cloneBtnText = isCloned ? 'Sync' : 'Initialize';
             const prBadge = repo.open_prs_count > 0 ?
                 `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
             const issueBadge = repo.open_issues_count > 0 ?
@@ -368,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn btn-sm btn-outline-secondary actions-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View actions for ${escapeHTML(repo.full_name)}">Actions</button>
                     <button class="btn btn-sm btn-outline-secondary releases-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="View releases for ${escapeHTML(repo.full_name)}">Releases</button>
                     <button class="btn btn-sm btn-outline-dark governance-action" data-repo="${escapeHTML(repo.full_name)}" aria-label="Manage governance for ${escapeHTML(repo.full_name)}">Gov</button>
-                    <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="Clone repository ${escapeHTML(repo.full_name)}">Clone</button>
+                    <button class="btn btn-sm btn-outline-info clone-action" data-repo-url="${escapeHTML(repo.html_url)}" aria-label="${isCloned ? 'Sync' : 'Initialize'} repository ${escapeHTML(repo.full_name)}">${cloneBtnText}</button>
                 </div>
             `;
             repoList.appendChild(item);
@@ -772,7 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return currentOrg ? `Org: ${currentOrg}` : 'Personal';
     };
 
-    const refreshPortfolioPulse = async () => {
+    const refreshPortfolioPulse = async (forceRefresh = false) => {
         const card = document.getElementById('portfolioPulseCard');
         const scopeEl = document.getElementById('pulseScope');
         if (!card) return;
@@ -784,6 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams();
             if (currentOrg) params.set('org_name', currentOrg);
             if (currentTeamId) params.set('team_id', currentTeamId);
+            if (forceRefresh) params.set('force_refresh', 'true');
 
             const response = await fetch(`/api/workspace/portfolio/pulse?${params.toString()}`);
             const data = await response.json();
@@ -837,7 +839,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshPortfolioPulseBtn) {
         refreshPortfolioPulseBtn.addEventListener('click', () => {
             toggleLoading(refreshPortfolioPulseBtn, true);
-            refreshPortfolioPulse().finally(() => toggleLoading(refreshPortfolioPulseBtn, false));
+            refreshPortfolioPulse(true).finally(() => toggleLoading(refreshPortfolioPulseBtn, false));
         });
     }
 
@@ -1228,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const refreshPortfolioHeatmap = async () => {
+    const refreshPortfolioHeatmap = async (forceRefresh = false) => {
         const card = document.getElementById('portfolioGovernanceCard');
         const scopeEl = document.getElementById('heatmapScope');
         if (!card) return;
@@ -1240,6 +1242,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams();
             if (currentOrg) params.set('org_name', currentOrg);
             if (currentTeamId) params.set('team_id', currentTeamId);
+            if (forceRefresh) params.set('force_refresh', 'true');
 
             const response = await fetch(`/api/workspace/portfolio/governance/heatmap?${params.toString()}`);
             const data = await response.json();
@@ -1263,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshHeatmapBtn) {
         refreshHeatmapBtn.addEventListener('click', () => {
             toggleLoading(refreshHeatmapBtn, true);
-            refreshPortfolioHeatmap().finally(() => toggleLoading(refreshHeatmapBtn, false));
+            refreshPortfolioHeatmap(true).finally(() => toggleLoading(refreshHeatmapBtn, false));
         });
     }
 
@@ -1680,7 +1683,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const refreshPortfolioRoadmap = async () => {
+    const refreshPortfolioRoadmap = async (forceRefresh = false) => {
         const container = document.getElementById('portfolioRoadmapContainer');
         const scopeEl = document.getElementById('roadmapScope');
         if (!container) return;
@@ -1692,6 +1695,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams();
             if (currentOrg) params.set('org_name', currentOrg);
             if (currentTeamId) params.set('team_id', currentTeamId);
+            if (forceRefresh) params.set('force_refresh', 'true');
 
             const response = await fetch(`/api/workspace/portfolio/milestones?${params.toString()}`);
             const milestones = await response.json();
@@ -1708,6 +1712,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     col.className = 'col';
                     const dueDate = ms.due_on ? new Date(ms.due_on).toLocaleDateString() : 'No due date';
                     const percent = Math.round(ms.progress);
+
+                    const isCloned = lastPortfolioData ? lastPortfolioData.some(p => p.full_name === ms.full_name) : false;
+                    const ghostBadge = isCloned ? '' : '<span class="badge bg-light text-muted border ms-2" style="font-size: 0.7rem;">Not Cloned</span>';
+                    const initBtn = isCloned ? '' : `<button class="btn btn-sm btn-outline-primary init-workspace-btn mt-2 w-100" data-repo="${escapeHTML(ms.full_name)}">Initialize Workspace</button>`;
 
                     let borderClass = 'border-light';
                     let badgeClass = 'bg-info text-dark';
@@ -1735,8 +1743,13 @@ document.addEventListener('DOMContentLoaded', () => {
                              data-full-name="${escapeHTML(ms.full_name)}">
                             <div class="card-body p-3">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(ms.title)}">${escapeHTML(ms.title)}</h6>
-                                    <span class="badge ${badgeClass} small">${escapeHTML(ms.repo_name)}</span>
+                                    <div class="text-truncate" style="max-width: 70%;">
+                                        <h6 class="card-title mb-0 text-truncate" title="${escapeHTML(ms.title)}">${escapeHTML(ms.title)}</h6>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge ${badgeClass} small">${escapeHTML(ms.repo_name)}</span>
+                                        ${ghostBadge}
+                                    </div>
                                 </div>
                                 <div class="small ${ms.is_overdue ? 'text-danger fw-bold' : 'text-muted'} mb-1">
                                     <i class="bi bi-calendar"></i> Due: ${escapeHTML(dueDate)}
@@ -1752,9 +1765,38 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span>${percent}%</span>
                                     <span>${ms.open_issues} open</span>
                                 </div>
+                                ${initBtn}
                             </div>
                         </div>
                     `;
+
+                    if (!isCloned) {
+                        col.querySelector('.init-workspace-btn').addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            const btn = e.target;
+                            toggleLoading(btn, true);
+                            try {
+                                const response = await fetch('/api/workspace/clone', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ repo_url: `https://github.com/${ms.full_name}` })
+                                });
+                                const result = await response.json();
+                                if (response.ok) {
+                                    showAlert(result.message);
+                                    refreshWorkspacePortfolio();
+                                    bootstrap.Tab.getOrCreateInstance(document.getElementById('workspace-tab')).show();
+                                    refreshExplorer();
+                                } else {
+                                    showAlert(result.error, 'danger');
+                                }
+                            } catch (err) {
+                                showAlert(err.message, 'danger');
+                            } finally {
+                                toggleLoading(btn, false);
+                            }
+                        });
+                    }
 
                     col.querySelector('.portfolio-milestone-card').addEventListener('click', async () => {
                         const repoName = ms.repo_name;
@@ -1793,7 +1835,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshRoadmapBtn) {
         refreshRoadmapBtn.addEventListener('click', () => {
             toggleLoading(refreshRoadmapBtn, true);
-            refreshPortfolioRoadmap().finally(() => toggleLoading(refreshRoadmapBtn, false));
+            refreshPortfolioRoadmap(true).finally(() => toggleLoading(refreshRoadmapBtn, false));
         });
     }
 
@@ -2280,7 +2322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const statusBadge = document.getElementById('statusBadge');
         const ciStatusBadge = document.getElementById('ciStatusBadge');
         const collabBadge = document.getElementById('collabBadge');
-        if (!branchBadge || !statusBadge) return;
+        if (!branchBadge || !statusBadge) return null;
 
         try {
             const response = await fetch('/api/workspace/status');
@@ -2372,9 +2414,17 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 branchBadge.style.display = 'none';
                 statusBadge.style.display = 'none';
+
+                if (data && data.active_repo_full_name) {
+                    statusBadge.textContent = 'Ghost Workspace';
+                    statusBadge.className = 'badge bg-warning text-dark';
+                    statusBadge.style.display = 'inline-block';
+                }
             }
+            return data;
         } catch (error) {
             console.error('Failed to fetch workspace status:', error);
+            return null;
         }
     };
 
@@ -2448,12 +2498,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const explorer = document.getElementById('workspaceExplorer');
         if (!explorer) return;
 
-        refreshStatus();
+        const status = await refreshStatus();
         try {
             const response = await fetch('/api/workspace/files');
             const data = await response.json();
 
             if (!response.ok) {
+                if (status && status.is_git === false && status.active_repo_full_name) {
+                    explorer.innerHTML = `
+                        <div class="text-center p-5">
+                            <div class="mb-3"><span class="badge bg-warning text-dark fs-6">Ghost Workspace</span></div>
+                            <p class="text-muted">Repository <strong>${escapeHTML(status.active_repo_full_name)}</strong> is active in your session, but not yet cloned to the server.</p>
+                            <button id="ghostInitBtn" class="btn btn-primary">Initialize Workspace</button>
+                        </div>
+                    `;
+                    document.getElementById('ghostInitBtn').addEventListener('click', async (e) => {
+                        toggleLoading(e.target, true);
+                        try {
+                            const resp = await fetch('/api/workspace/clone', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ repo_url: `https://github.com/${status.active_repo_full_name}` })
+                            });
+                            const result = await resp.json();
+                            if (resp.ok) {
+                                showAlert(result.message);
+                                refreshExplorer();
+                            } else {
+                                showAlert(result.error, 'danger');
+                            }
+                        } catch (err) {
+                            showAlert(err.message, 'danger');
+                        } finally {
+                            toggleLoading(e.target, false);
+                        }
+                    });
+                    return;
+                }
                 explorer.innerHTML = `<p class="text-muted">${data.error || 'No active repository.'}</p>`;
                 return;
             }

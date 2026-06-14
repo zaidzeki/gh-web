@@ -182,14 +182,14 @@
     - [x] Implement `POST /api/governance/remediate/batch` for multi-repo patching.
     - [x] Create Remediation Orchestrator UI for common vulnerabilities.
     - [x] Implement proactive Risk Guardrails (`warn_on_at_risk_milestone`).
-- [ ] **Epic: Strategic Governance Phase 7: Mission Control & Contextual Health**
-    - [ ] Implement `resolve_effective_portfolio` helper for context-driven repo selection.
-    - [ ] Update `/api/workspace/portfolio/pulse` to support `org_name` and `team_id` parameters.
-    - [ ] Update `/api/workspace/portfolio/milestones` to support context-driven aggregation.
-    - [ ] Update `/api/workspace/portfolio/governance/heatmap` to support context-driven aggregation.
-    - [ ] Implement Org-level server-side caching (60m TTL) for mission control metrics.
-    - [ ] Update Frontend Dashboard widgets to refresh dynamically on context switch.
-    - [ ] Add "Initialize Workspace" quick-action to Heatmap and Pulse outliers.
+- [x] **Epic: Strategic Governance Phase 7: Mission Control & Contextual Health**
+    - [x] Implement `resolve_effective_portfolio` helper for context-driven repo selection.
+    - [x] Update `/api/workspace/portfolio/pulse` to support `org_name` and `team_id` parameters.
+    - [x] Update `/api/workspace/portfolio/milestones` to support context-driven aggregation.
+    - [x] Update `/api/workspace/portfolio/governance/heatmap` to support context-driven aggregation.
+    - [x] Implement Org-level server-side caching (60m TTL) for mission control metrics.
+    - [x] Update Frontend Dashboard widgets to refresh dynamically on context switch.
+    - [x] Add "Initialize Workspace" quick-action to Heatmap and Pulse outliers.
 - [x] Add toast notifications for API responses.
 
 ## P3: Polish

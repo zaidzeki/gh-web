@@ -13,6 +13,10 @@ from ..pulse.routes import calculate_repo_pulse
 
 bp = Blueprint('milestones', __name__)
 
+# Context-level cache: { (token, context_key): (timestamp, data) }
+_portfolio_milestones_cache = {}
+CACHE_TTL = datetime.timedelta(minutes=60)
+
 def calculate_certainty(open_issues, lead_time_hours, due_on):
     """
     Calculates the Delivery Certainty Score.
@@ -140,6 +144,17 @@ def workspace_portfolio_milestones():
     org_name = request.args.get('org_name')
     team_id = request.args.get('team_id')
     repos_arg = request.args.get('repos')
+    force_refresh = request.args.get('force_refresh') in ['true', '1']
+
+    # Context Caching
+    context_key = f"{org_name}:{team_id}:{repos_arg}"
+    cache_key = (token, context_key)
+    now_ts = datetime.datetime.now()
+
+    if not force_refresh and cache_key in _portfolio_milestones_cache:
+        timestamp, data = _portfolio_milestones_cache[cache_key]
+        if now_ts - timestamp < CACHE_TTL:
+            return jsonify(data), 200
 
     g = get_github_client()
     repo_names = resolve_effective_portfolio(g, org_name, team_id, repos_arg)
@@ -208,6 +223,7 @@ def workspace_portfolio_milestones():
 
         aggregated_milestones.sort(key=sort_key)
 
+        _portfolio_milestones_cache[cache_key] = (now_ts, aggregated_milestones)
         return jsonify(aggregated_milestones), 200
     except Exception as e:
         return jsonify({"error": mask_token(str(e))}), 500

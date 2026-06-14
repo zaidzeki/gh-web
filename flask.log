@@ -1,36 +1,33 @@
+ * Serving Flask app 'app'
  * Debug mode: off
 [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:5000
- * Running on http://192.168.0.2:5000
+ * Running on http://127.0.0.1:5001
 [33mPress CTRL+C to quit[0m
-127.0.0.1 - - [14/Jun/2026 03:38:02] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:02] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:02] "GET /static/css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:02] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:02] "GET /static/js/app.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:02] "[31m[1mGET /api/user HTTP/1.1[0m" 401 -
-127.0.0.1 - - [14/Jun/2026 03:38:02] "GET /api/workspace/templates HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:03] "POST /login HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:04] "GET /api/workspace/templates HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:38:04] "[35m[1mGET /api/user HTTP/1.1[0m" 500 -
-127.0.0.1 - - [14/Jun/2026 03:39:58] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:39:59] "GET /static/css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:39:59] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:39:59] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:39:59] "GET /static/js/app.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:39:59] "[31m[1mGET /api/user HTTP/1.1[0m" 401 -
-127.0.0.1 - - [14/Jun/2026 03:39:59] "GET /api/workspace/templates HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:40:00] "POST /login HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:40:00] "GET /api/workspace/templates HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:40:00] "[35m[1mGET /api/user HTTP/1.1[0m" 500 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "GET /static/css/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "GET /static/js/app.js HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "[31m[1mGET /api/user HTTP/1.1[0m" 401 -
-127.0.0.1 - - [14/Jun/2026 03:41:07] "GET /api/workspace/templates HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:08] "POST /login HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:08] "GET /api/workspace/templates HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jun/2026 03:41:08] "[35m[1mGET /api/user HTTP/1.1[0m" 500 -
+127.0.0.1 - - [14/Jun/2026 11:24:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:24:39] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:24:39] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:24:39] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:24:39] "GET /static/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:24:39] "GET /api/workspace/templates HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:24:41] "[31m[1mGET /api/repos HTTP/1.1[0m" 401 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "GET /static/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "GET /api/workspace/templates HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:25:31] "[31m[1mGET /api/repos HTTP/1.1[0m" 401 -
+127.0.0.1 - - [14/Jun/2026 11:26:02] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:26:02] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:26:02] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:26:02] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:26:02] "GET /static/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:26:03] "GET /api/workspace/templates HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:26:03] "[31m[1mGET /api/repos HTTP/1.1[0m" 401 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "GET /static/vendors/bootstrap/css/bootstrap.min.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "GET /static/css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "GET /static/vendors/bootstrap/js/bootstrap.bundle.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "GET /static/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "GET /api/workspace/templates HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 11:27:23] "[31m[1mGET /api/repos HTTP/1.1[0m" 401 -
