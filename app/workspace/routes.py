@@ -968,18 +968,29 @@ def workspace_status():
         return jsonify({"error": "No active repository in workspace"}), 400
 
     workspace_dir = get_workspace_dir(repo_name)
+
+    # Check for active issue/PR linkage in session (context for ghost workspaces)
+    active_issue_data = session.get('active_issues', {}).get(repo_name)
+    repo_full_name = None
+    if isinstance(active_issue_data, dict):
+        repo_full_name = active_issue_data.get('repo_full_name')
+
     if not os.path.exists(os.path.join(workspace_dir, '.git')):
-        return jsonify({"is_git": False}), 200
+        return jsonify({
+            "is_git": False,
+            "active_repo_name": repo_name,
+            "active_repo_full_name": repo_full_name
+        }), 200
 
     try:
         repo = git.Repo(workspace_dir)
         can_push = False
-        repo_full_name = None
 
         # Try to resolve full name from remotes
         for remote in repo.remotes:
-            repo_full_name = get_repo_full_name_from_url(remote.url)
-            if repo_full_name:
+            resolved_full_name = get_repo_full_name_from_url(remote.url)
+            if resolved_full_name:
+                repo_full_name = resolved_full_name
                 break
 
         # Check if we can push to the tracking remote

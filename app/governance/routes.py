@@ -13,6 +13,10 @@ from .policy_store import PolicyStore
 bp = Blueprint('governance', __name__)
 policy_store = PolicyStore()
 
+# Context-level cache: { (token, context_key): (timestamp, data) }
+_portfolio_heatmap_cache = {}
+CACHE_TTL = datetime.timedelta(minutes=60)
+
 def get_github_client():
     token = session.get('github_token')
     if not token:
@@ -203,6 +207,17 @@ def get_portfolio_heatmap():
     org_name = request.args.get('org_name')
     team_id = request.args.get('team_id')
     repos_arg = request.args.get('repos')
+    force_refresh = request.args.get('force_refresh') in ['true', '1']
+
+    # Context Caching
+    context_key = f"{org_name}:{team_id}:{repos_arg}"
+    cache_key = (token, context_key)
+    now_ts = datetime.datetime.now()
+
+    if not force_refresh and cache_key in _portfolio_heatmap_cache:
+        timestamp, data = _portfolio_heatmap_cache[cache_key]
+        if now_ts - timestamp < CACHE_TTL:
+            return jsonify(data), 200
 
     g = get_github_client()
     repo_names = resolve_effective_portfolio(g, org_name, team_id, repos_arg)
@@ -262,6 +277,7 @@ def get_portfolio_heatmap():
             if res:
                 results.append(res)
 
+    _portfolio_heatmap_cache[cache_key] = (now_ts, results)
     return jsonify(results), 200
 
 @bp.route('/api/governance/remediate/batch', methods=['POST'])
