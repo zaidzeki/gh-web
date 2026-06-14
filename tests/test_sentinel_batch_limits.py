@@ -103,7 +103,8 @@ def test_milestone_portfolio_limit(client, mocker):
     # The limit is applied to the directories searched, so it shouldn't crash
     # and would have only called get_repo 50 times (though we mocked milestones to be empty)
 
-    # Verify that it only processed 50 repos by checking call count of get_repo
-    assert mock_gh.return_value.get_repo.call_count == 50
+    # Verify that it only processed 20 repos by checking call count of get_repo
+    # (Portfolio aggregation in Phase 7 is capped at 20 repos)
+    assert mock_gh.return_value.get_repo.call_count == 20
 
     shutil.rmtree(workspace_root)

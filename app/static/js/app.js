@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await refreshDashboardOrgs();
                 await refreshDashboardRepos();
-                refreshWorkspacePortfolio();
+                await refreshWorkspacePortfolio();
                 refreshTaskInbox();
                 refreshPortfolioRoadmap();
                 refreshPortfolioPulse();
@@ -247,6 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         refreshDashboardRepos();
                         refreshTaskInbox();
+                        refreshPortfolioRoadmap();
+                        refreshPortfolioPulse();
+                        refreshPortfolioHeatmap();
+                        refreshPortfolioSecurity();
                     });
                 });
             } else {
@@ -329,6 +333,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = document.createElement('div');
             item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center repo-item';
             item.dataset.repo = repo.full_name;
+
+            const isCloned = lastPortfolioData ? lastPortfolioData.some(p => p.full_name === repo.full_name || p.repo_name === repo.name) : false;
+            const ghostBadge = isCloned ? '' : '<span class="badge bg-light text-muted border ms-2" title="No local workspace active for this repository. Actions will use GitHub API.">Not Cloned</span>';
             const prBadge = repo.open_prs_count > 0 ?
                 `<span class="badge bg-warning text-dark ms-2" title="${repo.open_prs_count} open pull requests">${repo.open_prs_count} PRs</span>` : '';
             const issueBadge = repo.open_issues_count > 0 ?
@@ -343,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h6 class="mb-0 text-primary" style="cursor:pointer;" data-repo="${escapeHTML(repo.full_name)}" tabindex="0" role="button" aria-label="${repoAriaLabel}">
                             ${escapeHTML(repo.full_name)}
                         </h6>
+                        ${ghostBadge}
                         <span class="policy-badge ms-1"></span>
                         ${issueBadge}
                         ${prBadge}
@@ -756,21 +764,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const getActiveScopeText = () => {
+        if (currentTeamId) {
+            const activeItem = document.querySelector('#orgContextList .dropdown-item.active');
+            return `Team: ${activeItem ? activeItem.textContent.replace('↳', '').trim() : currentTeamSlug}`;
+        }
+        return currentOrg ? `Org: ${currentOrg}` : 'Personal';
+    };
+
     const refreshPortfolioPulse = async () => {
         const card = document.getElementById('portfolioPulseCard');
+        const scopeEl = document.getElementById('pulseScope');
         if (!card) return;
 
-        if (!lastPortfolioData || lastPortfolioData.length === 0) {
-            card.style.display = 'none';
-            return;
-        }
-
         card.style.display = 'block';
-        const repoNames = lastPortfolioData.map(item => item.full_name).filter(Boolean);
-        if (repoNames.length === 0) return;
+        if (scopeEl) scopeEl.textContent = `(${getActiveScopeText()})`;
 
         try {
-            const response = await fetch(`/api/workspace/portfolio/pulse?repos=${encodeURIComponent(repoNames.join(','))}`);
+            const params = new URLSearchParams();
+            if (currentOrg) params.set('org_name', currentOrg);
+            if (currentTeamId) params.set('team_id', currentTeamId);
+
+            const response = await fetch(`/api/workspace/portfolio/pulse?${params.toString()}`);
             const data = await response.json();
             if (response.ok) {
                 const m = data.metrics;
@@ -839,12 +854,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const card = document.getElementById('portfolioSecurityCard');
         if (!container || !card) return;
 
-        if (!lastPortfolioData || lastPortfolioData.length === 0) {
+        const sourceRepos = (allRepos && allRepos.length > 0) ? allRepos : (lastPortfolioData || []);
+
+        if (sourceRepos.length === 0) {
             card.style.display = 'none';
             return;
         }
 
-        const vulnerableRepos = lastPortfolioData.filter(repo => {
+        const vulnerableRepos = sourceRepos.filter(repo => {
             const health = healthDataCache[repo.full_name];
             return health && (health.security_status === 'failure' || health.security_status === 'warning');
         });
@@ -976,10 +993,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const openGovernanceManager = async (repoFullName) => {
         const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('governanceModal'));
         const repoNameEl = document.getElementById('repoPolicyName');
+        const ghostBadgeEl = document.getElementById('repoPolicyGhostBadge');
+        const initBtn = document.getElementById('initializeWorkspaceBtn');
         const orgNameEl = document.getElementById('orgPolicyName');
         const orgTab = document.getElementById('org-policy-tab');
 
         repoNameEl.textContent = repoFullName;
+
+        const isCloned = lastPortfolioData ? lastPortfolioData.some(p => p.full_name === repoFullName) : false;
+        if (isCloned) {
+            ghostBadgeEl.innerHTML = '';
+            initBtn.style.display = 'none';
+        } else {
+            ghostBadgeEl.innerHTML = '<span class="badge bg-light text-muted border ms-2" style="font-size: 0.7rem;">Ghost Workspace</span>';
+            initBtn.style.display = 'block';
+
+            // Setup Initialize Workspace Button
+            const newInitBtn = initBtn.cloneNode(true);
+            initBtn.parentNode.replaceChild(newInitBtn, initBtn);
+            newInitBtn.addEventListener('click', async () => {
+                toggleLoading(newInitBtn, true);
+                try {
+                    const response = await fetch('/api/workspace/clone', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ repo_url: `https://github.com/${repoFullName}` })
+                    });
+                    const result = await response.json();
+                    if (response.ok) {
+                        showAlert(result.message);
+                        modal.hide();
+                        bootstrap.Tab.getOrCreateInstance(document.getElementById('workspace-tab')).show();
+                        refreshExplorer();
+                    } else {
+                        showAlert(result.error, 'danger');
+                    }
+                } catch (err) {
+                    showAlert(err.message, 'danger');
+                } finally {
+                    toggleLoading(newInitBtn, false);
+                }
+            });
+        }
+
         const orgName = repoFullName.split('/')[0];
         orgNameEl.textContent = orgName;
 
@@ -1174,19 +1230,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshPortfolioHeatmap = async () => {
         const card = document.getElementById('portfolioGovernanceCard');
+        const scopeEl = document.getElementById('heatmapScope');
         if (!card) return;
 
-        if (!lastPortfolioData || lastPortfolioData.length === 0) {
-            card.style.display = 'none';
-            return;
-        }
-
         card.style.display = 'block';
-        const repoNames = lastPortfolioData.map(item => item.full_name).filter(Boolean);
-        if (repoNames.length === 0) return;
+        if (scopeEl) scopeEl.textContent = `(${getActiveScopeText()})`;
 
         try {
-            const response = await fetch(`/api/workspace/portfolio/governance/heatmap?repos=${encodeURIComponent(repoNames.join(','))}`);
+            const params = new URLSearchParams();
+            if (currentOrg) params.set('org_name', currentOrg);
+            if (currentTeamId) params.set('team_id', currentTeamId);
+
+            const response = await fetch(`/api/workspace/portfolio/governance/heatmap?${params.toString()}`);
             const data = await response.json();
             if (response.ok) {
                 renderHeatmap(data);
@@ -1219,9 +1274,11 @@ document.addEventListener('DOMContentLoaded', () => {
         list.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-danger" role="status"></div><p class="mt-2 text-muted">Analyzing portfolio for common vulnerabilities...</p></div>';
         modal.show();
 
-        const repoNames = lastPortfolioData ? lastPortfolioData.map(item => item.full_name).filter(Boolean) : [];
+        const sourceRepos = (allRepos && allRepos.length > 0) ? allRepos : (lastPortfolioData || []);
+        const repoNames = sourceRepos.map(item => item.full_name).filter(Boolean);
+
         if (repoNames.length === 0) {
-            list.innerHTML = '<p class="text-muted p-4 text-center">No active workspaces to analyze.</p>';
+            list.innerHTML = '<p class="text-muted p-4 text-center">No repositories to analyze in current context.</p>';
             return;
         }
 
@@ -1334,7 +1391,8 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshPortfolioSecurityBtn.addEventListener('click', async () => {
             toggleLoading(refreshPortfolioSecurityBtn, true);
             try {
-                const repoNames = lastPortfolioData ? lastPortfolioData.map(item => item.full_name).filter(Boolean) : [];
+                const sourceRepos = (allRepos && allRepos.length > 0) ? allRepos : (lastPortfolioData || []);
+                const repoNames = sourceRepos.map(item => item.full_name).filter(Boolean);
                 if (repoNames.length > 0) {
                     await refreshRepoHealth(repoNames);
                 }
@@ -1624,12 +1682,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshPortfolioRoadmap = async () => {
         const container = document.getElementById('portfolioRoadmapContainer');
+        const scopeEl = document.getElementById('roadmapScope');
         if (!container) return;
 
         container.innerHTML = '<div class="col-12 text-center p-3"><span class="spinner-border spinner-border-sm" role="status"></span></div>';
+        if (scopeEl) scopeEl.textContent = `(${getActiveScopeText()})`;
 
         try {
-            const response = await fetch('/api/workspace/portfolio/milestones');
+            const params = new URLSearchParams();
+            if (currentOrg) params.set('org_name', currentOrg);
+            if (currentTeamId) params.set('team_id', currentTeamId);
+
+            const response = await fetch(`/api/workspace/portfolio/milestones?${params.toString()}`);
             const milestones = await response.json();
 
             if (response.ok) {

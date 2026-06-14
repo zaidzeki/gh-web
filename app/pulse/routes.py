@@ -3,12 +3,17 @@ import statistics
 from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, session, jsonify
 from github import Github, Auth
-from ..workspace.utils import mask_token, get_workspace_dir, calculate_dependency_freshness
+from ..workspace.utils import (
+    mask_token, get_workspace_dir, get_workspace_dir_if_exists,
+    calculate_dependency_freshness, resolve_effective_portfolio
+)
 
 bp = Blueprint('pulse', __name__)
 
 # Simple in-memory cache: { (token, repo_full_name): (timestamp, data) }
 _pulse_cache = {}
+# Context-level cache: { (token, context_key): (timestamp, data) }
+_portfolio_pulse_cache = {}
 CACHE_TTL = datetime.timedelta(minutes=60)
 
 def get_github_client():
@@ -246,8 +251,9 @@ def calculate_repo_pulse(g, repo_full_name, repo_obj=None):
         # 7. Dependency Freshness (Scanned from workspace)
         freshness_index = None
         try:
-            workspace_dir = get_workspace_dir(repo.name)
-            freshness_index = calculate_dependency_freshness(workspace_dir)
+            workspace_dir = get_workspace_dir_if_exists(repo.name)
+            if workspace_dir:
+                freshness_index = calculate_dependency_freshness(workspace_dir)
         except:
             pass
         current_metrics["dependency_freshness_index"] = freshness_index
@@ -298,8 +304,21 @@ def get_portfolio_pulse():
     if not token:
         return jsonify({"error": "Unauthorized"}), 401
 
-    repo_names = request.args.get('repos', '').split(',')
-    repo_names = [r.strip() for r in repo_names if r.strip()]
+    org_name = request.args.get('org_name')
+    team_id = request.args.get('team_id')
+    repos_arg = request.args.get('repos')
+
+    # Context Caching
+    context_key = f"{org_name}:{team_id}:{repos_arg}"
+    cache_key = (token, context_key)
+    now_ts = datetime.datetime.now()
+    if cache_key in _portfolio_pulse_cache:
+        timestamp, data = _portfolio_pulse_cache[cache_key]
+        if now_ts - timestamp < CACHE_TTL:
+            return jsonify(data), 200
+
+    g = get_github_client()
+    repo_names = resolve_effective_portfolio(g, org_name, team_id, repos_arg)
 
     if not repo_names:
         return jsonify({
@@ -318,8 +337,6 @@ def get_portfolio_pulse():
     for name in repo_names:
         if len(name) > 255:
             return jsonify({"error": f"Repository name too long: {name[:50]}..."}), 400
-
-    g = get_github_client()
     now = datetime.datetime.now()
 
     def fetch_and_cache(full_name):
@@ -407,10 +424,13 @@ def get_portfolio_pulse():
     trends = _calculate_trends(summary, prev_summary)
     benchmarks = _classify_tier(summary)
 
-    return jsonify({
+    result_data = {
         "metrics": summary,
         "previous_metrics": prev_summary,
         "trends": trends,
         "benchmarks": benchmarks,
         "repos": results
-    }), 200
+    }
+    _portfolio_pulse_cache[cache_key] = (now_ts, result_data)
+
+    return jsonify(result_data), 200

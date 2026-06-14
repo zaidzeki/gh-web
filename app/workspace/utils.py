@@ -217,6 +217,20 @@ def render_template_dir(source_path, target_path, context, is_safe_path_func=Non
                 shutil.copy2(source_file_path, dest_file_path, follow_symlinks=False)
 
 
+def get_workspace_dir_if_exists(repo_name):
+    """Safely checks if a workspace exists for the given repo without creating it."""
+    session_id = secure_filename(session.get('session_id', 'default'))
+    if not session_id:
+        session_id = 'default'
+    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+    safe_repo_name = secure_filename(repo_name)
+    if not safe_repo_name:
+        return None
+    repo_workspace = os.path.join(workspace_root, safe_repo_name)
+    if os.path.exists(repo_workspace) and os.path.isdir(repo_workspace):
+        return repo_workspace
+    return None
+
 def calculate_dependency_freshness(workspace_dir):
     """
     Scans requirements.txt and calculates a freshness index (0-100).
@@ -225,6 +239,9 @@ def calculate_dependency_freshness(workspace_dir):
     - 50: Some dependencies are pinned, others are not (e.g., '>=', or unpinned)
     - 0: No dependencies are pinned or no requirements.txt found
     """
+    if not workspace_dir or not os.path.exists(workspace_dir):
+        return None
+
     req_path = os.path.join(workspace_dir, 'requirements.txt')
     if not os.path.exists(req_path):
         return None
@@ -245,3 +262,75 @@ def calculate_dependency_freshness(workspace_dir):
         return round(score, 2)
     except:
         return 0
+
+def resolve_effective_portfolio(g, org_name=None, team_id=None, repos_arg=None):
+    """
+    Resolves the list of repository full names for strategic aggregation.
+    Priority: 1. repos_arg, 2. org/team context, 3. active workspaces, 4. user context.
+    """
+    # 1. Explicit repos list
+    if repos_arg:
+        repo_names = [r.strip() for r in repos_arg.split(',') if r.strip()]
+        if repo_names:
+            return repo_names[:50]
+
+    # 2. Context-driven (Org/Team)
+    if org_name:
+        try:
+            org = g.get_organization(org_name)
+            if team_id:
+                team = org.get_team(int(team_id))
+                repos = team.get_repos(sort='pushed', direction='desc')
+            else:
+                repos = org.get_repos(sort='pushed', direction='desc')
+
+            results = []
+            for i, repo in enumerate(repos):
+                if i >= 20: break
+                results.append(repo.full_name)
+            if results:
+                return results
+        except:
+            pass
+
+    # 3. Workspace Fallback
+    session_id = secure_filename(session.get('session_id', 'default'))
+    if not session_id:
+        session_id = 'default'
+    workspace_root = os.path.join('/tmp/gh-web-workspaces', session_id)
+    if os.path.exists(workspace_root):
+        try:
+            repo_dirs = sorted(os.listdir(workspace_root))
+            results = []
+            import git
+            for rd in repo_dirs:
+                if len(results) >= 20: break
+                repo_path = os.path.join(workspace_root, rd)
+                if os.path.isdir(repo_path) and os.path.exists(os.path.join(repo_path, '.git')):
+                    try:
+                        r = git.Repo(repo_path)
+                        url = r.remotes.origin.url
+                        match = re.search(r'github\.com[:/](.+?)(?:\.git)?$', url)
+                        full_name = match.group(1) if match else None
+                        if full_name:
+                            results.append(full_name)
+                    except:
+                        pass
+            if results:
+                return results
+        except:
+            pass
+
+    # 4. User context fallback (Personal recently pushed)
+    try:
+        user = g.get_user()
+        repos = user.get_repos(sort='pushed', direction='desc')
+        results = []
+        for i, repo in enumerate(repos):
+            if i >= 20: break
+            results.append(repo.full_name)
+        return results
+    except:
+        pass
+
+    return []
